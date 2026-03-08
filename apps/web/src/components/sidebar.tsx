@@ -1,3 +1,10 @@
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@heyloaf/ui/components/select"
 import { Separator } from "@heyloaf/ui/components/separator"
 import { cn } from "@heyloaf/ui/lib/utils"
 import Analytics01Icon from "@hugeicons/core-free-icons/Analytics01Icon"
@@ -8,16 +15,19 @@ import Contact01Icon from "@hugeicons/core-free-icons/Contact01Icon"
 import Home01Icon from "@hugeicons/core-free-icons/Home01Icon"
 import Invoice01Icon from "@hugeicons/core-free-icons/Invoice01Icon"
 import Logout01Icon from "@hugeicons/core-free-icons/Logout01Icon"
+import NoteIcon from "@hugeicons/core-free-icons/NoteIcon"
 import Notification01Icon from "@hugeicons/core-free-icons/Notification01Icon"
 import Package01Icon from "@hugeicons/core-free-icons/Package01Icon"
 import Settings01Icon from "@hugeicons/core-free-icons/Settings01Icon"
 import ShoppingBag01Icon from "@hugeicons/core-free-icons/ShoppingBag01Icon"
 import Store01Icon from "@hugeicons/core-free-icons/Store01Icon"
 import Tag01Icon from "@hugeicons/core-free-icons/Tag01Icon"
+import Time01Icon from "@hugeicons/core-free-icons/Time01Icon"
 import WarehouseIcon from "@hugeicons/core-free-icons/WarehouseIcon"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { useQuery } from "@tanstack/react-query"
+import { useMutation, useQuery } from "@tanstack/react-query"
 import { Link, useRouterState } from "@tanstack/react-router"
+import { toast } from "sonner"
 import { useApi } from "@/hooks/use-api"
 import { useAuthStore } from "@/lib/auth"
 
@@ -25,12 +35,14 @@ const navItems = [
   { label: "Dashboard", href: "/dashboard", icon: Home01Icon },
   { label: "Point of Sale", href: "/pos", icon: Cash01Icon },
   { label: "Products", href: "/products", icon: Package01Icon },
+  { label: "Recipes", href: "/recipes", icon: NoteIcon },
   { label: "Categories", href: "/categories", icon: Tag01Icon },
   { label: "Stock", href: "/stock", icon: WarehouseIcon },
   { label: "Orders", href: "/orders", icon: ShoppingBag01Icon },
   { label: "Contacts", href: "/contacts", icon: Contact01Icon },
   { label: "Invoices", href: "/invoices", icon: Invoice01Icon },
   { label: "Transactions", href: "/transactions", icon: ArrowDataTransferHorizontalIcon },
+  { label: "Shifts", href: "/shifts", icon: Time01Icon },
   { label: "Production", href: "/production", icon: Bread01Icon },
   { label: "Channels", href: "/channels", icon: Store01Icon },
   { label: "Reports", href: "/reports", icon: Analytics01Icon },
@@ -39,7 +51,7 @@ const navItems = [
 
 export function AppSidebar() {
   const location = useRouterState({ select: (s) => s.location })
-  const { user, company, clearAuth } = useAuthStore()
+  const { user, company, companies, setToken, setCompany, clearAuth } = useAuthStore()
   const client = useApi()
 
   const { data: unreadData } = useQuery({
@@ -53,11 +65,57 @@ export function AppSidebar() {
 
   const unreadCount = (unreadData as { count?: number })?.count ?? 0
 
+  const switchCompany = useMutation({
+    mutationFn: async (companyId: string) => {
+      const { data, error } = await client.POST("/api/auth/switch-company", {
+        body: { company_id: companyId },
+      })
+      if (error || !data) throw new Error("Failed to switch company")
+      return data as { data: { access_token: string; refresh_token: string } }
+    },
+    onSuccess: (res, companyId) => {
+      setToken(res.data.access_token)
+      const switched = companies.find((c) => c.id === companyId)
+      if (switched) setCompany(switched)
+      window.location.reload()
+    },
+    onError: () => {
+      toast.error("Failed to switch company")
+    },
+  })
+
+  const hasMultipleCompanies = companies.length > 1
+
   return (
     <aside className="flex w-56 flex-col border-r bg-sidebar">
       <div className="flex h-14 items-center justify-between border-b px-4">
-        <span className="text-sm font-bold tracking-tight">{company?.name ?? "Heyloaf"}</span>
-        <Link to="/notifications" className="relative text-muted-foreground hover:text-foreground">
+        {hasMultipleCompanies ? (
+          <Select
+            value={company?.id ?? ""}
+            onValueChange={(val) => {
+              if (val && val !== company?.id) {
+                switchCompany.mutate(val)
+              }
+            }}
+          >
+            <SelectTrigger className="h-8 w-full border-none bg-transparent px-0 text-sm font-bold tracking-tight shadow-none focus:ring-0">
+              <SelectValue placeholder="Select company" />
+            </SelectTrigger>
+            <SelectContent>
+              {companies.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        ) : (
+          <span className="text-sm font-bold tracking-tight">{company?.name ?? "Heyloaf"}</span>
+        )}
+        <Link
+          to="/notifications"
+          className="relative shrink-0 text-muted-foreground hover:text-foreground"
+        >
           <HugeiconsIcon icon={Notification01Icon} size={18} />
           {unreadCount > 0 && (
             <span className="absolute -top-1.5 -right-1.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-destructive px-1 text-[10px] font-medium text-destructive-foreground">

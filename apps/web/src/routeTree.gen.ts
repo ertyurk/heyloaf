@@ -14,7 +14,9 @@ import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedTransactionsRouteImport } from './routes/_authenticated/transactions'
 import { Route as AuthenticatedStockRouteImport } from './routes/_authenticated/stock'
+import { Route as AuthenticatedShiftsRouteImport } from './routes/_authenticated/shifts'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
+import { Route as AuthenticatedRecipesRouteImport } from './routes/_authenticated/recipes'
 import { Route as AuthenticatedProductsRouteImport } from './routes/_authenticated/products'
 import { Route as AuthenticatedProductionRouteImport } from './routes/_authenticated/production'
 import { Route as AuthenticatedPosRouteImport } from './routes/_authenticated/pos'
@@ -62,9 +64,19 @@ const AuthenticatedStockRoute = AuthenticatedStockRouteImport.update({
   path: '/stock',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
+const AuthenticatedShiftsRoute = AuthenticatedShiftsRouteImport.update({
+  id: '/shifts',
+  path: '/shifts',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedReportsRoute = AuthenticatedReportsRouteImport.update({
   id: '/reports',
   path: '/reports',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
+const AuthenticatedRecipesRoute = AuthenticatedRecipesRouteImport.update({
+  id: '/recipes',
+  path: '/recipes',
   getParentRoute: () => AuthenticatedRoute,
 } as any)
 const AuthenticatedProductsRoute = AuthenticatedProductsRouteImport.update({
@@ -198,7 +210,9 @@ export interface FileRoutesByFullPath {
   '/pos': typeof AuthenticatedPosRoute
   '/production': typeof AuthenticatedProductionRoute
   '/products': typeof AuthenticatedProductsRoute
+  '/recipes': typeof AuthenticatedRecipesRoute
   '/reports': typeof AuthenticatedReportsRoute
+  '/shifts': typeof AuthenticatedShiftsRoute
   '/stock': typeof AuthenticatedStockRoute
   '/transactions': typeof AuthenticatedTransactionsRoute
   '/contacts/$contactId': typeof AuthenticatedContactsContactIdRoute
@@ -226,7 +240,9 @@ export interface FileRoutesByTo {
   '/pos': typeof AuthenticatedPosRoute
   '/production': typeof AuthenticatedProductionRoute
   '/products': typeof AuthenticatedProductsRoute
+  '/recipes': typeof AuthenticatedRecipesRoute
   '/reports': typeof AuthenticatedReportsRoute
+  '/shifts': typeof AuthenticatedShiftsRoute
   '/stock': typeof AuthenticatedStockRoute
   '/transactions': typeof AuthenticatedTransactionsRoute
   '/contacts/$contactId': typeof AuthenticatedContactsContactIdRoute
@@ -256,7 +272,9 @@ export interface FileRoutesById {
   '/_authenticated/pos': typeof AuthenticatedPosRoute
   '/_authenticated/production': typeof AuthenticatedProductionRoute
   '/_authenticated/products': typeof AuthenticatedProductsRoute
+  '/_authenticated/recipes': typeof AuthenticatedRecipesRoute
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
+  '/_authenticated/shifts': typeof AuthenticatedShiftsRoute
   '/_authenticated/stock': typeof AuthenticatedStockRoute
   '/_authenticated/transactions': typeof AuthenticatedTransactionsRoute
   '/_authenticated/contacts/$contactId': typeof AuthenticatedContactsContactIdRoute
@@ -286,7 +304,9 @@ export interface FileRouteTypes {
     | '/pos'
     | '/production'
     | '/products'
+    | '/recipes'
     | '/reports'
+    | '/shifts'
     | '/stock'
     | '/transactions'
     | '/contacts/$contactId'
@@ -314,7 +334,9 @@ export interface FileRouteTypes {
     | '/pos'
     | '/production'
     | '/products'
+    | '/recipes'
     | '/reports'
+    | '/shifts'
     | '/stock'
     | '/transactions'
     | '/contacts/$contactId'
@@ -343,7 +365,9 @@ export interface FileRouteTypes {
     | '/_authenticated/pos'
     | '/_authenticated/production'
     | '/_authenticated/products'
+    | '/_authenticated/recipes'
     | '/_authenticated/reports'
+    | '/_authenticated/shifts'
     | '/_authenticated/stock'
     | '/_authenticated/transactions'
     | '/_authenticated/contacts/$contactId'
@@ -402,11 +426,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedStockRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/shifts': {
+      id: '/_authenticated/shifts'
+      path: '/shifts'
+      fullPath: '/shifts'
+      preLoaderRoute: typeof AuthenticatedShiftsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/reports': {
       id: '/_authenticated/reports'
       path: '/reports'
       fullPath: '/reports'
       preLoaderRoute: typeof AuthenticatedReportsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/recipes': {
+      id: '/_authenticated/recipes'
+      path: '/recipes'
+      fullPath: '/recipes'
+      preLoaderRoute: typeof AuthenticatedRecipesRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/products': {
@@ -609,7 +647,9 @@ interface AuthenticatedRouteChildren {
   AuthenticatedPosRoute: typeof AuthenticatedPosRoute
   AuthenticatedProductionRoute: typeof AuthenticatedProductionRoute
   AuthenticatedProductsRoute: typeof AuthenticatedProductsRoute
+  AuthenticatedRecipesRoute: typeof AuthenticatedRecipesRoute
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
+  AuthenticatedShiftsRoute: typeof AuthenticatedShiftsRoute
   AuthenticatedStockRoute: typeof AuthenticatedStockRoute
   AuthenticatedTransactionsRoute: typeof AuthenticatedTransactionsRoute
   AuthenticatedSettingsAuditRoute: typeof AuthenticatedSettingsAuditRoute
@@ -633,7 +673,9 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedPosRoute: AuthenticatedPosRoute,
   AuthenticatedProductionRoute: AuthenticatedProductionRoute,
   AuthenticatedProductsRoute: AuthenticatedProductsRoute,
+  AuthenticatedRecipesRoute: AuthenticatedRecipesRoute,
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
+  AuthenticatedShiftsRoute: AuthenticatedShiftsRoute,
   AuthenticatedStockRoute: AuthenticatedStockRoute,
   AuthenticatedTransactionsRoute: AuthenticatedTransactionsRoute,
   AuthenticatedSettingsAuditRoute: AuthenticatedSettingsAuditRoute,

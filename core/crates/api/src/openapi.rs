@@ -3,7 +3,7 @@ use utoipa::OpenApi;
 use crate::handlers::{
     audit, auth, categories, company, contacts, currencies, dashboard, invoices,
     marketplace_channels, notifications, orders, payment_methods, pos_terminals, price_lists,
-    production, products, shifts, stock, users,
+    production, products, recipes, shifts, stock, users,
 };
 
 #[derive(OpenApi)]
@@ -38,6 +38,10 @@ use crate::handlers::{
         products::bulk_activate,
         products::bulk_deactivate,
         products::bulk_category,
+        // Recipes
+        recipes::get_recipe,
+        recipes::update_recipe,
+        recipes::get_recipe_cost,
         // Stock
         stock::list_stock,
         stock::list_low_stock,
@@ -158,6 +162,12 @@ use crate::handlers::{
         products::BulkCategoryRequest,
         products::BulkActionResponse,
         heyloaf_dal::models::product::Product,
+        // Recipes
+        recipes::UpdateRecipeRequest,
+        recipes::RecipeMaterial,
+        recipes::RecipeVariant,
+        recipes::RecipeCostResponse,
+        recipes::MaterialCostLine,
         // Stock
         stock::UpdateStockLevelsRequest,
         stock::CreateMovementRequest,
@@ -245,6 +255,7 @@ use crate::handlers::{
         (name = "shifts", description = "Shift management"),
         (name = "payment-methods", description = "Payment method management"),
         (name = "pos-terminals", description = "POS terminal management"),
+        (name = "recipes", description = "Product recipe & BOM management"),
         (name = "production", description = "Production & cooking workflow"),
         (name = "notifications", description = "Notification management"),
         (name = "users", description = "User management"),

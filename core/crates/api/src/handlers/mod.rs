@@ -15,6 +15,7 @@ pub mod pos_terminals;
 pub mod price_lists;
 pub mod production;
 pub mod products;
+pub mod recipes;
 pub mod shifts;
 pub mod stock;
 pub mod users;

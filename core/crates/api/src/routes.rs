@@ -33,6 +33,15 @@ fn open_routes() -> Router<AppState> {
             "/products/{id}",
             routing::get(handlers::products::get_product),
         )
+        // Recipes (read)
+        .route(
+            "/products/{id}/recipe",
+            routing::get(handlers::recipes::get_recipe),
+        )
+        .route(
+            "/products/{id}/recipe/cost",
+            routing::get(handlers::recipes::get_recipe_cost),
+        )
         // Stock (read)
         .route("/stock", routing::get(handlers::stock::list_stock))
         .route("/stock/low", routing::get(handlers::stock::list_low_stock))
@@ -205,6 +214,11 @@ fn manager_routes() -> Router<AppState> {
         .route(
             "/products/{id}",
             routing::delete(handlers::products::delete_product),
+        )
+        // Recipes (write)
+        .route(
+            "/products/{id}/recipe",
+            routing::put(handlers::recipes::update_recipe),
         )
         // Stock (write)
         .route(

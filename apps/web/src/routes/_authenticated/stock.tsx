@@ -68,6 +68,11 @@ function StockPage() {
   const client = useApi()
   const queryClient = useQueryClient()
 
+  // Stock count sheet state
+  const [countOpen, setCountOpen] = useState(false)
+  const [countNotes, setCountNotes] = useState("")
+  const [countQuantities, setCountQuantities] = useState<Record<string, string>>({})
+
   // Movement sheet state
   const [movementOpen, setMovementOpen] = useState(false)
   const [movementProductId, setMovementProductId] = useState<string>("")
@@ -181,6 +186,53 @@ function StockPage() {
     },
   })
 
+  const submitStockCount = useMutation({
+    mutationFn: async () => {
+      const items = allStocks
+        .filter(
+          (s) => countQuantities[s.product_id] !== undefined && countQuantities[s.product_id] !== ""
+        )
+        .map((s) => ({
+          product_id: s.product_id,
+          expected_quantity: s.quantity,
+          actual_quantity: Number(countQuantities[s.product_id]),
+        }))
+      if (items.length === 0) throw new Error("No items counted")
+      // Create the stock count
+      const { data: createData, error: createError } = await client.POST(
+        "/api/stock/counts" as never,
+        { body: { items, ...(countNotes ? { notes: countNotes } : {}) } } as never
+      )
+      if (createError || !createData) throw new Error("Failed to create stock count")
+      const countId = (createData as { data: { id: string } }).data.id
+      // Complete it immediately
+      const { error: completeError } = await client.POST(
+        `/api/stock/counts/${countId}/complete` as never
+      )
+      if (completeError) throw new Error("Failed to complete stock count")
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["stock"] })
+      setCountOpen(false)
+      setCountQuantities({})
+      setCountNotes("")
+      toast.success("Stock count completed")
+    },
+    onError: (err: Error) => {
+      toast.error(err.message || "Failed to submit stock count")
+    },
+  })
+
+  function openStockCountSheet() {
+    const quantities: Record<string, string> = {}
+    for (const s of allStocks) {
+      quantities[s.product_id] = ""
+    }
+    setCountQuantities(quantities)
+    setCountNotes("")
+    setCountOpen(true)
+  }
+
   function resetMovementForm() {
     setMovementProductId("")
     setMovementType("in")
@@ -283,6 +335,9 @@ function StockPage() {
   return (
     <>
       <PageHeader title="Stock" description="Inventory levels and movements">
+        <Button variant="outline" onClick={openStockCountSheet}>
+          Start Stock Count
+        </Button>
         <Button
           onClick={() => {
             resetMovementForm()
@@ -460,6 +515,95 @@ function StockPage() {
               </Button>
               <Button type="submit" disabled={updateLevels.isPending}>
                 {updateLevels.isPending ? "Saving..." : "Update Levels"}
+              </Button>
+            </SheetFooter>
+          </form>
+        </SheetContent>
+      </Sheet>
+
+      {/* Stock Count Sheet */}
+      <Sheet open={countOpen} onOpenChange={setCountOpen}>
+        <SheetContent side="right" className="sm:max-w-lg">
+          <SheetHeader>
+            <SheetTitle>Stock Count</SheetTitle>
+            <SheetDescription>
+              Count actual quantities for each product and compare with system records.
+            </SheetDescription>
+          </SheetHeader>
+          <form
+            className="contents"
+            onSubmit={(e) => {
+              e.preventDefault()
+              submitStockCount.mutate()
+            }}
+          >
+            <SheetBody>
+              <div className="grid gap-4">
+                <div className="grid gap-1.5">
+                  <Label htmlFor="count-notes">Notes (optional)</Label>
+                  <Textarea
+                    id="count-notes"
+                    value={countNotes}
+                    onChange={(e) => setCountNotes(e.target.value)}
+                    placeholder="e.g. Weekly stock count"
+                  />
+                </div>
+                <div className="grid gap-1">
+                  <div className="grid grid-cols-[1fr_80px_80px_60px] gap-2 text-xs font-medium text-muted-foreground border-b pb-2">
+                    <span>Product</span>
+                    <span className="text-right">System</span>
+                    <span className="text-right">Actual</span>
+                    <span className="text-right">Diff</span>
+                  </div>
+                  {allStocks.map((item) => {
+                    const actual = countQuantities[item.product_id] ?? ""
+                    const diff = actual !== "" ? Number(actual) - item.quantity : null
+                    return (
+                      <div
+                        key={item.product_id}
+                        className="grid grid-cols-[1fr_80px_80px_60px] items-center gap-2 py-1"
+                      >
+                        <span className="truncate text-sm">{getProductName(item.product_id)}</span>
+                        <span className="text-right text-sm tabular-nums text-muted-foreground">
+                          {item.quantity}
+                        </span>
+                        <Input
+                          type="number"
+                          min={0}
+                          className="h-8 text-right text-sm tabular-nums"
+                          value={actual}
+                          onChange={(e) =>
+                            setCountQuantities((prev) => ({
+                              ...prev,
+                              [item.product_id]: e.target.value,
+                            }))
+                          }
+                        />
+                        <span
+                          className={`text-right text-sm tabular-nums ${
+                            diff == null
+                              ? "text-muted-foreground"
+                              : diff === 0
+                                ? "text-muted-foreground"
+                                : diff > 0
+                                  ? "text-green-600"
+                                  : "text-destructive font-medium"
+                          }`}
+                        >
+                          {diff == null ? "\u2014" : diff > 0 ? `+${diff}` : diff}
+                        </span>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+            </SheetBody>
+            <SheetFooter>
+              <Button variant="outline" type="button" onClick={() => setCountOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={submitStockCount.isPending}>
+                {submitStockCount.isPending ? "Submitting..." : "Submit Count"}
               </Button>
             </SheetFooter>
           </form>

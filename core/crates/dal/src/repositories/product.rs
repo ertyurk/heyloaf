@@ -161,6 +161,24 @@ impl ProductRepository {
             .await
     }
 
+    pub async fn update_recipe(
+        pool: &PgPool,
+        id: Uuid,
+        recipe: &serde_json::Value,
+    ) -> Result<Product, sqlx::Error> {
+        let sql = format!(
+            r"UPDATE products SET recipe = $2
+            WHERE id = $1
+            RETURNING {}",
+            Self::SELECT
+        );
+        sqlx::query_as::<_, Product>(&sql)
+            .bind(id)
+            .bind(recipe)
+            .fetch_one(pool)
+            .await
+    }
+
     pub async fn delete(pool: &PgPool, id: Uuid) -> Result<(), sqlx::Error> {
         sqlx::query("DELETE FROM products WHERE id = $1")
             .bind(id)
