@@ -99,6 +99,65 @@ function isSinglePrintableChar(e: KeyboardEvent): boolean {
   return e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey
 }
 
+function buildPaymentLabel(
+  splitMode: boolean,
+  splitPayments: SplitPaymentRow[],
+  paymentMethodId: string,
+  getName: (id: string) => string
+): string {
+  if (splitMode) {
+    return splitPayments
+      .map((r) => `${getName(r.methodId)}: ${formatCurrency(r.amount)}`)
+      .join(", ")
+  }
+  return getName(paymentMethodId)
+}
+
+function buildPaymentInfo(
+  splitMode: boolean,
+  splitPayments: SplitPaymentRow[],
+  paymentMethodId: string
+): Record<string, unknown> {
+  if (splitMode) {
+    return {
+      payments: splitPayments.map((r) => ({
+        payment_method_id: r.methodId,
+        amount: r.amount,
+      })),
+    }
+  }
+  if (paymentMethodId) {
+    return { payment_method_id: paymentMethodId }
+  }
+  return {}
+}
+
+function loadSavedCart(): CartItem[] {
+  try {
+    const saved = localStorage.getItem("heyloaf-pos-cart")
+    return saved ? JSON.parse(saved) : []
+  } catch {
+    return []
+  }
+}
+
+function filterProducts(products: Product[], categoryId: string | null, search: string): Product[] {
+  let result = products
+  if (categoryId) {
+    result = result.filter((p) => p.category_id === categoryId)
+  }
+  if (search) {
+    const q = search.toLowerCase()
+    result = result.filter(
+      (p) =>
+        p.name?.toLowerCase().includes(q) ||
+        p.code?.toLowerCase().includes(q) ||
+        p.barcode?.toLowerCase().includes(q)
+    )
+  }
+  return result
+}
+
 // --- Receipt Sheet component ---
 interface ReceiptSheetProps {
   open: boolean
@@ -281,20 +340,14 @@ function SplitPaymentPanel({
   )
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: POS page is inherently complex with cart, payments, and keyboard handling
 function PosPage() {
   const client = useApi()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
   const company = useAuthStore((s) => s.company)
 
-  const [cart, setCart] = useState<CartItem[]>(() => {
-    try {
-      const saved = localStorage.getItem("heyloaf-pos-cart")
-      return saved ? JSON.parse(saved) : []
-    } catch {
-      return []
-    }
-  })
+  const [cart, setCart] = useState<CartItem[]>(loadSavedCart)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [search, setSearch] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
@@ -417,22 +470,10 @@ function PosPage() {
   }, [categories])
 
   // Filtered products based on category and search
-  const filteredProducts = useMemo(() => {
-    let result = posProducts
-    if (selectedCategory) {
-      result = result.filter((p) => p.category_id === selectedCategory)
-    }
-    if (debouncedSearch) {
-      const q = debouncedSearch.toLowerCase()
-      result = result.filter(
-        (p) =>
-          p.name?.toLowerCase().includes(q) ||
-          p.code?.toLowerCase().includes(q) ||
-          p.barcode?.toLowerCase().includes(q)
-      )
-    }
-    return result
-  }, [posProducts, selectedCategory, debouncedSearch])
+  const filteredProducts = useMemo(
+    () => filterProducts(posProducts, selectedCategory, debouncedSearch),
+    [posProducts, selectedCategory, debouncedSearch]
+  )
 
   // Get price for a product
   const getProductPrice = useCallback(
@@ -553,14 +594,10 @@ function PosPage() {
 
   function initSplitMode() {
     setSplitMode(true)
-    if (paymentMethods.length >= 2) {
-      setSplitPayments([
-        { methodId: paymentMethods[0]!.id, amount: grandTotal },
-        { methodId: paymentMethods[1]!.id, amount: 0 },
-      ])
-    } else if (paymentMethods.length === 1) {
-      setSplitPayments([{ methodId: paymentMethods[0]!.id, amount: grandTotal }])
-    }
+    const initial: SplitPaymentRow[] = paymentMethods
+      .slice(0, 2)
+      .map((pm, i) => ({ methodId: pm.id, amount: i === 0 ? grandTotal : 0 }))
+    setSplitPayments(initial)
   }
 
   function exitSplitMode() {
@@ -585,16 +622,7 @@ function PosPage() {
         line_total: item.price * item.quantity,
       }))
 
-      const paymentInfo = splitMode
-        ? {
-            payments: splitPayments.map((r) => ({
-              payment_method_id: r.methodId,
-              amount: r.amount,
-            })),
-          }
-        : paymentMethodId
-          ? { payment_method_id: paymentMethodId }
-          : {}
+      const paymentInfo = buildPaymentInfo(splitMode, splitPayments, paymentMethodId)
 
       await client.POST(
         "/api/orders" as never,
@@ -608,14 +636,12 @@ function PosPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders"] })
-
-      // Build receipt data before clearing cart
-      const paymentLabel = splitMode
-        ? splitPayments
-            .map((r) => `${getPaymentMethodName(r.methodId)}: ${formatCurrency(r.amount)}`)
-            .join(", ")
-        : getPaymentMethodName(paymentMethodId)
-
+      const paymentLabel = buildPaymentLabel(
+        splitMode,
+        splitPayments,
+        paymentMethodId,
+        getPaymentMethodName
+      )
       setLastOrder({
         items: [...cart],
         subtotal,
@@ -625,7 +651,6 @@ function PosPage() {
         date: new Date(),
       })
       setReceiptOpen(true)
-
       setCart([])
       localStorage.removeItem("heyloaf-pos-cart")
       setPaymentMethodId("")

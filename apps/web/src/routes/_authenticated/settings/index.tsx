@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@heyloaf/ui/components/card"
 import { createFileRoute, Link } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 import { PageHeader } from "@/components/page-header"
 
 export const Route = createFileRoute("/_authenticated/settings/")({
@@ -8,71 +9,73 @@ export const Route = createFileRoute("/_authenticated/settings/")({
 
 const sections = [
   {
-    title: "General Settings",
-    description: "Default tax rate, currency, language, and timezone",
+    titleKey: "settings.general.title",
+    descriptionKey: "settings.general.description",
     to: "/settings/general",
   },
   {
-    title: "Company Settings",
-    description: "Manage your company profile and preferences",
+    titleKey: "settings.company.title",
+    descriptionKey: "settings.company.description",
     to: "/settings/company",
   },
   {
-    title: "Currencies",
-    description: "Configure currencies and exchange rates",
+    titleKey: "settings.currencies.title",
+    descriptionKey: "settings.currencies.description",
     to: "/settings/currencies",
   },
   {
-    title: "Payment Methods",
-    description: "Set up accepted payment methods",
+    titleKey: "settings.paymentMethods.title",
+    descriptionKey: "settings.paymentMethods.description",
     to: "/settings/payment-methods",
   },
   {
-    title: "Price Lists",
-    description: "Manage pricing tiers and schedules",
+    titleKey: "settings.priceLists.title",
+    descriptionKey: "settings.priceLists.description",
     to: "/settings/price-lists",
   },
   {
-    title: "POS Terminals",
-    description: "Configure point-of-sale terminals",
+    titleKey: "settings.posTerminals.title",
+    descriptionKey: "settings.posTerminals.description",
     to: "/settings/pos-terminals",
   },
   {
-    title: "Stock Settings",
-    description: "Minimum stock levels and precision defaults",
+    titleKey: "settings.stockSettings.title",
+    descriptionKey: "settings.stockSettings.description",
     to: "/settings/stock",
   },
   {
-    title: "Users",
-    description: "Manage team members and permissions",
+    titleKey: "settings.users.title",
+    descriptionKey: "settings.users.description",
     to: "/settings/users",
   },
   {
-    title: "Notification Settings",
-    description: "Configure low stock and overdue invoice alerts",
+    titleKey: "settings.notificationSettings.title",
+    descriptionKey: "settings.notificationSettings.description",
     to: "/settings/notifications",
   },
   {
-    title: "Audit Logs",
-    description: "View system activity history",
+    titleKey: "settings.auditLogs.title",
+    descriptionKey: "settings.auditLogs.description",
     to: "/settings/audit",
   },
 ] as const
 
 function SettingsIndexPage() {
+  const { t } = useTranslation()
+
   return (
     <>
-      <PageHeader title="Settings" description="Manage your workspace configuration" />
+      <PageHeader title={t("settings.title")} description={t("settings.description")} />
 
       <div className="grid gap-4 p-6 sm:grid-cols-2 lg:grid-cols-3">
         {sections.map((section) => (
           <Link key={section.to} to={section.to} className="block">
             <Card className="transition-shadow hover:shadow-md">
               <CardHeader>
-                <CardTitle>{section.title}</CardTitle>
+                <CardTitle>{t(section.titleKey)}</CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground text-sm">{section.description}</p>
+                <p className="text-muted-foreground text-sm">{t(section.descriptionKey)}</p>
               </CardContent>
             </Card>
           </Link>

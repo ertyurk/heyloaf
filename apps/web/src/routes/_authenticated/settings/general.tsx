@@ -12,9 +12,11 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
+import { saveLanguage } from "@/lib/i18n"
 
 export const Route = createFileRoute("/_authenticated/settings/general")({
   component: GeneralSettingsPage,
@@ -35,6 +37,7 @@ const emptyForm: GeneralForm = {
 }
 
 function GeneralSettingsPage() {
+  const { t, i18n } = useTranslation()
   const client = useApi()
   const queryClient = useQueryClient()
 
@@ -86,11 +89,16 @@ function GeneralSettingsPage() {
       })
       return res.data
     },
-    onSuccess: () => {
+    onSuccess: (_data, variables) => {
       queryClient.invalidateQueries({ queryKey: ["company"] })
-      toast.success("General settings saved")
+      // Switch app language when the language setting is saved
+      if (variables.default_language && variables.default_language !== i18n.language) {
+        i18n.changeLanguage(variables.default_language)
+        saveLanguage(variables.default_language)
+      }
+      toast.success(t("settings.general.saved"))
     },
-    onError: () => toast.error("Failed to save general settings"),
+    onError: () => toast.error(t("settings.general.failedToSave")),
   })
 
   function handleSubmit(e: React.FormEvent) {
@@ -110,26 +118,32 @@ function GeneralSettingsPage() {
   if (isLoading) {
     return (
       <>
-        <PageHeader title="General Settings" description="Default preferences for your workspace" />
-        <p className="text-muted-foreground py-8 text-center text-sm">Loading...</p>
+        <PageHeader
+          title={t("settings.general.title")}
+          description={t("settings.general.description")}
+        />
+        <p className="text-muted-foreground py-8 text-center text-sm">{t("common.loading")}</p>
       </>
     )
   }
 
   return (
     <>
-      <PageHeader title="General Settings" description="Default preferences for your workspace" />
+      <PageHeader
+        title={t("settings.general.title")}
+        description={t("settings.general.description")}
+      />
 
       <div className="space-y-4 p-6">
         <Card className="mx-auto max-w-2xl">
           <CardHeader>
-            <CardTitle>Defaults</CardTitle>
+            <CardTitle>{t("settings.general.defaults")}</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="grid gap-2">
-                  <Label htmlFor="default_tax_rate">Default Tax Rate (%)</Label>
+                  <Label htmlFor="default_tax_rate">{t("settings.general.defaultTaxRate")}</Label>
                   <Input
                     id="default_tax_rate"
                     type="number"
@@ -142,13 +156,13 @@ function GeneralSettingsPage() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="default_currency">Default Currency</Label>
+                  <Label htmlFor="default_currency">{t("settings.general.defaultCurrency")}</Label>
                   <Select
                     value={form.default_currency}
                     onValueChange={(val) => updateField("default_currency", val as string)}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select currency" />
+                      <SelectValue placeholder={t("settings.general.selectCurrency")} />
                     </SelectTrigger>
                     <SelectContent>
                       {currencies.map((c) => (
@@ -163,7 +177,7 @@ function GeneralSettingsPage() {
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="grid gap-2">
-                  <Label htmlFor="timezone">Timezone</Label>
+                  <Label htmlFor="timezone">{t("settings.general.timezone")}</Label>
                   <Input
                     id="timezone"
                     value={form.timezone}
@@ -172,17 +186,17 @@ function GeneralSettingsPage() {
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="default_language">Default Language</Label>
+                  <Label htmlFor="default_language">{t("settings.general.defaultLanguage")}</Label>
                   <Select
                     value={form.default_language}
                     onValueChange={(val) => updateField("default_language", val as string)}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select language" />
+                      <SelectValue placeholder={t("settings.general.selectLanguage")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="en">English</SelectItem>
-                      <SelectItem value="tr">Turkish</SelectItem>
+                      <SelectItem value="en">{t("settings.general.english")}</SelectItem>
+                      <SelectItem value="tr">{t("settings.general.turkish")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -190,7 +204,7 @@ function GeneralSettingsPage() {
 
               <div className="flex justify-end pt-4">
                 <Button type="submit" disabled={updateMutation.isPending}>
-                  {updateMutation.isPending ? "Saving..." : "Save Changes"}
+                  {updateMutation.isPending ? t("common.saving") : t("common.saveChanges")}
                 </Button>
               </div>
             </form>

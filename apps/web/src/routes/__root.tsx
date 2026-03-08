@@ -3,6 +3,7 @@ import { QueryClientProvider } from "@tanstack/react-query"
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router"
 import { Toaster } from "sonner"
+import "@/lib/i18n"
 import { createQueryClient } from "@/lib/query"
 
 const queryClient = createQueryClient()

@@ -27,29 +27,35 @@ import WarehouseIcon from "@hugeicons/core-free-icons/WarehouseIcon"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useMutation, useQuery } from "@tanstack/react-query"
 import { Link, useRouterState } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { useApi } from "@/hooks/use-api"
 import { useAuthStore } from "@/lib/auth"
 
 const navItems = [
-  { label: "Dashboard", href: "/dashboard", icon: Home01Icon },
-  { label: "Point of Sale", href: "/pos", icon: Cash01Icon },
-  { label: "Products", href: "/products", icon: Package01Icon },
-  { label: "Recipes", href: "/recipes", icon: NoteIcon },
-  { label: "Categories", href: "/categories", icon: Tag01Icon },
-  { label: "Stock", href: "/stock", icon: WarehouseIcon },
-  { label: "Orders", href: "/orders", icon: ShoppingBag01Icon },
-  { label: "Contacts", href: "/contacts", icon: Contact01Icon },
-  { label: "Invoices", href: "/invoices", icon: Invoice01Icon },
-  { label: "Transactions", href: "/transactions", icon: ArrowDataTransferHorizontalIcon },
-  { label: "Shifts", href: "/shifts", icon: Time01Icon },
-  { label: "Production", href: "/production", icon: Bread01Icon },
-  { label: "Channels", href: "/channels", icon: Store01Icon },
-  { label: "Reports", href: "/reports", icon: Analytics01Icon },
-  { label: "Notifications", href: "/notifications", icon: Notification01Icon },
+  { labelKey: "sidebar.dashboard", href: "/dashboard", icon: Home01Icon },
+  { labelKey: "sidebar.pos", href: "/pos", icon: Cash01Icon },
+  { labelKey: "sidebar.products", href: "/products", icon: Package01Icon },
+  { labelKey: "sidebar.recipes", href: "/recipes", icon: NoteIcon },
+  { labelKey: "sidebar.categories", href: "/categories", icon: Tag01Icon },
+  { labelKey: "sidebar.stock", href: "/stock", icon: WarehouseIcon },
+  { labelKey: "sidebar.orders", href: "/orders", icon: ShoppingBag01Icon },
+  { labelKey: "sidebar.contacts", href: "/contacts", icon: Contact01Icon },
+  { labelKey: "sidebar.invoices", href: "/invoices", icon: Invoice01Icon },
+  {
+    labelKey: "sidebar.transactions",
+    href: "/transactions",
+    icon: ArrowDataTransferHorizontalIcon,
+  },
+  { labelKey: "sidebar.shifts", href: "/shifts", icon: Time01Icon },
+  { labelKey: "sidebar.production", href: "/production", icon: Bread01Icon },
+  { labelKey: "sidebar.channels", href: "/channels", icon: Store01Icon },
+  { labelKey: "sidebar.reports", href: "/reports", icon: Analytics01Icon },
+  { labelKey: "sidebar.notifications", href: "/notifications", icon: Notification01Icon },
 ]
 
 export function AppSidebar() {
+  const { t } = useTranslation()
   const location = useRouterState({ select: (s) => s.location })
   const { user, company, companies, setToken, setCompany, clearAuth } = useAuthStore()
   const client = useApi()
@@ -80,7 +86,7 @@ export function AppSidebar() {
       window.location.reload()
     },
     onError: () => {
-      toast.error("Failed to switch company")
+      toast.error(t("auth.failedToSwitchCompany"))
     },
   })
 
@@ -99,7 +105,7 @@ export function AppSidebar() {
             }}
           >
             <SelectTrigger className="h-8 w-full border-none bg-transparent px-0 text-sm font-bold tracking-tight shadow-none focus:ring-0">
-              <SelectValue placeholder="Select company" />
+              <SelectValue placeholder={t("sidebar.selectCompany")} />
             </SelectTrigger>
             <SelectContent>
               {companies.map((c) => (
@@ -140,7 +146,7 @@ export function AppSidebar() {
               )}
             >
               <HugeiconsIcon icon={item.icon} size={16} />
-              {item.label}
+              {t(item.labelKey)}
             </Link>
           )
         })}
@@ -159,7 +165,7 @@ export function AppSidebar() {
           )}
         >
           <HugeiconsIcon icon={Settings01Icon} size={16} />
-          Settings
+          {t("sidebar.settings")}
         </Link>
       </div>
 
