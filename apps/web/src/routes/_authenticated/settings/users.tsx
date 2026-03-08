@@ -96,9 +96,7 @@ function PermissionsEditor({
                 <td className="px-3 py-1.5">
                   <Select
                     value={permissions[mod.key] ?? "none"}
-                    onValueChange={(val) =>
-                      onChange({ ...permissions, [mod.key]: val })
-                    }
+                    onValueChange={(val) => onChange({ ...permissions, [mod.key]: val ?? "none" })}
                   >
                     <SelectTrigger size="sm" className="w-28">
                       <SelectValue />
@@ -173,10 +171,7 @@ function UsersPage() {
   })
 
   const updatePermsMutation = useMutation({
-    mutationFn: async ({
-      id,
-      permissions,
-    }: { id: string; permissions: Permissions }) => {
+    mutationFn: async ({ id, permissions }: { id: string; permissions: Permissions }) => {
       const res = await client.PUT("/api/users/{id}/permissions", {
         params: { path: { id } },
         body: { permissions },
@@ -214,14 +209,12 @@ function UsersPage() {
     setForm(emptyForm)
   }
 
-  function openPermissions(row: {
-    user_id: string
-    name: string
-    permissions?: Permissions
-  }) {
+  function openPermissions(row: { user_id: string; name: string; permissions?: unknown }) {
     setPermUserId(row.user_id)
     setPermUserName(row.name)
-    setPermValues(row.permissions && typeof row.permissions === "object" ? (row.permissions as Permissions) : {})
+    setPermValues(
+      row.permissions && typeof row.permissions === "object" ? (row.permissions as Permissions) : {}
+    )
     setPermSheetOpen(true)
   }
 
@@ -378,10 +371,7 @@ function UsersPage() {
           </SheetHeader>
           <form onSubmit={handlePermSubmit} className="flex flex-1 flex-col">
             <SheetBody className="grid gap-4">
-              <PermissionsEditor
-                permissions={permValues}
-                onChange={setPermValues}
-              />
+              <PermissionsEditor permissions={permValues} onChange={setPermValues} />
             </SheetBody>
             <SheetFooter>
               <Button type="submit" disabled={updatePermsMutation.isPending}>

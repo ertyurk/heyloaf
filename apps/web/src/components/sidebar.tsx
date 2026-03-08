@@ -33,31 +33,38 @@ import { useApi } from "@/hooks/use-api"
 import { useAuthStore } from "@/lib/auth"
 
 const navItems = [
-  { labelKey: "sidebar.dashboard", href: "/dashboard", icon: Home01Icon },
-  { labelKey: "sidebar.pos", href: "/pos", icon: Cash01Icon },
-  { labelKey: "sidebar.products", href: "/products", icon: Package01Icon },
-  { labelKey: "sidebar.recipes", href: "/recipes", icon: NoteIcon },
-  { labelKey: "sidebar.categories", href: "/categories", icon: Tag01Icon },
-  { labelKey: "sidebar.stock", href: "/stock", icon: WarehouseIcon },
-  { labelKey: "sidebar.orders", href: "/orders", icon: ShoppingBag01Icon },
-  { labelKey: "sidebar.contacts", href: "/contacts", icon: Contact01Icon },
-  { labelKey: "sidebar.invoices", href: "/invoices", icon: Invoice01Icon },
+  { labelKey: "sidebar.dashboard", href: "/dashboard", icon: Home01Icon, module: "reports" },
+  { labelKey: "sidebar.pos", href: "/pos", icon: Cash01Icon, module: "pos" },
+  { labelKey: "sidebar.products", href: "/products", icon: Package01Icon, module: "products" },
+  { labelKey: "sidebar.recipes", href: "/recipes", icon: NoteIcon, module: "products" },
+  { labelKey: "sidebar.categories", href: "/categories", icon: Tag01Icon, module: "products" },
+  { labelKey: "sidebar.stock", href: "/stock", icon: WarehouseIcon, module: "stock" },
+  { labelKey: "sidebar.orders", href: "/orders", icon: ShoppingBag01Icon, module: "pos" },
+  { labelKey: "sidebar.contacts", href: "/contacts", icon: Contact01Icon, module: "sales" },
+  { labelKey: "sidebar.invoices", href: "/invoices", icon: Invoice01Icon, module: "sales" },
   {
     labelKey: "sidebar.transactions",
     href: "/transactions",
     icon: ArrowDataTransferHorizontalIcon,
+    module: "sales",
   },
-  { labelKey: "sidebar.shifts", href: "/shifts", icon: Time01Icon },
-  { labelKey: "sidebar.production", href: "/production", icon: Bread01Icon },
-  { labelKey: "sidebar.channels", href: "/channels", icon: Store01Icon },
-  { labelKey: "sidebar.reports", href: "/reports", icon: Analytics01Icon },
-  { labelKey: "sidebar.notifications", href: "/notifications", icon: Notification01Icon },
-]
+  { labelKey: "sidebar.shifts", href: "/shifts", icon: Time01Icon, module: "pos" },
+  { labelKey: "sidebar.production", href: "/production", icon: Bread01Icon, module: "production" },
+  { labelKey: "sidebar.channels", href: "/channels", icon: Store01Icon, module: "products" },
+  { labelKey: "sidebar.reports", href: "/reports", icon: Analytics01Icon, module: "reports" },
+  {
+    labelKey: "sidebar.notifications",
+    href: "/notifications",
+    icon: Notification01Icon,
+    module: undefined,
+  },
+] as const
 
 export function AppSidebar() {
   const { t } = useTranslation()
   const location = useRouterState({ select: (s) => s.location })
-  const { user, company, companies, setToken, setCompany, clearAuth } = useAuthStore()
+  const { user, company, companies, setToken, setCompany, clearAuth, canViewModule } =
+    useAuthStore()
   const client = useApi()
 
   const { data: unreadData } = useQuery({
@@ -132,42 +139,46 @@ export function AppSidebar() {
       </div>
 
       <nav className="flex flex-1 flex-col gap-0.5 overflow-y-auto p-2">
-        {navItems.map((item) => {
-          const active = location.pathname.startsWith(item.href)
-          return (
-            <Link
-              key={item.href}
-              to={item.href}
-              className={cn(
-                "flex items-center gap-2 px-3 py-1.5 text-sm transition-colors",
-                active
-                  ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-                  : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-              )}
-            >
-              <HugeiconsIcon icon={item.icon} size={16} />
-              {t(item.labelKey)}
-            </Link>
-          )
-        })}
+        {navItems
+          .filter((item) => !item.module || canViewModule(item.module))
+          .map((item) => {
+            const active = location.pathname.startsWith(item.href)
+            return (
+              <Link
+                key={item.href}
+                to={item.href}
+                className={cn(
+                  "flex items-center gap-2 px-3 py-1.5 text-sm transition-colors",
+                  active
+                    ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+                    : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+                )}
+              >
+                <HugeiconsIcon icon={item.icon} size={16} />
+                {t(item.labelKey)}
+              </Link>
+            )
+          })}
       </nav>
 
       <Separator />
 
-      <div className="p-2">
-        <Link
-          to="/settings"
-          className={cn(
-            "flex items-center gap-2 px-3 py-1.5 text-sm transition-colors",
-            location.pathname.startsWith("/settings")
-              ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-              : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
-          )}
-        >
-          <HugeiconsIcon icon={Settings01Icon} size={16} />
-          {t("sidebar.settings")}
-        </Link>
-      </div>
+      {canViewModule("settings") && (
+        <div className="p-2">
+          <Link
+            to="/settings"
+            className={cn(
+              "flex items-center gap-2 px-3 py-1.5 text-sm transition-colors",
+              location.pathname.startsWith("/settings")
+                ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
+                : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
+            )}
+          >
+            <HugeiconsIcon icon={Settings01Icon} size={16} />
+            {t("sidebar.settings")}
+          </Link>
+        </div>
+      )}
 
       <Separator />
 

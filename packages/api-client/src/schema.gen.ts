@@ -948,6 +948,22 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  "/api/users/{id}/permissions": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put: operations["update_user_permissions"]
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   "/api/users/{id}/role": {
     parameters: {
       query?: never
@@ -1348,7 +1364,9 @@ export interface components {
       company?: null | components["schemas"]["LoginCompany"]
       /** Format: int64 */
       expires_in: number
+      permissions: unknown
       refresh_token: string
+      role?: string | null
       token_type: string
       user: components["schemas"]["LoginUser"]
     }
@@ -1855,6 +1873,9 @@ export interface components {
       notes?: string | null
       /** Format: double */
       quantity: number
+    }
+    UpdatePermissionsRequest: {
+      permissions: unknown
     }
     UpdateRoleRequest: {
       role: string
@@ -5776,6 +5797,48 @@ export interface operations {
           [name: string]: unknown
         }
         content?: never
+      }
+    }
+  }
+  update_user_permissions: {
+    parameters: {
+      query?: never
+      header?: never
+      path: {
+        /** @description User ID */
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody: {
+      content: {
+        "application/json": components["schemas"]["UpdatePermissionsRequest"]
+      }
+    }
+    responses: {
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": {
+            data: {
+              /** Format: uuid */
+              company_id: string
+              /** Format: date-time */
+              created_at: string
+              /** Format: uuid */
+              id: string
+              is_active: boolean
+              permissions: unknown
+              role: string
+              /** Format: date-time */
+              updated_at: string
+              /** Format: uuid */
+              user_id: string
+            }
+          }
+        }
       }
     }
   }
