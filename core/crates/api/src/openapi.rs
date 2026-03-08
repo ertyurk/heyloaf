@@ -3,7 +3,7 @@ use utoipa::OpenApi;
 use crate::handlers::{
     audit, auth, categories, company, contacts, currencies, dashboard, invoices,
     marketplace_channels, notifications, orders, payment_methods, pos_terminals, price_lists,
-    production, products, recipes, shifts, stock, users,
+    production, products, recipes, shifts, stock, transactions, users,
 };
 
 #[derive(OpenApi)]
@@ -82,6 +82,8 @@ use crate::handlers::{
         contacts::delete_contact,
         contacts::list_contact_transactions,
         contacts::record_payment,
+        // Transactions
+        transactions::list_transactions,
         // Invoices
         invoices::list_invoices,
         invoices::get_invoice,
@@ -250,6 +252,7 @@ use crate::handlers::{
         (name = "marketplace-channels", description = "Marketplace channel management"),
         (name = "currencies", description = "Currency management"),
         (name = "contacts", description = "Contact & ledger management"),
+        (name = "transactions", description = "Transaction management"),
         (name = "invoices", description = "Invoice management"),
         (name = "orders", description = "Order management"),
         (name = "shifts", description = "Shift management"),

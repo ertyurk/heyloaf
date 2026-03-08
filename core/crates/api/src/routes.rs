@@ -98,6 +98,11 @@ fn open_routes() -> Router<AppState> {
             "/contacts/{id}/transactions",
             routing::get(handlers::contacts::list_contact_transactions),
         )
+        // Transactions (read)
+        .route(
+            "/transactions",
+            routing::get(handlers::transactions::list_transactions),
+        )
         // Invoices (read)
         .route("/invoices", routing::get(handlers::invoices::list_invoices))
         .route(

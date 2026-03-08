@@ -6,6 +6,7 @@ use heyloaf_common::types::{ApiResponse, PaginatedResponse, PaginationParams};
 use heyloaf_dal::models::invoice::Invoice;
 use heyloaf_dal::repositories::contact::ContactRepository;
 use heyloaf_dal::repositories::invoice::InvoiceRepository;
+use heyloaf_dal::repositories::transaction::TransactionRepository;
 use heyloaf_services::audit_service::AuditBuilder;
 use heyloaf_services::stock_service::StockService;
 use serde::Deserialize;
@@ -201,7 +202,10 @@ pub async fn create_invoice(
     record_invoice_stock_movements_tx(&mut tx, ctx.company_id, &invoice, auth.user_id).await?;
 
     // Contact balance update
-    apply_invoice_contact_balance_tx(&mut tx, &invoice).await?;
+    let new_balance = apply_invoice_contact_balance_tx(&mut tx, &invoice).await?;
+
+    // Create transaction record for the invoice
+    create_invoice_transaction_tx(&mut tx, ctx.company_id, &invoice, new_balance).await?;
 
     tx.commit().await.map_err(|e| {
         AppError::Database(format!("Failed to commit transaction: {e}"))
@@ -251,6 +255,11 @@ pub async fn update_invoice(
     // Reverse old contact balance
     reverse_invoice_contact_balance_tx(&mut tx, &existing).await?;
 
+    // Remove old transaction record
+    TransactionRepository::delete_by_reference_with_executor(&mut *tx, "invoice", id)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
     let invoice = InvoiceRepository::update_with_executor(
         &mut *tx,
         id,
@@ -275,7 +284,10 @@ pub async fn update_invoice(
     record_invoice_stock_movements_tx(&mut tx, ctx.company_id, &invoice, auth.user_id).await?;
 
     // Re-apply contact balance
-    apply_invoice_contact_balance_tx(&mut tx, &invoice).await?;
+    let new_balance = apply_invoice_contact_balance_tx(&mut tx, &invoice).await?;
+
+    // Create new transaction record
+    create_invoice_transaction_tx(&mut tx, ctx.company_id, &invoice, new_balance).await?;
 
     tx.commit().await.map_err(|e| {
         AppError::Database(format!("Failed to commit transaction: {e}"))
@@ -363,6 +375,11 @@ pub async fn delete_invoice(
     // Reverse contact balance
     reverse_invoice_contact_balance_tx(&mut tx, &existing).await?;
 
+    // Remove transaction record
+    TransactionRepository::delete_by_reference_with_executor(&mut *tx, "invoice", id)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
     InvoiceRepository::delete_with_executor(&mut *tx, id)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
@@ -446,23 +463,58 @@ async fn record_invoice_stock_movements_tx(
 /// Apply contact balance delta for the invoice within a transaction.
 /// Purchase  -> positive delta (you owe the supplier more).
 /// Sale      -> negative delta (customer owes you, reducing their balance).
+/// Returns the new balance if a contact was updated.
 async fn apply_invoice_contact_balance_tx(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     invoice: &Invoice,
-) -> Result<(), AppError> {
+) -> Result<Option<f64>, AppError> {
     let Some(contact_id) = invoice.contact_id else {
-        return Ok(());
+        return Ok(None);
     };
 
     let delta = match invoice.invoice_type.as_str() {
         "purchase" => invoice.grand_total,
         "sale" => -invoice.grand_total,
+        _ => return Ok(None),
+    };
+
+    let updated = ContactRepository::update_balance_with_executor(&mut **tx, contact_id, delta)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    Ok(Some(updated.balance))
+}
+
+/// Create a transaction record for the given invoice within a DB transaction.
+async fn create_invoice_transaction_tx(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    company_id: Uuid,
+    invoice: &Invoice,
+    balance_after: Option<f64>,
+) -> Result<(), AppError> {
+    let transaction_type = match invoice.invoice_type.as_str() {
+        "purchase" => "purchase",
+        "sale" => "invoice",
         _ => return Ok(()),
     };
 
-    ContactRepository::update_balance_with_executor(&mut **tx, contact_id, delta)
-        .await
-        .map_err(|e| AppError::Database(e.to_string()))?;
+    let description = format!("Invoice {}", invoice.invoice_number);
+
+    TransactionRepository::create_with_executor(
+        &mut **tx,
+        company_id,
+        invoice.contact_id,
+        transaction_type,
+        invoice.grand_total,
+        invoice.date,
+        None,
+        Some("invoice"),
+        Some(invoice.id),
+        balance_after.unwrap_or(0.0),
+        Some(description.as_str()),
+    )
+    .await
+    .map_err(|e| AppError::Database(e.to_string()))?;
 
     Ok(())
 }
