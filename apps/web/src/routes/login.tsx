@@ -41,6 +41,8 @@ function LoginPage() {
           refresh_token: string
           user: { id: string; name: string; email: string }
           company: { id: string; name: string }
+          role?: string | null
+          permissions?: Record<string, string>
         }
       }
 
@@ -49,6 +51,8 @@ function LoginPage() {
         refreshToken: loginData.data.refresh_token,
         user: loginData.data.user,
         company: loginData.data.company,
+        role: loginData.data.role,
+        permissions: loginData.data.permissions,
       })
 
       navigate({ to: "/dashboard" })
