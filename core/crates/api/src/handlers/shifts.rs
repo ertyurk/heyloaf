@@ -1,11 +1,13 @@
 use axum::extract::{Path, Query, State};
 use axum::{Extension, Json};
+use chrono::{DateTime, Utc};
 use heyloaf_common::errors::AppError;
 use heyloaf_common::types::{ApiResponse, PaginatedResponse, PaginationParams};
 use heyloaf_dal::models::shift::Shift;
-use heyloaf_dal::repositories::shift::ShiftRepository;
+use heyloaf_dal::repositories::shift::{PaymentMethodSummary, ShiftRepository};
+use heyloaf_dal::repositories::user::UserRepository;
 use heyloaf_services::audit_service::AuditBuilder;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
@@ -183,4 +185,90 @@ pub async fn close_shift(
         .emit();
 
     Ok(Json(ApiResponse::new(shift)))
+}
+
+// --- Z-Report ---
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct ZReport {
+    pub shift_id: Uuid,
+    pub cashier_name: String,
+    pub opened_at: DateTime<Utc>,
+    pub closed_at: Option<DateTime<Utc>>,
+    pub opening_balance: f64,
+    pub closing_balance: Option<f64>,
+    pub total_sales: f64,
+    pub total_orders: i64,
+    pub total_items_sold: i64,
+    pub payment_method_breakdown: Vec<PaymentMethodSummary>,
+    pub expected_cash: f64,
+    pub actual_cash: Option<f64>,
+    pub discrepancy: Option<f64>,
+    pub voided_orders: i64,
+    pub returned_orders: i64,
+}
+
+#[utoipa::path(
+    get,
+    path = "/api/shifts/{id}/z-report",
+    tag = "shifts",
+    security(("bearer" = [])),
+    params(("id" = Uuid, Path, description = "Shift ID")),
+    responses((status = 200, body = inline(ApiResponse<ZReport>)))
+)]
+pub async fn get_z_report(
+    State(state): State<AppState>,
+    Extension(ctx): Extension<CompanyContext>,
+    Path(id): Path<Uuid>,
+) -> Result<Json<ApiResponse<ZReport>>, AppError> {
+    let shift = ShiftRepository::find_by_id(&state.pool, id)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .ok_or_else(|| AppError::NotFound("Shift not found".into()))?;
+
+    if shift.company_id != ctx.company_id {
+        return Err(AppError::NotFound("Shift not found".into()));
+    }
+
+    let cashier = UserRepository::find_by_id(&state.pool, shift.cashier_id)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+    let cashier_name = cashier.map_or_else(|| "Unknown".to_owned(), |u| u.name);
+
+    let cash_method_id =
+        ShiftRepository::find_cash_payment_method_id(&state.pool, ctx.company_id)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let stats = ShiftRepository::order_stats(&state.pool, id, cash_method_id)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let breakdown = ShiftRepository::payment_method_breakdown(&state.pool, id)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let expected_cash = shift.opening_balance + stats.cash_sales;
+    let actual_cash = shift.closing_balance;
+    let discrepancy = actual_cash.map(|actual| actual - expected_cash);
+
+    let report = ZReport {
+        shift_id: shift.id,
+        cashier_name,
+        opened_at: shift.opened_at,
+        closed_at: shift.closed_at,
+        opening_balance: shift.opening_balance,
+        closing_balance: shift.closing_balance,
+        total_sales: stats.total_sales,
+        total_orders: stats.total_orders,
+        total_items_sold: stats.total_items_sold,
+        payment_method_breakdown: breakdown,
+        expected_cash,
+        actual_cash,
+        discrepancy,
+        voided_orders: stats.voided_orders,
+        returned_orders: stats.returned_orders,
+    };
+
+    Ok(Json(ApiResponse::new(report)))
 }

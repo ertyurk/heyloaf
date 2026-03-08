@@ -19,4 +19,5 @@ pub mod recipes;
 pub mod shifts;
 pub mod stock;
 pub mod transactions;
+pub mod uploads;
 pub mod users;

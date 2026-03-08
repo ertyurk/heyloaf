@@ -1,7 +1,26 @@
-use sqlx::PgPool;
+use serde::Serialize;
+use sqlx::{FromRow, PgPool};
+use utoipa::ToSchema;
 use uuid::Uuid;
 
 use crate::models::shift::Shift;
+
+#[derive(Debug, Clone, Serialize, FromRow, ToSchema)]
+pub struct PaymentMethodSummary {
+    pub method_name: String,
+    pub count: i64,
+    pub total: f64,
+}
+
+#[derive(Debug, Clone, Serialize, FromRow)]
+pub struct ShiftOrderStats {
+    pub total_sales: f64,
+    pub total_orders: i64,
+    pub total_items_sold: i64,
+    pub voided_orders: i64,
+    pub returned_orders: i64,
+    pub cash_sales: f64,
+}
 
 pub struct ShiftRepository;
 
@@ -125,5 +144,85 @@ impl ShiftRepository {
             .bind(notes)
             .fetch_one(pool)
             .await
+    }
+
+    /// Aggregate order stats for a shift (completed orders only for totals,
+    /// plus counts of voided/returned).
+    pub async fn order_stats(
+        pool: &PgPool,
+        shift_id: Uuid,
+        default_cash_method_id: Option<Uuid>,
+    ) -> Result<ShiftOrderStats, sqlx::Error> {
+        let row = sqlx::query_as::<_, ShiftOrderStats>(
+            r"SELECT
+                COALESCE(SUM(CASE WHEN status = 'completed' THEN total ELSE 0 END), 0)
+                    AS total_sales,
+                COUNT(*) FILTER (WHERE status = 'completed')
+                    AS total_orders,
+                COALESCE(
+                    (SELECT SUM(oi.quantity)::bigint
+                     FROM order_items oi
+                     JOIN orders o2 ON o2.id = oi.order_id
+                     WHERE o2.shift_id = $1 AND o2.status = 'completed'),
+                    0
+                ) AS total_items_sold,
+                COUNT(*) FILTER (WHERE status = 'voided')
+                    AS voided_orders,
+                COUNT(*) FILTER (WHERE status = 'returned')
+                    AS returned_orders,
+                COALESCE(SUM(
+                    CASE WHEN status = 'completed'
+                         AND payment_method_id = $2
+                    THEN total ELSE 0 END
+                ), 0) AS cash_sales
+            FROM orders
+            WHERE shift_id = $1",
+        )
+        .bind(shift_id)
+        .bind(default_cash_method_id)
+        .fetch_one(pool)
+        .await?;
+
+        Ok(row)
+    }
+
+    /// Payment method breakdown for a shift (completed orders only).
+    pub async fn payment_method_breakdown(
+        pool: &PgPool,
+        shift_id: Uuid,
+    ) -> Result<Vec<PaymentMethodSummary>, sqlx::Error> {
+        sqlx::query_as::<_, PaymentMethodSummary>(
+            r"SELECT
+                COALESCE(pm.name, 'Unknown') AS method_name,
+                COUNT(*) AS count,
+                COALESCE(SUM(o.total), 0) AS total
+            FROM orders o
+            LEFT JOIN payment_methods pm ON pm.id = o.payment_method_id
+            WHERE o.shift_id = $1 AND o.status = 'completed'
+            GROUP BY pm.name
+            ORDER BY total DESC",
+        )
+        .bind(shift_id)
+        .fetch_all(pool)
+        .await
+    }
+
+    /// Find the "Cash" payment method for a company (first method whose name
+    /// case-insensitively matches "cash", or the default method).
+    pub async fn find_cash_payment_method_id(
+        pool: &PgPool,
+        company_id: Uuid,
+    ) -> Result<Option<Uuid>, sqlx::Error> {
+        let id: Option<Uuid> = sqlx::query_scalar(
+            r"SELECT id FROM payment_methods
+            WHERE company_id = $1
+            ORDER BY (LOWER(name) = 'cash') DESC, is_default DESC
+            LIMIT 1",
+        )
+        .bind(company_id)
+        .fetch_optional(pool)
+        .await?;
+
+        Ok(id)
     }
 }

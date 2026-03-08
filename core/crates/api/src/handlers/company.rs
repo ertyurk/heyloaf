@@ -24,6 +24,7 @@ pub struct UpdateCompanyRequest {
     pub phone: Option<String>,
     pub email: Option<String>,
     pub website: Option<String>,
+    pub logo_url: Option<String>,
     #[validate(length(min = 1, message = "Currency is required"))]
     pub default_currency: String,
     pub default_tax_rate: f64,
@@ -94,6 +95,7 @@ pub async fn update_company(
         body.phone.as_deref(),
         body.email.as_deref(),
         body.website.as_deref(),
+        body.logo_url.as_deref(),
         &body.default_currency,
         body.default_tax_rate,
         &body.default_language,

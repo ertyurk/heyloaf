@@ -3,10 +3,11 @@ import { Input } from "@heyloaf/ui/components/input"
 import { Label } from "@heyloaf/ui/components/label"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { useEffect, useState } from "react"
+import { useEffect, useRef, useState } from "react"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
+import { useAuthStore } from "@/lib/auth"
 
 export const Route = createFileRoute("/_authenticated/settings/company")({
   component: CompanyPage,
@@ -20,6 +21,7 @@ interface CompanyForm {
   phone: string
   email: string
   website: string
+  logo_url: string
   default_currency: string
   default_tax_rate: string
   default_language: string
@@ -34,15 +36,24 @@ const emptyForm: CompanyForm = {
   phone: "",
   email: "",
   website: "",
+  logo_url: "",
   default_currency: "",
   default_tax_rate: "",
   default_language: "",
   timezone: "",
 }
 
+const API_BASE_URL =
+  typeof window !== "undefined"
+    ? `${window.location.protocol}//${window.location.hostname}:8083`
+    : "http://localhost:8083"
+
 function CompanyPage() {
   const client = useApi()
   const queryClient = useQueryClient()
+  const token = useAuthStore((s) => s.token)
+  const logoInputRef = useRef<HTMLInputElement>(null)
+  const [uploadingLogo, setUploadingLogo] = useState(false)
 
   const [form, setForm] = useState<CompanyForm>(emptyForm)
 
@@ -66,6 +77,7 @@ function CompanyPage() {
         phone: company.phone ?? "",
         email: company.email ?? "",
         website: company.website ?? "",
+        logo_url: company.logo_url ?? "",
         default_currency: company.default_currency ?? "",
         default_tax_rate: String(company.default_tax_rate ?? ""),
         default_language: company.default_language ?? "",
@@ -73,6 +85,34 @@ function CompanyPage() {
       })
     }
   }, [company])
+
+  async function handleLogoUpload(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0]
+    if (!file) return
+    setUploadingLogo(true)
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      const res = await fetch(`${API_BASE_URL}/api/uploads`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err?.error?.message ?? "Upload failed")
+      }
+      const json = await res.json()
+      const url: string = json.data.url
+      setForm((f) => ({ ...f, logo_url: url }))
+      toast.success("Logo uploaded")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed")
+    } finally {
+      setUploadingLogo(false)
+      if (logoInputRef.current) logoInputRef.current.value = ""
+    }
+  }
 
   const updateMutation = useMutation({
     mutationFn: async (body: {
@@ -83,6 +123,7 @@ function CompanyPage() {
       phone?: string
       email?: string
       website?: string
+      logo_url?: string
       default_currency: string
       default_tax_rate: number
       default_language: string
@@ -109,6 +150,7 @@ function CompanyPage() {
       phone: form.phone || undefined,
       email: form.email || undefined,
       website: form.website || undefined,
+      logo_url: form.logo_url || undefined,
       default_currency: form.default_currency,
       default_tax_rate: Number(form.default_tax_rate),
       default_language: form.default_language,
@@ -134,6 +176,43 @@ function CompanyPage() {
       <PageHeader title="Company Settings" description="Manage your company profile" />
 
       <form onSubmit={handleSubmit} className="mx-auto max-w-2xl space-y-6 p-6">
+        {/* Logo Upload */}
+        <div className="grid gap-2">
+          <Label>Company Logo</Label>
+          <div className="flex items-center gap-4">
+            <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted">
+              {form.logo_url ? (
+                <img
+                  src={`${API_BASE_URL}${form.logo_url}`}
+                  alt="Company logo"
+                  className="h-full w-full object-cover"
+                />
+              ) : (
+                <span className="text-muted-foreground text-xs">No logo</span>
+              )}
+            </div>
+            <div className="flex flex-col gap-1">
+              <input
+                ref={logoInputRef}
+                type="file"
+                accept="image/jpeg,image/png,image/webp,image/svg+xml"
+                className="hidden"
+                onChange={handleLogoUpload}
+              />
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                disabled={uploadingLogo}
+                onClick={() => logoInputRef.current?.click()}
+              >
+                {uploadingLogo ? "Uploading..." : "Upload Logo"}
+              </Button>
+              <p className="text-muted-foreground text-xs">JPEG, PNG, WebP, or SVG. Max 5MB.</p>
+            </div>
+          </div>
+        </div>
+
         <div className="grid gap-2">
           <Label htmlFor="name">Company Name</Label>
           <Input

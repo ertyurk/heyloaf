@@ -36,6 +36,11 @@ pub struct UpdateRoleRequest {
     pub role: String,
 }
 
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct UpdatePermissionsRequest {
+    pub permissions: serde_json::Value,
+}
+
 // --- Handlers ---
 
 #[utoipa::path(
@@ -172,6 +177,43 @@ pub async fn update_user_role(
     AuditBuilder::new(state.audit.clone(), ctx.company_id, auth.user_id)
         .entity("user_company", uc.id)
         .action("update_role")
+        .before(&uc)
+        .after(&updated)
+        .emit();
+
+    Ok(Json(ApiResponse::new(updated)))
+}
+
+#[utoipa::path(
+    put,
+    path = "/api/users/{id}/permissions",
+    tag = "users",
+    security(("bearer" = [])),
+    params(("id" = Uuid, Path, description = "User ID")),
+    request_body = UpdatePermissionsRequest,
+    responses((status = 200, body = inline(ApiResponse<UserCompany>)))
+)]
+pub async fn update_user_permissions(
+    State(state): State<AppState>,
+    Extension(ctx): Extension<CompanyContext>,
+    Extension(auth): Extension<AuthUser>,
+    Path(id): Path<Uuid>,
+    Json(body): Json<UpdatePermissionsRequest>,
+) -> Result<Json<ApiResponse<UserCompany>>, AppError> {
+    // Verify user belongs to this company
+    let uc = UserRepository::get_user_company(&state.pool, id, ctx.company_id)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .ok_or_else(|| AppError::NotFound("User not found in this company".into()))?;
+
+    let updated =
+        UserRepository::update_permissions(&state.pool, id, ctx.company_id, &body.permissions)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+
+    AuditBuilder::new(state.audit.clone(), ctx.company_id, auth.user_id)
+        .entity("user_company", uc.id)
+        .action("update_permissions")
         .before(&uc)
         .after(&updated)
         .emit();

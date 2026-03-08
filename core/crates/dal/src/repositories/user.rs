@@ -129,6 +129,26 @@ impl UserRepository {
             .await
     }
 
+    pub async fn update_permissions(
+        pool: &PgPool,
+        user_id: Uuid,
+        company_id: Uuid,
+        permissions: &serde_json::Value,
+    ) -> Result<UserCompany, sqlx::Error> {
+        let sql = format!(
+            r"UPDATE user_companies SET permissions = $3
+            WHERE user_id = $1 AND company_id = $2
+            RETURNING {}",
+            Self::UC_SELECT
+        );
+        sqlx::query_as::<_, UserCompany>(&sql)
+            .bind(user_id)
+            .bind(company_id)
+            .bind(permissions)
+            .fetch_one(pool)
+            .await
+    }
+
     pub async fn deactivate_from_company(
         pool: &PgPool,
         user_id: Uuid,

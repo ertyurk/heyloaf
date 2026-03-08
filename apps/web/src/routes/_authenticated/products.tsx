@@ -31,6 +31,12 @@ import { useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
+import { useAuthStore } from "@/lib/auth"
+
+const API_BASE_URL =
+  typeof window !== "undefined"
+    ? `${window.location.protocol}//${window.location.hostname}:8083`
+    : "http://localhost:8083"
 
 type Product = components["schemas"]["Product"]
 type Category = components["schemas"]["Category"]
@@ -69,10 +75,48 @@ const PLU_TYPE_OPTIONS = [
 function ProductsPage() {
   const client = useApi()
   const queryClient = useQueryClient()
+  const token = useAuthStore((s) => s.token)
 
   const [createOpen, setCreateOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+
+  const createImageInputRef = useRef<HTMLInputElement>(null)
+  const editImageInputRef = useRef<HTMLInputElement>(null)
+  const [uploadingCreateImage, setUploadingCreateImage] = useState(false)
+  const [uploadingEditImage, setUploadingEditImage] = useState(false)
+  const [createImageUrl, setCreateImageUrl] = useState("")
+  const [editImageUrl, setEditImageUrl] = useState("")
+
+  async function handleImageUpload(
+    file: File,
+    setUrl: (url: string) => void,
+    setUploading: (v: boolean) => void,
+    inputRef: React.RefObject<HTMLInputElement | null>
+  ) {
+    setUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append("file", file)
+      const res = await fetch(`${API_BASE_URL}/api/uploads`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${token}` },
+        body: formData,
+      })
+      if (!res.ok) {
+        const err = await res.json()
+        throw new Error(err?.error?.message ?? "Upload failed")
+      }
+      const json = await res.json()
+      setUrl(json.data.url)
+      toast.success("Image uploaded")
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Upload failed")
+    } finally {
+      setUploading(false)
+      if (inputRef.current) inputRef.current.value = ""
+    }
+  }
 
   // Search and filters
   const [searchQuery, setSearchQuery] = useState("")
@@ -156,6 +200,23 @@ function ProductsPage() {
   }, [products, debouncedSearch, typeFilter, statusFilter])
 
   const columns = [
+    {
+      id: "image",
+      header: "",
+      cell: (row: Product) => (
+        <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded bg-muted">
+          {row.image_url ? (
+            <img
+              src={`${API_BASE_URL}${row.image_url}`}
+              alt={row.name}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            <span className="text-muted-foreground text-[10px]">--</span>
+          )}
+        </div>
+      ),
+    },
     {
       id: "code",
       header: "Code",
@@ -245,6 +306,7 @@ function ProductsPage() {
       plu_type: editForm.plu_type || null,
       plu_code: editForm.plu_code || null,
       min_stock_level: editForm.min_stock_level ? Number(editForm.min_stock_level) : null,
+      image_url: editImageUrl || null,
     }
   }
 
@@ -302,10 +364,12 @@ function ProductsPage() {
       scale_enabled: false,
       min_stock_level: "",
     })
+    setCreateImageUrl("")
   }
 
   function openEditSheet(product: Product) {
     setEditingProduct(product)
+    setEditImageUrl(product.image_url ?? "")
     setEditForm({
       name: product.name ?? "",
       code: product.code ?? "",
@@ -411,6 +475,51 @@ function ProductsPage() {
           </SheetHeader>
           <form onSubmit={handleCreateSubmit} className="flex flex-col flex-1 overflow-hidden">
             <SheetBody className="grid gap-4">
+              {/* Product Image */}
+              <div className="grid gap-2">
+                <Label>Product Image</Label>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted">
+                    {createImageUrl ? (
+                      <img
+                        src={`${API_BASE_URL}${createImageUrl}`}
+                        alt="Product"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-muted-foreground text-xs">No image</span>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <input
+                      ref={createImageInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/svg+xml"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file)
+                          handleImageUpload(
+                            file,
+                            setCreateImageUrl,
+                            setUploadingCreateImage,
+                            createImageInputRef
+                          )
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={uploadingCreateImage}
+                      onClick={() => createImageInputRef.current?.click()}
+                    >
+                      {uploadingCreateImage ? "Uploading..." : "Upload Image"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
               <div className="grid gap-2">
                 <Label htmlFor="create-name">Name *</Label>
                 <Input
@@ -610,6 +719,51 @@ function ProductsPage() {
           </SheetHeader>
           <form onSubmit={handleEditSubmit} className="flex flex-col flex-1 overflow-hidden">
             <SheetBody className="grid gap-4">
+              {/* Product Image */}
+              <div className="grid gap-2">
+                <Label>Product Image</Label>
+                <div className="flex items-center gap-3">
+                  <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted">
+                    {editImageUrl ? (
+                      <img
+                        src={`${API_BASE_URL}${editImageUrl}`}
+                        alt="Product"
+                        className="h-full w-full object-cover"
+                      />
+                    ) : (
+                      <span className="text-muted-foreground text-xs">No image</span>
+                    )}
+                  </div>
+                  <div className="flex flex-col gap-1">
+                    <input
+                      ref={editImageInputRef}
+                      type="file"
+                      accept="image/jpeg,image/png,image/webp,image/svg+xml"
+                      className="hidden"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0]
+                        if (file)
+                          handleImageUpload(
+                            file,
+                            setEditImageUrl,
+                            setUploadingEditImage,
+                            editImageInputRef
+                          )
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      disabled={uploadingEditImage}
+                      onClick={() => editImageInputRef.current?.click()}
+                    >
+                      {uploadingEditImage ? "Uploading..." : "Upload Image"}
+                    </Button>
+                  </div>
+                </div>
+              </div>
+
               <div className="grid gap-2">
                 <Label htmlFor="edit-name">Name *</Label>
                 <Input

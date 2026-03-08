@@ -24,6 +24,7 @@ impl CompanyRepository {
         phone: Option<&str>,
         email: Option<&str>,
         website: Option<&str>,
+        logo_url: Option<&str>,
         default_currency: &str,
         default_tax_rate: f64,
         default_language: &str,
@@ -33,9 +34,9 @@ impl CompanyRepository {
         sqlx::query_as::<_, Company>(
             r"UPDATE companies
             SET name = $2, tax_number = $3, tax_office = $4, address = $5,
-                phone = $6, email = $7, website = $8,
-                default_currency = $9, default_tax_rate = $10,
-                default_language = $11, timezone = $12, settings = $13
+                phone = $6, email = $7, website = $8, logo_url = $9,
+                default_currency = $10, default_tax_rate = $11,
+                default_language = $12, timezone = $13, settings = $14
             WHERE id = $1
             RETURNING *",
         )
@@ -47,6 +48,7 @@ impl CompanyRepository {
         .bind(phone)
         .bind(email)
         .bind(website)
+        .bind(logo_url)
         .bind(default_currency)
         .bind(default_tax_rate)
         .bind(default_language)

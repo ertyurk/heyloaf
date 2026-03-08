@@ -16,13 +16,15 @@ import {
   SheetTitle,
 } from "@heyloaf/ui/components/sheet"
 import { Textarea } from "@heyloaf/ui/components/textarea"
+import { cn } from "@heyloaf/ui/lib/utils"
 import ArrowDown01Icon from "@hugeicons/core-free-icons/ArrowDown01Icon"
 import ArrowUp01Icon from "@hugeicons/core-free-icons/ArrowUp01Icon"
+import DragDropVerticalIcon from "@hugeicons/core-free-icons/DragDropVerticalIcon"
 import Search01Icon from "@hugeicons/core-free-icons/Search01Icon"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { useMemo, useRef, useState } from "react"
+import { useCallback, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
@@ -61,6 +63,254 @@ interface RecipeData {
   notes?: string
 }
 
+interface VariantBodyProps {
+  variant: RecipeVariant
+  materialOptions: { value: string; label: string }[]
+  updateVariant: <F extends keyof RecipeVariant>(key: string, field: F, value: RecipeVariant[F]) => void
+  addVariantOverride: (variantKey: string) => void
+  removeVariantOverride: (variantKey: string, overrideKey: string) => void
+  updateVariantOverride: (
+    variantKey: string,
+    overrideKey: string,
+    field: "product_id" | "quantity" | "unit",
+    value: string | number
+  ) => void
+  removeVariant: (key: string) => void
+  handleVariantDragStart: (e: React.DragEvent, variantKey: string, index: number) => void
+  handleVariantDragOver: (e: React.DragEvent, variantKey: string, index: number) => void
+  handleVariantDrop: (e: React.DragEvent, variantKey: string, targetIndex: number) => void
+  handleVariantDragEnd: () => void
+  handleVariantListDrop: (e: React.DragEvent, variantKey: string) => void
+  handleVariantListDragOver: (e: React.DragEvent, variantKey: string) => void
+  handleVariantListDragLeave: (e: React.DragEvent) => void
+  variantDragIndex: { variantKey: string; index: number } | null
+  variantDropTarget: { variantKey: string; index: number } | null
+  variantPoolDragOver: string | null
+}
+
+function VariantBody({
+  variant,
+  materialOptions,
+  updateVariant,
+  addVariantOverride,
+  removeVariantOverride,
+  updateVariantOverride,
+  removeVariant,
+  handleVariantDragStart,
+  handleVariantDragOver,
+  handleVariantDrop,
+  handleVariantDragEnd,
+  handleVariantListDrop,
+  handleVariantListDragOver,
+  handleVariantListDragLeave,
+  variantDragIndex,
+  variantDropTarget,
+  variantPoolDragOver,
+}: VariantBodyProps) {
+  return (
+    <div className="border-t p-3 space-y-3">
+      <div className="grid gap-2">
+        <Label className="text-xs">Variant Name</Label>
+        <Input
+          value={variant.name}
+          onChange={(e) => updateVariant(variant.key, "name", e.target.value)}
+          placeholder='e.g., "Chocolate", "Gluten-Free"'
+        />
+      </div>
+
+      <div className="grid gap-2">
+        <Label className="text-xs">Price Modifier</Label>
+        <Input
+          type="number"
+          step="0.01"
+          value={variant.price_modifier}
+          onChange={(e) =>
+            updateVariant(variant.key, "price_modifier", Number(e.target.value))
+          }
+          placeholder="0.00"
+        />
+        <p className="text-xs text-muted-foreground">
+          Positive to add, negative to subtract from base price
+        </p>
+      </div>
+
+      <div className="grid gap-2">
+        <Label className="text-xs">Production Notes</Label>
+        <Textarea
+          value={variant.notes}
+          onChange={(e) => updateVariant(variant.key, "notes", e.target.value)}
+          placeholder="Notes specific to this variant..."
+          rows={2}
+        />
+      </div>
+
+      {/* Material overrides */}
+      <div className="grid gap-2">
+        <div className="flex items-center justify-between">
+          <Label className="text-xs">Material Overrides</Label>
+          <Button
+            type="button"
+            variant="outline"
+            size="sm"
+            className="h-7 text-xs"
+            onClick={() => addVariantOverride(variant.key)}
+          >
+            Add Override
+          </Button>
+        </div>
+
+        <div
+          role="listbox"
+          aria-label={`${variant.name || "Variant"} material overrides`}
+          onDrop={(e) => handleVariantListDrop(e, variant.key)}
+          onDragOver={(e) => handleVariantListDragOver(e, variant.key)}
+          onDragLeave={handleVariantListDragLeave}
+          className={cn(
+            "min-h-[40px] rounded-md transition-colors",
+            variantPoolDragOver === variant.key &&
+              variant.material_overrides.length === 0 &&
+              "border-2 border-dashed border-primary/50 bg-primary/5"
+          )}
+        >
+          {variant.material_overrides.length === 0 && (
+            <p className="text-xs text-muted-foreground py-2 text-center">
+              {variantPoolDragOver === variant.key
+                ? "Drop material here"
+                : "No overrides. Add materials or drag from the pool."}
+            </p>
+          )}
+
+          <div className="space-y-1">
+            {variant.material_overrides.map((ovr, ovrIdx) => (
+              <div key={ovr.key}>
+                {/* Drop indicator line */}
+                {variantDropTarget?.variantKey === variant.key &&
+                  variantDropTarget.index === ovrIdx &&
+                  variantDragIndex !== null &&
+                  variantDragIndex.index !== ovrIdx && (
+                    <div className="h-0.5 bg-primary rounded-full mx-2 my-0.5 transition-all" />
+                  )}
+                <div
+                  role="option"
+                  tabIndex={0}
+                  aria-selected={false}
+                  draggable
+                  onDragStart={(e) =>
+                    handleVariantDragStart(e, variant.key, ovrIdx)
+                  }
+                  onDragOver={(e) =>
+                    handleVariantDragOver(e, variant.key, ovrIdx)
+                  }
+                  onDrop={(e) => handleVariantDrop(e, variant.key, ovrIdx)}
+                  onDragEnd={handleVariantDragEnd}
+                  className={cn(
+                    "rounded-md border border-dashed p-2 space-y-2 transition-all",
+                    variantDragIndex?.variantKey === variant.key &&
+                      variantDragIndex.index === ovrIdx &&
+                      "opacity-40 scale-[0.98]"
+                  )}
+                >
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors">
+                        <HugeiconsIcon icon={DragDropVerticalIcon} size={14} />
+                      </div>
+                      <span className="text-xs text-muted-foreground">
+                        Override {ovrIdx + 1}
+                      </span>
+                    </div>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      className="h-5 px-1.5 text-xs text-destructive"
+                      onClick={() =>
+                        removeVariantOverride(variant.key, ovr.key)
+                      }
+                    >
+                      Remove
+                    </Button>
+                  </div>
+
+                  <AdvancedSelect
+                    options={materialOptions}
+                    value={ovr.product_id}
+                    onValueChange={(val) =>
+                      updateVariantOverride(
+                        variant.key,
+                        ovr.key,
+                        "product_id",
+                        val ?? ""
+                      )
+                    }
+                    placeholder="Select product"
+                    searchable
+                    aria-label={`Variant ${variant.name || "unnamed"} override ${ovrIdx + 1}`}
+                  />
+
+                  <div className="grid grid-cols-2 gap-2">
+                    <div className="grid gap-1">
+                      <Label className="text-xs">Quantity</Label>
+                      <Input
+                        type="number"
+                        step="0.001"
+                        min="0"
+                        value={ovr.quantity}
+                        onChange={(e) =>
+                          updateVariantOverride(
+                            variant.key,
+                            ovr.key,
+                            "quantity",
+                            Number(e.target.value)
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="grid gap-1">
+                      <Label className="text-xs">Unit</Label>
+                      <Input
+                        value={ovr.unit}
+                        onChange={(e) =>
+                          updateVariantOverride(
+                            variant.key,
+                            ovr.key,
+                            "unit",
+                            e.target.value
+                          )
+                        }
+                        placeholder="kg, g, L, pcs"
+                      />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+            {/* Drop indicator at end of overrides list */}
+            {variant.material_overrides.length > 0 &&
+              variantDropTarget === null &&
+              variantPoolDragOver === variant.key && (
+                <div className="h-0.5 bg-primary rounded-full mx-2 my-1 transition-all" />
+              )}
+          </div>
+        </div>
+      </div>
+
+      {/* Delete variant */}
+      <div className="flex justify-end pt-1">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          className="text-destructive"
+          onClick={() => removeVariant(variant.key)}
+        >
+          Delete Variant
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 function RecipesPage() {
   const client = useApi()
   const queryClient = useQueryClient()
@@ -86,6 +336,248 @@ function RecipesPage() {
   const [notes, setNotes] = useState("")
   const [materials, setMaterials] = useState<RecipeMaterial[]>([])
   const [variants, setVariants] = useState<RecipeVariant[]>([])
+
+  // Drag & drop state for materials
+  const [dragIndex, setDragIndex] = useState<number | null>(null)
+  const [dropTargetIndex, setDropTargetIndex] = useState<number | null>(null)
+  const [poolDragOver, setPoolDragOver] = useState(false)
+
+  // Drag & drop state for variant overrides (keyed by variant key)
+  const [variantDragIndex, setVariantDragIndex] = useState<{
+    variantKey: string
+    index: number
+  } | null>(null)
+  const [variantDropTarget, setVariantDropTarget] = useState<{
+    variantKey: string
+    index: number
+  } | null>(null)
+  const [variantPoolDragOver, setVariantPoolDragOver] = useState<string | null>(null)
+
+  // Material pool search
+  const [poolSearch, setPoolSearch] = useState("")
+  const [poolExpanded, setPoolExpanded] = useState(false)
+
+  // --- Master material drag handlers ---
+
+  const handleDragStart = useCallback((e: React.DragEvent, index: number) => {
+    setDragIndex(index)
+    e.dataTransfer.effectAllowed = "move"
+    e.dataTransfer.setData("text/plain", String(index))
+  }, [])
+
+  const handleDragOver = useCallback(
+    (e: React.DragEvent, index: number) => {
+      e.preventDefault()
+      // Only handle reorder when dragging an existing material
+      if (dragIndex !== null) {
+        e.dataTransfer.dropEffect = "move"
+        setDropTargetIndex(index)
+      }
+    },
+    [dragIndex]
+  )
+
+  const handleDrop = useCallback(
+    (e: React.DragEvent, targetIndex: number) => {
+      e.preventDefault()
+
+      // Handle drop from material pool
+      const productId = e.dataTransfer.getData("product-id")
+      if (productId) {
+        setMaterials((prev) => {
+          const newMaterial: RecipeMaterial = {
+            key: crypto.randomUUID(),
+            product_id: productId,
+            quantity: 0,
+            unit: "kg",
+          }
+          const items = [...prev]
+          items.splice(targetIndex, 0, newMaterial)
+          return items
+        })
+        setDropTargetIndex(null)
+        setPoolDragOver(false)
+        return
+      }
+
+      // Handle reorder
+      if (dragIndex === null || dragIndex === targetIndex) {
+        setDropTargetIndex(null)
+        return
+      }
+      setMaterials((prev) => {
+        const items = [...prev]
+        const [removed] = items.splice(dragIndex, 1)
+        items.splice(targetIndex, 0, removed)
+        return items
+      })
+      setDragIndex(null)
+      setDropTargetIndex(null)
+    },
+    [dragIndex]
+  )
+
+  const handleDragEnd = useCallback(() => {
+    setDragIndex(null)
+    setDropTargetIndex(null)
+    setPoolDragOver(false)
+  }, [])
+
+  // Handle drop on the empty materials list / zone
+  const handleListDrop = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    const productId = e.dataTransfer.getData("product-id")
+    if (productId) {
+      setMaterials((prev) => [
+        ...prev,
+        {
+          key: crypto.randomUUID(),
+          product_id: productId,
+          quantity: 0,
+          unit: "kg",
+        },
+      ])
+    }
+    setPoolDragOver(false)
+    setDropTargetIndex(null)
+  }, [])
+
+  const handleListDragOver = useCallback((e: React.DragEvent) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = "copy"
+    setPoolDragOver(true)
+  }, [])
+
+  const handleListDragLeave = useCallback((e: React.DragEvent) => {
+    // Only clear if leaving the actual container
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setPoolDragOver(false)
+      setDropTargetIndex(null)
+    }
+  }, [])
+
+  // --- Variant override drag handlers ---
+
+  const handleVariantDragStart = useCallback(
+    (e: React.DragEvent, variantKey: string, index: number) => {
+      setVariantDragIndex({ variantKey, index })
+      e.dataTransfer.effectAllowed = "move"
+      e.dataTransfer.setData("text/plain", String(index))
+    },
+    []
+  )
+
+  const handleVariantDragOver = useCallback(
+    (e: React.DragEvent, variantKey: string, index: number) => {
+      e.preventDefault()
+      if (variantDragIndex !== null && variantDragIndex.variantKey === variantKey) {
+        e.dataTransfer.dropEffect = "move"
+        setVariantDropTarget({ variantKey, index })
+      }
+    },
+    [variantDragIndex]
+  )
+
+  const handleVariantDrop = useCallback(
+    (e: React.DragEvent, variantKey: string, targetIndex: number) => {
+      e.preventDefault()
+
+      // Handle drop from material pool
+      const productId = e.dataTransfer.getData("product-id")
+      if (productId) {
+        setVariants((prev) =>
+          prev.map((v) =>
+            v.key === variantKey
+              ? {
+                  ...v,
+                  material_overrides: [
+                    ...v.material_overrides.slice(0, targetIndex),
+                    {
+                      key: crypto.randomUUID(),
+                      product_id: productId,
+                      quantity: 0,
+                      unit: "kg",
+                    },
+                    ...v.material_overrides.slice(targetIndex),
+                  ],
+                }
+              : v
+          )
+        )
+        setVariantDropTarget(null)
+        setVariantPoolDragOver(null)
+        return
+      }
+
+      // Handle reorder within same variant
+      if (
+        variantDragIndex === null ||
+        variantDragIndex.variantKey !== variantKey ||
+        variantDragIndex.index === targetIndex
+      ) {
+        setVariantDropTarget(null)
+        return
+      }
+      setVariants((prev) =>
+        prev.map((v) => {
+          if (v.key !== variantKey) return v
+          const items = [...v.material_overrides]
+          const [removed] = items.splice(variantDragIndex.index, 1)
+          items.splice(targetIndex, 0, removed)
+          return { ...v, material_overrides: items }
+        })
+      )
+      setVariantDragIndex(null)
+      setVariantDropTarget(null)
+    },
+    [variantDragIndex]
+  )
+
+  const handleVariantDragEnd = useCallback(() => {
+    setVariantDragIndex(null)
+    setVariantDropTarget(null)
+    setVariantPoolDragOver(null)
+  }, [])
+
+  const handleVariantListDrop = useCallback((e: React.DragEvent, variantKey: string) => {
+    e.preventDefault()
+    const productId = e.dataTransfer.getData("product-id")
+    if (productId) {
+      setVariants((prev) =>
+        prev.map((v) =>
+          v.key === variantKey
+            ? {
+                ...v,
+                material_overrides: [
+                  ...v.material_overrides,
+                  {
+                    key: crypto.randomUUID(),
+                    product_id: productId,
+                    quantity: 0,
+                    unit: "kg",
+                  },
+                ],
+              }
+            : v
+        )
+      )
+    }
+    setVariantPoolDragOver(null)
+    setVariantDropTarget(null)
+  }, [])
+
+  const handleVariantListDragOver = useCallback((e: React.DragEvent, variantKey: string) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = "copy"
+    setVariantPoolDragOver(variantKey)
+  }, [])
+
+  const handleVariantListDragLeave = useCallback((e: React.DragEvent) => {
+    if (!e.currentTarget.contains(e.relatedTarget as Node)) {
+      setVariantPoolDragOver(null)
+      setVariantDropTarget(null)
+    }
+  }, [])
 
   // Fetch all products
   const { data: productsData, isLoading } = useQuery({
@@ -115,6 +607,19 @@ function RecipesPage() {
         label: `${p.name}${p.code ? ` (${p.code})` : ""}`,
       }))
   }, [allProducts])
+
+  // Products available in the drag pool (filtered by pool search)
+  const materialPoolProducts = useMemo(() => {
+    const pool = allProducts.filter(
+      (p) =>
+        p.product_type === "raw" || p.product_type === "semi" || p.product_type === "commercial"
+    )
+    if (!poolSearch.trim()) return pool
+    const q = poolSearch.toLowerCase()
+    return pool.filter(
+      (p) => p.name?.toLowerCase().includes(q) || p.code?.toLowerCase().includes(q)
+    )
+  }, [allProducts, poolSearch])
 
   // Search filter
   const filtered = useMemo(() => {
@@ -412,12 +917,78 @@ function RecipesPage() {
 
       {/* Recipe Editor Sheet */}
       <Sheet open={editorOpen} onOpenChange={setEditorOpen}>
-        <SheetContent side="right" className="sm:max-w-lg">
+        <SheetContent side="right" className="sm:max-w-2xl">
           <SheetHeader>
             <SheetTitle>Recipe: {editingProduct?.name ?? ""}</SheetTitle>
           </SheetHeader>
           <form onSubmit={handleSave} className="flex flex-col flex-1 overflow-hidden">
             <SheetBody className="grid gap-4">
+              {/* Material Pool */}
+              <div className="rounded-md border bg-muted/30">
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between p-3 text-left hover:bg-muted/50 transition-colors"
+                  onClick={() => setPoolExpanded(!poolExpanded)}
+                >
+                  <div className="flex items-center gap-2">
+                    <HugeiconsIcon
+                      icon={poolExpanded ? ArrowUp01Icon : ArrowDown01Icon}
+                      size={14}
+                      className="text-muted-foreground"
+                    />
+                    <span className="text-sm font-medium">Material Pool</span>
+                    <span className="text-xs text-muted-foreground">
+                      Drag products into materials list
+                    </span>
+                  </div>
+                </button>
+                {poolExpanded && (
+                  <div className="border-t p-3 space-y-2">
+                    <div className="relative">
+                      <HugeiconsIcon
+                        icon={Search01Icon}
+                        size={14}
+                        className="text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2"
+                      />
+                      <Input
+                        placeholder="Search materials..."
+                        className="pl-8 h-8 text-xs"
+                        value={poolSearch}
+                        onChange={(e) => setPoolSearch(e.target.value)}
+                      />
+                    </div>
+                    <div className="flex flex-wrap gap-1.5 max-h-32 overflow-y-auto">
+                      {materialPoolProducts.length === 0 && (
+                        <p className="text-xs text-muted-foreground py-2 w-full text-center">
+                          No matching products
+                        </p>
+                      )}
+                      {materialPoolProducts.map((product) => (
+                        <div
+                          key={product.id}
+                          role="option"
+                          tabIndex={0}
+                          aria-selected={false}
+                          draggable
+                          onDragStart={(e) => {
+                            e.dataTransfer.setData("product-id", product.id)
+                            e.dataTransfer.effectAllowed = "copy"
+                          }}
+                          className="cursor-grab active:cursor-grabbing border rounded px-2 py-1 text-xs bg-background hover:bg-accent transition-colors select-none"
+                        >
+                          <span className="font-medium">{product.name}</span>
+                          {product.code && (
+                            <span className="text-muted-foreground ml-1">({product.code})</span>
+                          )}
+                          <Badge variant="secondary" className="ml-1.5 text-[10px] px-1 py-0">
+                            {product.product_type}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
               <div className="grid gap-2">
                 <Label htmlFor="batch-size">Batch Size</Label>
                 <Input
@@ -451,65 +1022,114 @@ function RecipesPage() {
                   </Button>
                 </div>
 
-                {materials.length === 0 && (
-                  <p className="text-sm text-muted-foreground py-4 text-center">
-                    No materials added yet. Click "Add Material" to start building the recipe.
-                  </p>
-                )}
+                <div
+                  role="listbox"
+                  aria-label="Recipe materials"
+                  onDrop={handleListDrop}
+                  onDragOver={handleListDragOver}
+                  onDragLeave={handleListDragLeave}
+                  className={cn(
+                    "min-h-[60px] rounded-md transition-colors",
+                    poolDragOver &&
+                      materials.length === 0 &&
+                      "border-2 border-dashed border-primary/50 bg-primary/5"
+                  )}
+                >
+                  {materials.length === 0 && (
+                    <p className="text-sm text-muted-foreground py-4 text-center">
+                      {poolDragOver
+                        ? "Drop material here"
+                        : 'No materials added yet. Click "Add Material" or drag from the pool.'}
+                    </p>
+                  )}
 
-                <div className="space-y-3">
-                  {materials.map((mat, idx) => (
-                    <div key={mat.key} className="rounded-md border p-3 space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="text-xs text-muted-foreground font-medium">
-                          Material {idx + 1}
-                        </span>
-                        <Button
-                          type="button"
-                          variant="ghost"
-                          size="sm"
-                          className="h-6 px-2 text-destructive"
-                          onClick={() => removeMaterial(mat.key)}
+                  <div className="space-y-1">
+                    {materials.map((mat, idx) => (
+                      <div key={mat.key}>
+                        {/* Drop indicator line */}
+                        {dropTargetIndex === idx && dragIndex !== null && dragIndex !== idx && (
+                          <div className="h-0.5 bg-primary rounded-full mx-3 my-0.5 transition-all" />
+                        )}
+                        <div
+                          role="option"
+                          tabIndex={0}
+                          aria-selected={false}
+                          draggable
+                          onDragStart={(e) => handleDragStart(e, idx)}
+                          onDragOver={(e) => handleDragOver(e, idx)}
+                          onDrop={(e) => handleDrop(e, idx)}
+                          onDragEnd={handleDragEnd}
+                          className={cn(
+                            "rounded-md border p-3 space-y-2 transition-all",
+                            dragIndex === idx && "opacity-40 scale-[0.98]",
+                            dropTargetIndex === idx &&
+                              dragIndex === null &&
+                              "border-primary/50 bg-primary/5"
+                          )}
                         >
-                          Remove
-                        </Button>
-                      </div>
+                          <div className="flex items-center justify-between">
+                            <div className="flex items-center gap-2">
+                              <div className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors">
+                                <HugeiconsIcon icon={DragDropVerticalIcon} size={16} />
+                              </div>
+                              <span className="text-xs text-muted-foreground font-medium">
+                                Material {idx + 1}
+                              </span>
+                            </div>
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="h-6 px-2 text-destructive"
+                              onClick={() => removeMaterial(mat.key)}
+                            >
+                              Remove
+                            </Button>
+                          </div>
 
-                      <div className="grid gap-2">
-                        <AdvancedSelect
-                          options={materialOptions}
-                          value={mat.product_id}
-                          onValueChange={(val) => updateMaterial(mat.key, "product_id", val ?? "")}
-                          placeholder="Select product"
-                          searchable
-                          aria-label={`Material ${idx + 1} product`}
-                        />
-                      </div>
+                          <div className="grid gap-2">
+                            <AdvancedSelect
+                              options={materialOptions}
+                              value={mat.product_id}
+                              onValueChange={(val) =>
+                                updateMaterial(mat.key, "product_id", val ?? "")
+                              }
+                              placeholder="Select product"
+                              searchable
+                              aria-label={`Material ${idx + 1} product`}
+                            />
+                          </div>
 
-                      <div className="grid grid-cols-2 gap-2">
-                        <div className="grid gap-1">
-                          <Label className="text-xs">Quantity</Label>
-                          <Input
-                            type="number"
-                            step="0.001"
-                            min="0"
-                            value={mat.quantity}
-                            onChange={(e) =>
-                              updateMaterial(mat.key, "quantity", Number(e.target.value))
-                            }
-                          />
-                        </div>
-                        <div className="grid gap-1">
-                          <Label className="text-xs">Unit</Label>
-                          <Input
-                            value={mat.unit}
-                            onChange={(e) => updateMaterial(mat.key, "unit", e.target.value)}
-                            placeholder="kg, g, L, pcs"
-                          />
+                          <div className="grid grid-cols-2 gap-2">
+                            <div className="grid gap-1">
+                              <Label className="text-xs">Quantity</Label>
+                              <Input
+                                type="number"
+                                step="0.001"
+                                min="0"
+                                value={mat.quantity}
+                                onChange={(e) =>
+                                  updateMaterial(mat.key, "quantity", Number(e.target.value))
+                                }
+                              />
+                            </div>
+                            <div className="grid gap-1">
+                              <Label className="text-xs">Unit</Label>
+                              <Input
+                                value={mat.unit}
+                                onChange={(e) => updateMaterial(mat.key, "unit", e.target.value)}
+                                placeholder="kg, g, L, pcs"
+                              />
+                            </div>
+                          </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    ))}
+                    {/* Drop indicator at end of list */}
+                    {materials.length > 0 && dropTargetIndex === null && poolDragOver && (
+                      <div className="h-0.5 bg-primary rounded-full mx-3 my-1 transition-all" />
+                    )}
+                  </div>
                 </div>
               </div>
 
@@ -570,152 +1190,25 @@ function RecipesPage() {
 
                       {/* Variant body */}
                       {variant.expanded && (
-                        <div className="border-t p-3 space-y-3">
-                          <div className="grid gap-2">
-                            <Label className="text-xs">Variant Name</Label>
-                            <Input
-                              value={variant.name}
-                              onChange={(e) => updateVariant(variant.key, "name", e.target.value)}
-                              placeholder='e.g., "Chocolate", "Gluten-Free"'
-                            />
-                          </div>
-
-                          <div className="grid gap-2">
-                            <Label className="text-xs">Price Modifier</Label>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              value={variant.price_modifier}
-                              onChange={(e) =>
-                                updateVariant(variant.key, "price_modifier", Number(e.target.value))
-                              }
-                              placeholder="0.00"
-                            />
-                            <p className="text-xs text-muted-foreground">
-                              Positive to add, negative to subtract from base price
-                            </p>
-                          </div>
-
-                          <div className="grid gap-2">
-                            <Label className="text-xs">Production Notes</Label>
-                            <Textarea
-                              value={variant.notes}
-                              onChange={(e) => updateVariant(variant.key, "notes", e.target.value)}
-                              placeholder="Notes specific to this variant..."
-                              rows={2}
-                            />
-                          </div>
-
-                          {/* Material overrides */}
-                          <div className="grid gap-2">
-                            <div className="flex items-center justify-between">
-                              <Label className="text-xs">Material Overrides</Label>
-                              <Button
-                                type="button"
-                                variant="outline"
-                                size="sm"
-                                className="h-7 text-xs"
-                                onClick={() => addVariantOverride(variant.key)}
-                              >
-                                Add Override
-                              </Button>
-                            </div>
-
-                            {variant.material_overrides.length === 0 && (
-                              <p className="text-xs text-muted-foreground py-2 text-center">
-                                No overrides. Add materials to change from the master recipe.
-                              </p>
-                            )}
-
-                            <div className="space-y-2">
-                              {variant.material_overrides.map((ovr, ovrIdx) => (
-                                <div
-                                  key={ovr.key}
-                                  className="rounded-md border border-dashed p-2 space-y-2"
-                                >
-                                  <div className="flex items-center justify-between">
-                                    <span className="text-xs text-muted-foreground">
-                                      Override {ovrIdx + 1}
-                                    </span>
-                                    <Button
-                                      type="button"
-                                      variant="ghost"
-                                      size="sm"
-                                      className="h-5 px-1.5 text-xs text-destructive"
-                                      onClick={() => removeVariantOverride(variant.key, ovr.key)}
-                                    >
-                                      Remove
-                                    </Button>
-                                  </div>
-
-                                  <AdvancedSelect
-                                    options={materialOptions}
-                                    value={ovr.product_id}
-                                    onValueChange={(val) =>
-                                      updateVariantOverride(
-                                        variant.key,
-                                        ovr.key,
-                                        "product_id",
-                                        val ?? ""
-                                      )
-                                    }
-                                    placeholder="Select product"
-                                    searchable
-                                    aria-label={`Variant ${variant.name || "unnamed"} override ${ovrIdx + 1}`}
-                                  />
-
-                                  <div className="grid grid-cols-2 gap-2">
-                                    <div className="grid gap-1">
-                                      <Label className="text-xs">Quantity</Label>
-                                      <Input
-                                        type="number"
-                                        step="0.001"
-                                        min="0"
-                                        value={ovr.quantity}
-                                        onChange={(e) =>
-                                          updateVariantOverride(
-                                            variant.key,
-                                            ovr.key,
-                                            "quantity",
-                                            Number(e.target.value)
-                                          )
-                                        }
-                                      />
-                                    </div>
-                                    <div className="grid gap-1">
-                                      <Label className="text-xs">Unit</Label>
-                                      <Input
-                                        value={ovr.unit}
-                                        onChange={(e) =>
-                                          updateVariantOverride(
-                                            variant.key,
-                                            ovr.key,
-                                            "unit",
-                                            e.target.value
-                                          )
-                                        }
-                                        placeholder="kg, g, L, pcs"
-                                      />
-                                    </div>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          {/* Delete variant */}
-                          <div className="flex justify-end pt-1">
-                            <Button
-                              type="button"
-                              variant="ghost"
-                              size="sm"
-                              className="text-destructive"
-                              onClick={() => removeVariant(variant.key)}
-                            >
-                              Delete Variant
-                            </Button>
-                          </div>
-                        </div>
+                        <VariantBody
+                          variant={variant}
+                          materialOptions={materialOptions}
+                          updateVariant={updateVariant}
+                          addVariantOverride={addVariantOverride}
+                          removeVariantOverride={removeVariantOverride}
+                          updateVariantOverride={updateVariantOverride}
+                          removeVariant={removeVariant}
+                          handleVariantDragStart={handleVariantDragStart}
+                          handleVariantDragOver={handleVariantDragOver}
+                          handleVariantDrop={handleVariantDrop}
+                          handleVariantDragEnd={handleVariantDragEnd}
+                          handleVariantListDrop={handleVariantListDrop}
+                          handleVariantListDragOver={handleVariantListDragOver}
+                          handleVariantListDragLeave={handleVariantListDragLeave}
+                          variantDragIndex={variantDragIndex}
+                          variantDropTarget={variantDropTarget}
+                          variantPoolDragOver={variantPoolDragOver}
+                        />
                       )}
                     </div>
                   ))}

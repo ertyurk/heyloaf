@@ -62,6 +62,8 @@ pub struct LoginResponse {
     pub expires_in: u64,
     pub user: LoginUser,
     pub company: Option<LoginCompany>,
+    pub role: Option<String>,
+    pub permissions: serde_json::Value,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -160,9 +162,10 @@ pub async fn login(
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
-    let (company_id, role) = companies.first().map_or((None, None), |uc| {
-        (Some(uc.company_id), Some(uc.role.clone()))
-    });
+    let (company_id, role, permissions) =
+        companies.first().map_or((None, None, serde_json::Value::Object(serde_json::Map::new())), |uc| {
+            (Some(uc.company_id), Some(uc.role.clone()), uc.permissions.clone())
+        });
 
     // Fetch company details if user belongs to one
     let login_company = if let Some(cid) = company_id {
@@ -203,6 +206,8 @@ pub async fn login(
             email: user.email,
         },
         company: login_company,
+        role: role.clone(),
+        permissions,
     })))
 }
 

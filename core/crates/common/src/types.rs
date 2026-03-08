@@ -126,8 +126,27 @@ pub enum PermissionLevel {
     None,
 }
 
+impl PermissionLevel {
+    /// Numeric rank for comparison (higher = more access).
+    #[must_use]
+    pub const fn rank(self) -> u8 {
+        match self {
+            Self::None => 0,
+            Self::Viewer => 1,
+            Self::Editor => 2,
+            Self::Admin => 3,
+        }
+    }
+
+    /// Returns `true` when `self` has at least as much access as `min`.
+    #[must_use]
+    pub const fn meets(self, min: Self) -> bool {
+        self.rank() >= min.rank()
+    }
+}
+
 /// Application modules.
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize, utoipa::ToSchema)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, utoipa::ToSchema)]
 #[serde(rename_all = "snake_case")]
 pub enum Module {
     Products,
@@ -139,6 +158,24 @@ pub enum Module {
     Finance,
     Reports,
     Settings,
+}
+
+impl Module {
+    /// The JSON key used in the `permissions` JSONB column.
+    #[must_use]
+    pub const fn as_key(self) -> &'static str {
+        match self {
+            Self::Products => "products",
+            Self::Stock => "stock",
+            Self::Production => "production",
+            Self::Pos => "pos",
+            Self::Sales => "sales",
+            Self::Purchase => "purchase",
+            Self::Finance => "finance",
+            Self::Reports => "reports",
+            Self::Settings => "settings",
+        }
+    }
 }
 
 /// Product type classification.

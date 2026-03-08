@@ -102,6 +102,7 @@ use crate::handlers::{
         shifts::get_current_shift,
         shifts::open_shift,
         shifts::close_shift,
+        shifts::get_z_report,
         // Payment Methods
         payment_methods::list_payment_methods,
         payment_methods::create_payment_method,
@@ -136,6 +137,7 @@ use crate::handlers::{
         users::get_user,
         users::create_user,
         users::update_user_role,
+        users::update_user_permissions,
         users::remove_user,
         // Dashboard
         dashboard::get_dashboard,
@@ -213,7 +215,9 @@ use crate::handlers::{
         // Shifts
         shifts::OpenShiftRequest,
         shifts::CloseShiftRequest,
+        shifts::ZReport,
         heyloaf_dal::models::shift::Shift,
+        heyloaf_dal::repositories::shift::PaymentMethodSummary,
         // Payment Methods
         payment_methods::CreatePaymentMethodRequest,
         payment_methods::UpdatePaymentMethodRequest,
@@ -236,6 +240,7 @@ use crate::handlers::{
         // Users
         users::CreateUserRequest,
         users::UpdateRoleRequest,
+        users::UpdatePermissionsRequest,
         heyloaf_dal::models::user::CompanyUser,
         // Audit
         heyloaf_dal::models::audit::AuditLog,
