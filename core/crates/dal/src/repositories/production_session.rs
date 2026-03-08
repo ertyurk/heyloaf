@@ -98,8 +98,8 @@ impl ProductionSessionRepository {
             .await
     }
 
-    pub async fn complete(
-        pool: &PgPool,
+    pub async fn complete_with_executor<'e>(
+        executor: impl sqlx::PgExecutor<'e>,
         id: Uuid,
         completed_by: Uuid,
     ) -> Result<ProductionSession, sqlx::Error> {
@@ -113,8 +113,16 @@ impl ProductionSessionRepository {
         sqlx::query_as::<_, ProductionSession>(&sql)
             .bind(id)
             .bind(completed_by)
-            .fetch_one(pool)
+            .fetch_one(executor)
             .await
+    }
+
+    pub async fn complete(
+        pool: &PgPool,
+        id: Uuid,
+        completed_by: Uuid,
+    ) -> Result<ProductionSession, sqlx::Error> {
+        Self::complete_with_executor(pool, id, completed_by).await
     }
 
     pub async fn delete(pool: &PgPool, id: Uuid) -> Result<(), sqlx::Error> {

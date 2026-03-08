@@ -54,8 +54,8 @@ impl StockRepository {
             .await
     }
 
-    pub async fn upsert(
-        pool: &PgPool,
+    pub async fn upsert_with_executor<'e>(
+        executor: impl sqlx::PgExecutor<'e>,
         company_id: Uuid,
         product_id: Uuid,
         quantity_delta: f64,
@@ -74,8 +74,17 @@ impl StockRepository {
             .bind(company_id)
             .bind(product_id)
             .bind(quantity_delta)
-            .fetch_one(pool)
+            .fetch_one(executor)
             .await
+    }
+
+    pub async fn upsert(
+        pool: &PgPool,
+        company_id: Uuid,
+        product_id: Uuid,
+        quantity_delta: f64,
+    ) -> Result<Stock, sqlx::Error> {
+        Self::upsert_with_executor(pool, company_id, product_id, quantity_delta).await
     }
 
     pub async fn update_levels(

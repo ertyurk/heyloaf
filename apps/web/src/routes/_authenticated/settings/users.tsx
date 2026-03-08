@@ -33,6 +33,7 @@ const roles = [
   { value: "admin", label: "Admin" },
   { value: "manager", label: "Manager" },
   { value: "cashier", label: "Cashier" },
+  { value: "user", label: "User" },
 ] as const
 
 interface InviteForm {

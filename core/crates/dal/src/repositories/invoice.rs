@@ -76,8 +76,8 @@ impl InvoiceRepository {
     }
 
     #[expect(clippy::too_many_arguments)]
-    pub async fn create(
-        pool: &PgPool,
+    pub async fn create_with_executor<'e>(
+        executor: impl sqlx::PgExecutor<'e>,
         company_id: Uuid,
         invoice_number: &str,
         invoice_type: &str,
@@ -122,13 +122,41 @@ impl InvoiceRepository {
             .bind(tax_total)
             .bind(grand_total)
             .bind(base_currency_total)
-            .fetch_one(pool)
+            .fetch_one(executor)
             .await
     }
 
     #[expect(clippy::too_many_arguments)]
-    pub async fn update(
+    pub async fn create(
         pool: &PgPool,
+        company_id: Uuid,
+        invoice_number: &str,
+        invoice_type: &str,
+        contact_id: Option<Uuid>,
+        date: NaiveDate,
+        due_date: Option<NaiveDate>,
+        currency_code: &str,
+        exchange_rate: f64,
+        tax_number: Option<&str>,
+        tax_office: Option<&str>,
+        notes: Option<&str>,
+        line_items: &serde_json::Value,
+        subtotal: f64,
+        tax_total: f64,
+        grand_total: f64,
+        base_currency_total: f64,
+    ) -> Result<Invoice, sqlx::Error> {
+        Self::create_with_executor(
+            pool, company_id, invoice_number, invoice_type, contact_id, date, due_date,
+            currency_code, exchange_rate, tax_number, tax_office, notes, line_items,
+            subtotal, tax_total, grand_total, base_currency_total,
+        )
+        .await
+    }
+
+    #[expect(clippy::too_many_arguments)]
+    pub async fn update_with_executor<'e>(
+        executor: impl sqlx::PgExecutor<'e>,
         id: Uuid,
         contact_id: Option<Uuid>,
         date: NaiveDate,
@@ -170,8 +198,34 @@ impl InvoiceRepository {
             .bind(tax_total)
             .bind(grand_total)
             .bind(base_currency_total)
-            .fetch_one(pool)
+            .fetch_one(executor)
             .await
+    }
+
+    #[expect(clippy::too_many_arguments)]
+    pub async fn update(
+        pool: &PgPool,
+        id: Uuid,
+        contact_id: Option<Uuid>,
+        date: NaiveDate,
+        due_date: Option<NaiveDate>,
+        currency_code: &str,
+        exchange_rate: f64,
+        tax_number: Option<&str>,
+        tax_office: Option<&str>,
+        notes: Option<&str>,
+        line_items: &serde_json::Value,
+        subtotal: f64,
+        tax_total: f64,
+        grand_total: f64,
+        base_currency_total: f64,
+    ) -> Result<Invoice, sqlx::Error> {
+        Self::update_with_executor(
+            pool, id, contact_id, date, due_date, currency_code, exchange_rate,
+            tax_number, tax_office, notes, line_items, subtotal, tax_total,
+            grand_total, base_currency_total,
+        )
+        .await
     }
 
     pub async fn update_status(
@@ -192,38 +246,43 @@ impl InvoiceRepository {
             .await
     }
 
-    pub async fn delete(pool: &PgPool, id: Uuid) -> Result<(), sqlx::Error> {
+    pub async fn delete_with_executor<'e>(
+        executor: impl sqlx::PgExecutor<'e>,
+        id: Uuid,
+    ) -> Result<(), sqlx::Error> {
         sqlx::query("DELETE FROM invoices WHERE id = $1")
             .bind(id)
-            .execute(pool)
+            .execute(executor)
             .await?;
         Ok(())
     }
 
-    pub async fn next_number(
-        pool: &PgPool,
-        company_id: Uuid,
+    pub async fn delete(pool: &PgPool, id: Uuid) -> Result<(), sqlx::Error> {
+        Self::delete_with_executor(pool, id).await
+    }
+
+    pub async fn next_number_with_executor<'e>(
+        executor: impl sqlx::PgExecutor<'e>,
         invoice_type: &str,
     ) -> Result<String, sqlx::Error> {
-        let prefix = match invoice_type {
-            "purchase" => "AL",
-            _ => "ST",
+        let (prefix, seq) = match invoice_type {
+            "purchase" => ("AL", "invoice_purchase_seq"),
+            _ => ("ST", "invoice_sales_seq"),
         };
 
         let year = chrono::Utc::now().format("%Y");
+        let query = format!("SELECT nextval('{seq}')");
 
-        let count: i64 = sqlx::query_scalar(
-            r"SELECT COUNT(*) FROM invoices
-            WHERE company_id = $1
-            AND invoice_type = $2::invoice_type
-            AND EXTRACT(YEAR FROM date) = EXTRACT(YEAR FROM CURRENT_DATE)",
-        )
-        .bind(company_id)
-        .bind(invoice_type)
-        .fetch_one(pool)
-        .await?;
+        let next: i64 = sqlx::query_scalar(&query).fetch_one(executor).await?;
 
-        let next = count + 1;
         Ok(format!("{prefix}-{year}-{next:06}"))
+    }
+
+    pub async fn next_number(
+        pool: &PgPool,
+        _company_id: Uuid,
+        invoice_type: &str,
+    ) -> Result<String, sqlx::Error> {
+        Self::next_number_with_executor(pool, invoice_type).await
     }
 }

@@ -8,6 +8,7 @@ use heyloaf_dal::models::production_session::ProductionSession;
 use heyloaf_dal::repositories::production_record::ProductionRecordRepository;
 use heyloaf_dal::repositories::production_session::ProductionSessionRepository;
 use heyloaf_services::audit_service::AuditBuilder;
+use heyloaf_services::stock_service::StockService;
 use serde::Deserialize;
 use utoipa::ToSchema;
 use uuid::Uuid;
@@ -152,8 +153,12 @@ pub async fn create_production_record(
     Extension(auth): Extension<AuthUser>,
     ValidatedJson(body): ValidatedJson<CreateProductionRecordRequest>,
 ) -> Result<Json<ApiResponse<ProductionRecord>>, AppError> {
-    let record = ProductionRecordRepository::create(
-        &state.pool,
+    let mut tx = state.pool.begin().await.map_err(|e| {
+        AppError::Database(format!("Failed to start transaction: {e}"))
+    })?;
+
+    let record = ProductionRecordRepository::create_with_executor(
+        &mut *tx,
         ctx.company_id,
         body.product_id,
         body.variant_name.as_deref(),
@@ -168,32 +173,35 @@ pub async fn create_production_record(
     .map_err(|e| AppError::Database(e.to_string()))?;
 
     // Stock-in for finished product
-    state
-        .stock
-        .record_movement(
-            ctx.company_id,
-            record.product_id,
-            "in",
-            "production",
-            record.quantity,
-            None,
-            None,
-            Some("production"),
-            Some(record.id),
-            Some("Production output"),
-            auth.user_id,
-        )
-        .await?;
+    StockService::record_movement_tx(
+        &mut tx,
+        ctx.company_id,
+        record.product_id,
+        "in",
+        "production",
+        record.quantity,
+        None,
+        None,
+        Some("production"),
+        Some(record.id),
+        Some("Production output"),
+        auth.user_id,
+    )
+    .await?;
 
     // Stock-out for each consumed material
-    record_material_stock_movements(
-        &state,
+    record_material_stock_movements_tx(
+        &mut tx,
         ctx.company_id,
         record.id,
         &record.materials,
         auth.user_id,
     )
     .await?;
+
+    tx.commit().await.map_err(|e| {
+        AppError::Database(format!("Failed to commit transaction: {e}"))
+    })?;
 
     AuditBuilder::new(state.audit.clone(), ctx.company_id, auth.user_id)
         .entity("production_record", record.id)
@@ -229,14 +237,15 @@ pub async fn update_production_record(
         return Err(AppError::NotFound("Production record not found".into()));
     }
 
-    // Reverse old stock movements before updating
-    state
-        .stock
-        .reverse_movements("production", id, auth.user_id)
-        .await?;
+    let mut tx = state.pool.begin().await.map_err(|e| {
+        AppError::Database(format!("Failed to start transaction: {e}"))
+    })?;
 
-    let record = ProductionRecordRepository::update(
-        &state.pool,
+    // Reverse old stock movements before updating
+    StockService::reverse_movements_tx(&mut tx, "production", id, auth.user_id).await?;
+
+    let record = ProductionRecordRepository::update_with_executor(
+        &mut *tx,
         id,
         body.quantity,
         &body.materials,
@@ -246,32 +255,35 @@ pub async fn update_production_record(
     .map_err(|e| AppError::Database(e.to_string()))?;
 
     // Re-apply stock-in for finished product
-    state
-        .stock
-        .record_movement(
-            ctx.company_id,
-            record.product_id,
-            "in",
-            "production",
-            record.quantity,
-            None,
-            None,
-            Some("production"),
-            Some(record.id),
-            Some("Production output"),
-            auth.user_id,
-        )
-        .await?;
+    StockService::record_movement_tx(
+        &mut tx,
+        ctx.company_id,
+        record.product_id,
+        "in",
+        "production",
+        record.quantity,
+        None,
+        None,
+        Some("production"),
+        Some(record.id),
+        Some("Production output"),
+        auth.user_id,
+    )
+    .await?;
 
     // Re-apply stock-out for materials
-    record_material_stock_movements(
-        &state,
+    record_material_stock_movements_tx(
+        &mut tx,
         ctx.company_id,
         record.id,
         &record.materials,
         auth.user_id,
     )
     .await?;
+
+    tx.commit().await.map_err(|e| {
+        AppError::Database(format!("Failed to commit transaction: {e}"))
+    })?;
 
     AuditBuilder::new(state.audit.clone(), ctx.company_id, auth.user_id)
         .entity("production_record", record.id)
@@ -306,15 +318,20 @@ pub async fn delete_production_record(
         return Err(AppError::NotFound("Production record not found".into()));
     }
 
-    // Reverse stock movements before deleting
-    state
-        .stock
-        .reverse_movements("production", id, auth.user_id)
-        .await?;
+    let mut tx = state.pool.begin().await.map_err(|e| {
+        AppError::Database(format!("Failed to start transaction: {e}"))
+    })?;
 
-    ProductionRecordRepository::delete(&state.pool, id)
+    // Reverse stock movements before deleting
+    StockService::reverse_movements_tx(&mut tx, "production", id, auth.user_id).await?;
+
+    ProductionRecordRepository::delete_with_executor(&mut *tx, id)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
+
+    tx.commit().await.map_err(|e| {
+        AppError::Database(format!("Failed to commit transaction: {e}"))
+    })?;
 
     AuditBuilder::new(state.audit.clone(), ctx.company_id, auth.user_id)
         .entity("production_record", id)
@@ -464,7 +481,11 @@ pub async fn complete_production_session(
         return Err(AppError::BadRequest("Session is already completed".into()));
     }
 
-    let session = ProductionSessionRepository::complete(&state.pool, id, auth.user_id)
+    let mut tx = state.pool.begin().await.map_err(|e| {
+        AppError::Database(format!("Failed to start transaction: {e}"))
+    })?;
+
+    let session = ProductionSessionRepository::complete_with_executor(&mut *tx, id, auth.user_id)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
@@ -485,30 +506,29 @@ pub async fn complete_production_session(
                 .unwrap_or(0.0);
 
             // Stock-in for the finished product
-            state
-                .stock
-                .record_movement(
-                    ctx.company_id,
-                    product_id,
-                    "in",
-                    "production",
-                    quantity,
-                    None,
-                    None,
-                    Some("production"),
-                    Some(session.id),
-                    Some("Production output"),
-                    auth.user_id,
-                )
-                .await?;
+            StockService::record_movement_tx(
+                &mut tx,
+                ctx.company_id,
+                product_id,
+                "in",
+                "production",
+                quantity,
+                None,
+                None,
+                Some("production"),
+                Some(session.id),
+                Some("Production output"),
+                auth.user_id,
+            )
+            .await?;
 
             // Stock-out for each material consumed
             let materials = item
                 .get("materials")
                 .cloned()
                 .unwrap_or(serde_json::Value::Array(vec![]));
-            record_material_stock_movements(
-                &state,
+            record_material_stock_movements_tx(
+                &mut tx,
                 ctx.company_id,
                 session.id,
                 &materials,
@@ -517,6 +537,10 @@ pub async fn complete_production_session(
             .await?;
         }
     }
+
+    tx.commit().await.map_err(|e| {
+        AppError::Database(format!("Failed to commit transaction: {e}"))
+    })?;
 
     AuditBuilder::new(state.audit.clone(), ctx.company_id, auth.user_id)
         .entity("production_session", session.id)
@@ -551,6 +575,14 @@ pub async fn delete_production_session(
         return Err(AppError::NotFound("Production session not found".into()));
     }
 
+    // Reverse stock movements if the session was completed
+    if existing.status == "completed" {
+        state
+            .stock
+            .reverse_movements("production", id, auth.user_id)
+            .await?;
+    }
+
     ProductionSessionRepository::delete(&state.pool, id)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
@@ -568,10 +600,11 @@ pub async fn delete_production_session(
 
 // --- Stock helpers ---
 
-/// Record stock-out movements for each material in the materials JSON array.
+/// Record stock-out movements for each material in the materials JSON array,
+/// within a transaction.
 /// Each element is expected to have `product_id` and `quantity` fields.
-async fn record_material_stock_movements(
-    state: &AppState,
+async fn record_material_stock_movements_tx(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     company_id: Uuid,
     reference_id: Uuid,
     materials: &serde_json::Value,
@@ -596,22 +629,21 @@ async fn record_material_stock_movements(
             .and_then(serde_json::Value::as_f64)
             .unwrap_or(0.0);
 
-        state
-            .stock
-            .record_movement(
-                company_id,
-                product_id,
-                "out",
-                "production",
-                quantity,
-                None,
-                None,
-                Some("production"),
-                Some(reference_id),
-                Some("Material consumption"),
-                user_id,
-            )
-            .await?;
+        StockService::record_movement_tx(
+            tx,
+            company_id,
+            product_id,
+            "out",
+            "production",
+            quantity,
+            None,
+            None,
+            Some("production"),
+            Some(reference_id),
+            Some("Material consumption"),
+            user_id,
+        )
+        .await?;
     }
 
     Ok(())

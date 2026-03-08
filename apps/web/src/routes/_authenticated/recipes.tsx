@@ -5,6 +5,7 @@ import { Button } from "@heyloaf/ui/components/button"
 import { DataTable } from "@heyloaf/ui/components/data-table"
 import { Input } from "@heyloaf/ui/components/input"
 import { Label } from "@heyloaf/ui/components/label"
+import { Separator } from "@heyloaf/ui/components/separator"
 import {
   Sheet,
   SheetBody,
@@ -15,6 +16,8 @@ import {
   SheetTitle,
 } from "@heyloaf/ui/components/sheet"
 import { Textarea } from "@heyloaf/ui/components/textarea"
+import ArrowDown01Icon from "@hugeicons/core-free-icons/ArrowDown01Icon"
+import ArrowUp01Icon from "@hugeicons/core-free-icons/ArrowUp01Icon"
 import Search01Icon from "@hugeicons/core-free-icons/Search01Icon"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -37,16 +40,25 @@ interface RecipeMaterial {
   unit: string
 }
 
+interface RecipeVariant {
+  key: string
+  name: string
+  price_modifier: number
+  notes: string
+  material_overrides: RecipeMaterial[]
+  expanded: boolean
+}
+
 interface RecipeData {
   batch_size: number
   materials: { product_id: string; quantity: number; unit: string }[]
+  variants?: {
+    name: string
+    material_overrides: { product_id: string; quantity: number; unit: string }[]
+    price_modifier?: number
+    notes?: string
+  }[]
   notes?: string
-}
-
-let nextMaterialKey = 0
-function createMaterialKey() {
-  nextMaterialKey += 1
-  return `mat-${nextMaterialKey}`
 }
 
 function RecipesPage() {
@@ -73,6 +85,7 @@ function RecipesPage() {
   const [batchSize, setBatchSize] = useState(1)
   const [notes, setNotes] = useState("")
   const [materials, setMaterials] = useState<RecipeMaterial[]>([])
+  const [variants, setVariants] = useState<RecipeVariant[]>([])
 
   // Fetch all products
   const { data: productsData, isLoading } = useQuery({
@@ -178,24 +191,43 @@ function RecipesPage() {
       setNotes(recipe.notes ?? "")
       setMaterials(
         recipe.materials?.map((m) => ({
-          key: createMaterialKey(),
+          key: crypto.randomUUID(),
           product_id: m.product_id,
           quantity: m.quantity,
           unit: m.unit,
+        })) ?? []
+      )
+      setVariants(
+        recipe.variants?.map((v) => ({
+          key: crypto.randomUUID(),
+          name: v.name,
+          price_modifier: v.price_modifier ?? 0,
+          notes: v.notes ?? "",
+          material_overrides:
+            v.material_overrides?.map((m) => ({
+              key: crypto.randomUUID(),
+              product_id: m.product_id,
+              quantity: m.quantity,
+              unit: m.unit,
+            })) ?? [],
+          expanded: false,
         })) ?? []
       )
     } else {
       setBatchSize(1)
       setNotes("")
       setMaterials([])
+      setVariants([])
     }
     setEditorOpen(true)
   }
 
+  // --- Master material helpers ---
+
   function addMaterial() {
     setMaterials((prev) => [
       ...prev,
-      { key: createMaterialKey(), product_id: "", quantity: 0, unit: "kg" },
+      { key: crypto.randomUUID(), product_id: "", quantity: 0, unit: "kg" },
     ])
   }
 
@@ -211,9 +243,106 @@ function RecipesPage() {
     setMaterials((prev) => prev.map((m) => (m.key === key ? { ...m, [field]: value } : m)))
   }
 
+  // --- Variant helpers ---
+
+  function addVariant() {
+    setVariants((prev) => [
+      ...prev,
+      {
+        key: crypto.randomUUID(),
+        name: "",
+        price_modifier: 0,
+        notes: "",
+        material_overrides: [],
+        expanded: true,
+      },
+    ])
+  }
+
+  function removeVariant(key: string) {
+    setVariants((prev) => prev.filter((v) => v.key !== key))
+  }
+
+  function updateVariant<F extends keyof RecipeVariant>(
+    key: string,
+    field: F,
+    value: RecipeVariant[F]
+  ) {
+    setVariants((prev) => prev.map((v) => (v.key === key ? { ...v, [field]: value } : v)))
+  }
+
+  function toggleVariant(key: string) {
+    setVariants((prev) => prev.map((v) => (v.key === key ? { ...v, expanded: !v.expanded } : v)))
+  }
+
+  function addVariantOverride(variantKey: string) {
+    setVariants((prev) =>
+      prev.map((v) =>
+        v.key === variantKey
+          ? {
+              ...v,
+              material_overrides: [
+                ...v.material_overrides,
+                { key: crypto.randomUUID(), product_id: "", quantity: 0, unit: "kg" },
+              ],
+            }
+          : v
+      )
+    )
+  }
+
+  function removeVariantOverride(variantKey: string, overrideKey: string) {
+    setVariants((prev) =>
+      prev.map((v) =>
+        v.key === variantKey
+          ? {
+              ...v,
+              material_overrides: v.material_overrides.filter((m) => m.key !== overrideKey),
+            }
+          : v
+      )
+    )
+  }
+
+  function updateVariantOverride(
+    variantKey: string,
+    overrideKey: string,
+    field: "product_id" | "quantity" | "unit",
+    value: string | number
+  ) {
+    setVariants((prev) =>
+      prev.map((v) =>
+        v.key === variantKey
+          ? {
+              ...v,
+              material_overrides: v.material_overrides.map((m) =>
+                m.key === overrideKey ? { ...m, [field]: value } : m
+              ),
+            }
+          : v
+      )
+    )
+  }
+
+  // --- Save ---
+
   const saveMutation = useMutation({
     mutationFn: async () => {
       if (!editingProduct) return
+      const variantsPayload = variants
+        .filter((v) => v.name.trim())
+        .map((v) => ({
+          name: v.name.trim(),
+          price_modifier: v.price_modifier || undefined,
+          notes: v.notes.trim() || undefined,
+          material_overrides: v.material_overrides
+            .filter((m) => m.product_id)
+            .map((m) => ({
+              product_id: m.product_id,
+              quantity: Number(m.quantity),
+              unit: m.unit,
+            })),
+        }))
       const body = {
         batch_size: batchSize,
         materials: materials
@@ -223,6 +352,7 @@ function RecipesPage() {
             quantity: Number(m.quantity),
             unit: m.unit,
           })),
+        variants: variantsPayload.length > 0 ? variantsPayload : undefined,
         notes: notes || undefined,
       }
       const { error } = await client.PUT(
@@ -378,6 +508,215 @@ function RecipesPage() {
                           />
                         </div>
                       </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Variants Section */}
+              <Separator />
+
+              <div className="grid gap-2">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <Label>Variants</Label>
+                    <p className="text-xs text-muted-foreground mt-0.5">
+                      Named variations with material overrides and price modifiers
+                    </p>
+                  </div>
+                  <Button type="button" variant="outline" size="sm" onClick={addVariant}>
+                    Add Variant
+                  </Button>
+                </div>
+
+                {variants.length === 0 && (
+                  <p className="text-sm text-muted-foreground py-4 text-center">
+                    No variants yet. Add variants like "Chocolate", "Gluten-Free", etc.
+                  </p>
+                )}
+
+                <div className="space-y-3">
+                  {variants.map((variant) => (
+                    <div key={variant.key} className="rounded-md border">
+                      {/* Variant header - click to expand/collapse */}
+                      <button
+                        type="button"
+                        className="flex w-full items-center justify-between p-3 text-left hover:bg-muted/50 transition-colors"
+                        onClick={() => toggleVariant(variant.key)}
+                      >
+                        <div className="flex items-center gap-2">
+                          <HugeiconsIcon
+                            icon={variant.expanded ? ArrowUp01Icon : ArrowDown01Icon}
+                            size={14}
+                            className="text-muted-foreground"
+                          />
+                          <span className="text-sm font-medium">
+                            {variant.name || "Unnamed variant"}
+                          </span>
+                          {variant.price_modifier !== 0 && (
+                            <Badge variant="secondary" className="text-xs">
+                              {variant.price_modifier > 0 ? "+" : ""}
+                              {variant.price_modifier}
+                            </Badge>
+                          )}
+                          {variant.material_overrides.length > 0 && (
+                            <Badge variant="secondary" className="text-xs">
+                              {variant.material_overrides.length} override
+                              {variant.material_overrides.length !== 1 ? "s" : ""}
+                            </Badge>
+                          )}
+                        </div>
+                      </button>
+
+                      {/* Variant body */}
+                      {variant.expanded && (
+                        <div className="border-t p-3 space-y-3">
+                          <div className="grid gap-2">
+                            <Label className="text-xs">Variant Name</Label>
+                            <Input
+                              value={variant.name}
+                              onChange={(e) => updateVariant(variant.key, "name", e.target.value)}
+                              placeholder='e.g., "Chocolate", "Gluten-Free"'
+                            />
+                          </div>
+
+                          <div className="grid gap-2">
+                            <Label className="text-xs">Price Modifier</Label>
+                            <Input
+                              type="number"
+                              step="0.01"
+                              value={variant.price_modifier}
+                              onChange={(e) =>
+                                updateVariant(variant.key, "price_modifier", Number(e.target.value))
+                              }
+                              placeholder="0.00"
+                            />
+                            <p className="text-xs text-muted-foreground">
+                              Positive to add, negative to subtract from base price
+                            </p>
+                          </div>
+
+                          <div className="grid gap-2">
+                            <Label className="text-xs">Production Notes</Label>
+                            <Textarea
+                              value={variant.notes}
+                              onChange={(e) => updateVariant(variant.key, "notes", e.target.value)}
+                              placeholder="Notes specific to this variant..."
+                              rows={2}
+                            />
+                          </div>
+
+                          {/* Material overrides */}
+                          <div className="grid gap-2">
+                            <div className="flex items-center justify-between">
+                              <Label className="text-xs">Material Overrides</Label>
+                              <Button
+                                type="button"
+                                variant="outline"
+                                size="sm"
+                                className="h-7 text-xs"
+                                onClick={() => addVariantOverride(variant.key)}
+                              >
+                                Add Override
+                              </Button>
+                            </div>
+
+                            {variant.material_overrides.length === 0 && (
+                              <p className="text-xs text-muted-foreground py-2 text-center">
+                                No overrides. Add materials to change from the master recipe.
+                              </p>
+                            )}
+
+                            <div className="space-y-2">
+                              {variant.material_overrides.map((ovr, ovrIdx) => (
+                                <div
+                                  key={ovr.key}
+                                  className="rounded-md border border-dashed p-2 space-y-2"
+                                >
+                                  <div className="flex items-center justify-between">
+                                    <span className="text-xs text-muted-foreground">
+                                      Override {ovrIdx + 1}
+                                    </span>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-5 px-1.5 text-xs text-destructive"
+                                      onClick={() => removeVariantOverride(variant.key, ovr.key)}
+                                    >
+                                      Remove
+                                    </Button>
+                                  </div>
+
+                                  <AdvancedSelect
+                                    options={materialOptions}
+                                    value={ovr.product_id}
+                                    onValueChange={(val) =>
+                                      updateVariantOverride(
+                                        variant.key,
+                                        ovr.key,
+                                        "product_id",
+                                        val ?? ""
+                                      )
+                                    }
+                                    placeholder="Select product"
+                                    searchable
+                                    aria-label={`Variant ${variant.name || "unnamed"} override ${ovrIdx + 1}`}
+                                  />
+
+                                  <div className="grid grid-cols-2 gap-2">
+                                    <div className="grid gap-1">
+                                      <Label className="text-xs">Quantity</Label>
+                                      <Input
+                                        type="number"
+                                        step="0.001"
+                                        min="0"
+                                        value={ovr.quantity}
+                                        onChange={(e) =>
+                                          updateVariantOverride(
+                                            variant.key,
+                                            ovr.key,
+                                            "quantity",
+                                            Number(e.target.value)
+                                          )
+                                        }
+                                      />
+                                    </div>
+                                    <div className="grid gap-1">
+                                      <Label className="text-xs">Unit</Label>
+                                      <Input
+                                        value={ovr.unit}
+                                        onChange={(e) =>
+                                          updateVariantOverride(
+                                            variant.key,
+                                            ovr.key,
+                                            "unit",
+                                            e.target.value
+                                          )
+                                        }
+                                        placeholder="kg, g, L, pcs"
+                                      />
+                                    </div>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          {/* Delete variant */}
+                          <div className="flex justify-end pt-1">
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              className="text-destructive"
+                              onClick={() => removeVariant(variant.key)}
+                            >
+                              Delete Variant
+                            </Button>
+                          </div>
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

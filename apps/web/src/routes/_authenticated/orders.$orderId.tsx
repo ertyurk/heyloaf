@@ -12,6 +12,7 @@ import { useMemo } from "react"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
+import { formatCurrency } from "@/lib/format-currency"
 
 type Order = components["schemas"]["Order"]
 type OrderItem = components["schemas"]["OrderItem"]
@@ -25,13 +26,6 @@ const statusBadgeClass: Record<string, string> = {
   pending: "bg-secondary text-secondary-foreground",
   voided: "bg-destructive/10 text-destructive",
   returned: "bg-destructive/10 text-destructive",
-}
-
-function formatCurrency(amount: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(amount)
 }
 
 function formatDate(dateStr: string) {

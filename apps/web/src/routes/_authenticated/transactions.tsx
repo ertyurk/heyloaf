@@ -11,6 +11,7 @@ import { createFileRoute } from "@tanstack/react-router"
 import { useMemo, useRef, useState } from "react"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
+import { formatCurrency } from "@/lib/format-currency"
 
 type Transaction = components["schemas"]["Transaction"]
 type Contact = components["schemas"]["Contact"]
@@ -32,13 +33,6 @@ const typeBadgeClass: Record<string, string> = {
   payment: "bg-green-100 text-green-800",
   receipt: "bg-purple-100 text-purple-800",
   purchase: "bg-orange-100 text-orange-800",
-}
-
-function formatCurrency(amount: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(amount)
 }
 
 function formatDate(dateStr: string | null) {

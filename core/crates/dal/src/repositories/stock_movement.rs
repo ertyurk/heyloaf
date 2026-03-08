@@ -11,8 +11,8 @@ impl StockMovementRepository {
         reference_type, reference_id, description, created_by, created_at";
 
     #[expect(clippy::too_many_arguments)]
-    pub async fn create(
-        pool: &PgPool,
+    pub async fn create_with_executor<'e>(
+        executor: impl sqlx::PgExecutor<'e>,
         company_id: Uuid,
         product_id: Uuid,
         movement_type: &str,
@@ -49,8 +49,31 @@ impl StockMovementRepository {
             .bind(reference_id)
             .bind(description)
             .bind(created_by)
-            .fetch_one(pool)
+            .fetch_one(executor)
             .await
+    }
+
+    #[expect(clippy::too_many_arguments)]
+    pub async fn create(
+        pool: &PgPool,
+        company_id: Uuid,
+        product_id: Uuid,
+        movement_type: &str,
+        source: &str,
+        quantity: f64,
+        unit_price: Option<f64>,
+        total_price: Option<f64>,
+        vat_rate: Option<f64>,
+        reference_type: Option<&str>,
+        reference_id: Option<Uuid>,
+        description: Option<&str>,
+        created_by: Uuid,
+    ) -> Result<StockMovement, sqlx::Error> {
+        Self::create_with_executor(
+            pool, company_id, product_id, movement_type, source, quantity, unit_price,
+            total_price, vat_rate, reference_type, reference_id, description, created_by,
+        )
+        .await
     }
 
     pub async fn list(
@@ -101,8 +124,8 @@ impl StockMovementRepository {
         Ok((movements, total))
     }
 
-    pub async fn list_by_reference(
-        pool: &PgPool,
+    pub async fn list_by_reference_with_executor<'e>(
+        executor: impl sqlx::PgExecutor<'e>,
         reference_type: &str,
         reference_id: Uuid,
     ) -> Result<Vec<StockMovement>, sqlx::Error> {
@@ -115,12 +138,20 @@ impl StockMovementRepository {
         sqlx::query_as::<_, StockMovement>(&sql)
             .bind(reference_type)
             .bind(reference_id)
-            .fetch_all(pool)
+            .fetch_all(executor)
             .await
     }
 
-    pub async fn delete_by_reference(
+    pub async fn list_by_reference(
         pool: &PgPool,
+        reference_type: &str,
+        reference_id: Uuid,
+    ) -> Result<Vec<StockMovement>, sqlx::Error> {
+        Self::list_by_reference_with_executor(pool, reference_type, reference_id).await
+    }
+
+    pub async fn delete_by_reference_with_executor<'e>(
+        executor: impl sqlx::PgExecutor<'e>,
         reference_type: &str,
         reference_id: Uuid,
     ) -> Result<u64, sqlx::Error> {
@@ -129,8 +160,16 @@ impl StockMovementRepository {
         )
         .bind(reference_type)
         .bind(reference_id)
-        .execute(pool)
+        .execute(executor)
         .await?;
         Ok(result.rows_affected())
+    }
+
+    pub async fn delete_by_reference(
+        pool: &PgPool,
+        reference_type: &str,
+        reference_id: Uuid,
+    ) -> Result<u64, sqlx::Error> {
+        Self::delete_by_reference_with_executor(pool, reference_type, reference_id).await
     }
 }

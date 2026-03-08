@@ -19,6 +19,7 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
 import { useApi } from "@/hooks/use-api"
+import { formatCurrency } from "@/lib/format-currency"
 
 type Product = components["schemas"]["Product"]
 type Category = components["schemas"]["Category"]
@@ -273,6 +274,8 @@ function PosPage() {
   useEffect(() => {
     function handleKeyDown(e: KeyboardEvent) {
       if (e.key === "Enter" && !e.repeat) {
+        const tag = (e.target as HTMLElement).tagName
+        if (tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT") return
         e.preventDefault()
         handlePlaceOrder()
       }
@@ -377,7 +380,7 @@ function PosPage() {
                         {product.name}
                       </span>
                       <span className="text-sm tabular-nums text-muted-foreground">
-                        {price > 0 ? price.toFixed(2) : "--"}
+                        {price > 0 ? formatCurrency(price) : "--"}
                       </span>
                     </CardContent>
                   </Card>
@@ -415,7 +418,7 @@ function PosPage() {
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{item.name}</p>
                     <p className="text-xs tabular-nums text-muted-foreground">
-                      {item.price.toFixed(2)} x {item.quantity}
+                      {formatCurrency(item.price)} x {item.quantity}
                     </p>
                   </div>
                   <div className="flex shrink-0 items-center gap-1">
@@ -453,16 +456,16 @@ function PosPage() {
             <div className="space-y-1 p-3">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Subtotal</span>
-                <span className="tabular-nums">{subtotal.toFixed(2)}</span>
+                <span className="tabular-nums">{formatCurrency(subtotal)}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Tax</span>
-                <span className="tabular-nums">{taxTotal.toFixed(2)}</span>
+                <span className="tabular-nums">{formatCurrency(taxTotal)}</span>
               </div>
               <Separator />
               <div className="flex items-center justify-between text-base font-semibold">
                 <span>Total</span>
-                <span className="tabular-nums">{grandTotal.toFixed(2)}</span>
+                <span className="tabular-nums">{formatCurrency(grandTotal)}</span>
               </div>
             </div>
 

@@ -295,16 +295,17 @@ pub async fn delete_product(
 )]
 pub async fn bulk_activate(
     State(state): State<AppState>,
-    Extension(_ctx): Extension<CompanyContext>,
+    Extension(ctx): Extension<CompanyContext>,
     Json(body): Json<BulkIdsRequest>,
 ) -> Result<Json<ApiResponse<BulkActionResponse>>, AppError> {
     if body.ids.is_empty() {
         return Err(AppError::BadRequest("No product IDs provided".into()));
     }
 
-    let affected = ProductRepository::bulk_update_status(&state.pool, &body.ids, "active")
-        .await
-        .map_err(|e| AppError::Database(e.to_string()))?;
+    let affected =
+        ProductRepository::bulk_update_status(&state.pool, &body.ids, ctx.company_id, "active")
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
 
     Ok(Json(ApiResponse::new(BulkActionResponse { affected })))
 }
@@ -319,16 +320,21 @@ pub async fn bulk_activate(
 )]
 pub async fn bulk_deactivate(
     State(state): State<AppState>,
-    Extension(_ctx): Extension<CompanyContext>,
+    Extension(ctx): Extension<CompanyContext>,
     Json(body): Json<BulkIdsRequest>,
 ) -> Result<Json<ApiResponse<BulkActionResponse>>, AppError> {
     if body.ids.is_empty() {
         return Err(AppError::BadRequest("No product IDs provided".into()));
     }
 
-    let affected = ProductRepository::bulk_update_status(&state.pool, &body.ids, "inactive")
-        .await
-        .map_err(|e| AppError::Database(e.to_string()))?;
+    let affected = ProductRepository::bulk_update_status(
+        &state.pool,
+        &body.ids,
+        ctx.company_id,
+        "inactive",
+    )
+    .await
+    .map_err(|e| AppError::Database(e.to_string()))?;
 
     Ok(Json(ApiResponse::new(BulkActionResponse { affected })))
 }
@@ -343,17 +349,21 @@ pub async fn bulk_deactivate(
 )]
 pub async fn bulk_category(
     State(state): State<AppState>,
-    Extension(_ctx): Extension<CompanyContext>,
+    Extension(ctx): Extension<CompanyContext>,
     Json(body): Json<BulkCategoryRequest>,
 ) -> Result<Json<ApiResponse<BulkActionResponse>>, AppError> {
     if body.ids.is_empty() {
         return Err(AppError::BadRequest("No product IDs provided".into()));
     }
 
-    let affected =
-        ProductRepository::bulk_update_category(&state.pool, &body.ids, body.category_id)
-            .await
-            .map_err(|e| AppError::Database(e.to_string()))?;
+    let affected = ProductRepository::bulk_update_category(
+        &state.pool,
+        &body.ids,
+        ctx.company_id,
+        body.category_id,
+    )
+    .await
+    .map_err(|e| AppError::Database(e.to_string()))?;
 
     Ok(Json(ApiResponse::new(BulkActionResponse { affected })))
 }

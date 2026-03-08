@@ -190,27 +190,33 @@ impl ProductRepository {
     pub async fn bulk_update_status(
         pool: &PgPool,
         ids: &[Uuid],
+        company_id: Uuid,
         status: &str,
     ) -> Result<u64, sqlx::Error> {
-        let result =
-            sqlx::query("UPDATE products SET status = $2::product_status WHERE id = ANY($1)")
-                .bind(ids)
-                .bind(status)
-                .execute(pool)
-                .await?;
+        let result = sqlx::query(
+            "UPDATE products SET status = $2::product_status WHERE id = ANY($1) AND company_id = $3",
+        )
+        .bind(ids)
+        .bind(status)
+        .bind(company_id)
+        .execute(pool)
+        .await?;
         Ok(result.rows_affected())
     }
 
     pub async fn bulk_update_category(
         pool: &PgPool,
         ids: &[Uuid],
+        company_id: Uuid,
         category_id: Option<Uuid>,
     ) -> Result<u64, sqlx::Error> {
-        let result = sqlx::query("UPDATE products SET category_id = $2 WHERE id = ANY($1)")
-            .bind(ids)
-            .bind(category_id)
-            .execute(pool)
-            .await?;
+        let result =
+            sqlx::query("UPDATE products SET category_id = $2 WHERE id = ANY($1) AND company_id = $3")
+                .bind(ids)
+                .bind(category_id)
+                .bind(company_id)
+                .execute(pool)
+                .await?;
         Ok(result.rows_affected())
     }
 }

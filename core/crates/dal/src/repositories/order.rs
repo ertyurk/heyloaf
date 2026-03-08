@@ -77,8 +77,8 @@ impl OrderRepository {
     }
 
     #[expect(clippy::too_many_arguments)]
-    pub async fn create(
-        pool: &PgPool,
+    pub async fn create_with_executor<'e>(
+        executor: impl sqlx::PgExecutor<'e>,
         company_id: Uuid,
         order_number: &str,
         cashier_id: Uuid,
@@ -109,12 +109,33 @@ impl OrderRepository {
             .bind(total)
             .bind(payment_method_id)
             .bind(notes)
-            .fetch_one(pool)
+            .fetch_one(executor)
             .await
     }
 
-    pub async fn update_status(
+    #[expect(clippy::too_many_arguments)]
+    pub async fn create(
         pool: &PgPool,
+        company_id: Uuid,
+        order_number: &str,
+        cashier_id: Uuid,
+        shift_id: Option<Uuid>,
+        terminal_id: Option<Uuid>,
+        subtotal: f64,
+        tax_total: f64,
+        total: f64,
+        payment_method_id: Option<Uuid>,
+        notes: Option<&str>,
+    ) -> Result<Order, sqlx::Error> {
+        Self::create_with_executor(
+            pool, company_id, order_number, cashier_id, shift_id, terminal_id,
+            subtotal, tax_total, total, payment_method_id, notes,
+        )
+        .await
+    }
+
+    pub async fn update_status_with_executor<'e>(
+        executor: impl sqlx::PgExecutor<'e>,
         id: Uuid,
         status: &str,
     ) -> Result<Order, sqlx::Error> {
@@ -127,26 +148,62 @@ impl OrderRepository {
         sqlx::query_as::<_, Order>(&sql)
             .bind(id)
             .bind(status)
-            .fetch_one(pool)
+            .fetch_one(executor)
             .await
     }
 
-    pub async fn next_number(pool: &PgPool, company_id: Uuid) -> Result<String, sqlx::Error> {
+    pub async fn update_status(
+        pool: &PgPool,
+        id: Uuid,
+        status: &str,
+    ) -> Result<Order, sqlx::Error> {
+        Self::update_status_with_executor(pool, id, status).await
+    }
+
+    pub async fn update_status_with_notes_executor<'e>(
+        executor: impl sqlx::PgExecutor<'e>,
+        id: Uuid,
+        status: &str,
+        notes: &str,
+    ) -> Result<Order, sqlx::Error> {
+        let sql = format!(
+            r"UPDATE orders SET status = $2::order_status, notes = $3
+            WHERE id = $1
+            RETURNING {}",
+            Self::SELECT
+        );
+        sqlx::query_as::<_, Order>(&sql)
+            .bind(id)
+            .bind(status)
+            .bind(notes)
+            .fetch_one(executor)
+            .await
+    }
+
+    pub async fn update_status_with_notes(
+        pool: &PgPool,
+        id: Uuid,
+        status: &str,
+        notes: &str,
+    ) -> Result<Order, sqlx::Error> {
+        Self::update_status_with_notes_executor(pool, id, status, notes).await
+    }
+
+    pub async fn next_number_with_executor<'e>(
+        executor: impl sqlx::PgExecutor<'e>,
+    ) -> Result<String, sqlx::Error> {
         let today = Utc::now().format("%Y%m%d").to_string();
-        let prefix = format!("ORD-{today}-");
 
-        let count: Option<i64> = sqlx::query_scalar(
-            r"SELECT COUNT(*) FROM orders
-            WHERE company_id = $1
-            AND order_number LIKE $2",
-        )
-        .bind(company_id)
-        .bind(format!("{prefix}%"))
-        .fetch_one(pool)
-        .await?;
+        let next: i64 =
+            sqlx::query_scalar("SELECT nextval('order_number_seq')")
+                .fetch_one(executor)
+                .await?;
 
-        let next = count.unwrap_or(0) + 1;
-        Ok(format!("{prefix}{next:04}"))
+        Ok(format!("ORD-{today}-{next:04}"))
+    }
+
+    pub async fn next_number(pool: &PgPool, _company_id: Uuid) -> Result<String, sqlx::Error> {
+        Self::next_number_with_executor(pool).await
     }
 }
 
@@ -205,8 +262,8 @@ impl OrderItemRepository {
 
     /// Batch-insert order items. Each tuple:
     /// (product_id, product_name, variant_name, quantity, unit_price, vat_rate, line_total)
-    pub async fn create_batch(
-        pool: &PgPool,
+    pub async fn create_batch_with_executor<'e>(
+        executor: impl sqlx::PgExecutor<'e>,
         order_id: Uuid,
         items: &[OrderItemTuple],
     ) -> Result<Vec<OrderItem>, sqlx::Error> {
@@ -256,7 +313,17 @@ impl OrderItemRepository {
             .bind(&unit_prices)
             .bind(&vat_rates)
             .bind(&line_totals)
-            .fetch_all(pool)
+            .fetch_all(executor)
             .await
+    }
+
+    /// Batch-insert order items. Each tuple:
+    /// (product_id, product_name, variant_name, quantity, unit_price, vat_rate, line_total)
+    pub async fn create_batch(
+        pool: &PgPool,
+        order_id: Uuid,
+        items: &[OrderItemTuple],
+    ) -> Result<Vec<OrderItem>, sqlx::Error> {
+        Self::create_batch_with_executor(pool, order_id, items).await
     }
 }

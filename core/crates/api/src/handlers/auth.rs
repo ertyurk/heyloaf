@@ -1,8 +1,7 @@
-use argon2::password_hash::SaltString;
-use argon2::password_hash::rand_core::OsRng;
-use argon2::{Argon2, PasswordHash, PasswordHasher, PasswordVerifier};
+use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use axum::extract::State;
 use axum::{Extension, Json};
+use heyloaf_common::crypto::hash_password;
 use heyloaf_common::errors::AppError;
 use heyloaf_common::types::ApiResponse;
 use heyloaf_dal::repositories::company::CompanyRepository;
@@ -80,15 +79,6 @@ pub struct LoginCompany {
 
 // --- Helpers ---
 
-fn hash_password(password: &str) -> Result<String, AppError> {
-    let salt = SaltString::generate(&mut OsRng);
-    let argon2 = Argon2::default();
-    argon2
-        .hash_password(password.as_bytes(), &salt)
-        .map(|hash| hash.to_string())
-        .map_err(|e| AppError::Internal(anyhow::anyhow!("Password hashing failed: {e}")))
-}
-
 fn verify_password(password: &str, hash: &str) -> Result<bool, AppError> {
     let parsed_hash = PasswordHash::new(hash)
         .map_err(|e| AppError::Internal(anyhow::anyhow!("Invalid password hash: {e}")))?;
@@ -121,11 +111,16 @@ fn generate_access_token(
     .map_err(|e| AppError::Internal(e.into()))
 }
 
-fn generate_refresh_token(user_id: Uuid, secret: &str, ttl_secs: u64) -> Result<String, AppError> {
+fn generate_refresh_token(
+    user_id: Uuid,
+    company_id: Option<Uuid>,
+    secret: &str,
+    ttl_secs: u64,
+) -> Result<String, AppError> {
     let now = chrono::Utc::now();
     let claims = Claims {
         sub: user_id,
-        company_id: None,
+        company_id,
         role: None,
         exp: (now + chrono::Duration::seconds(ttl_secs as i64)).timestamp() as usize,
         iat: now.timestamp() as usize,
@@ -192,6 +187,7 @@ pub async fn login(
 
     let refresh_token = generate_refresh_token(
         user.id,
+        company_id,
         &state.config.jwt_secret,
         state.config.jwt_refresh_token_ttl_secs,
     )?;
@@ -246,6 +242,7 @@ pub async fn register(
 
     let refresh_token = generate_refresh_token(
         user.id,
+        None,
         &state.config.jwt_secret,
         state.config.jwt_refresh_token_ttl_secs,
     )?;
@@ -282,15 +279,32 @@ pub async fn refresh(
     })?;
 
     let user_id = token_data.claims.sub;
+    let token_company_id = token_data.claims.company_id;
 
     // Fetch user's companies to include in the new access token
     let companies = UserRepository::get_user_companies(&state.pool, user_id)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
-    let (company_id, role) = companies.first().map_or((None, None), |uc| {
-        (Some(uc.company_id), Some(uc.role.clone()))
-    });
+    // Preserve the company from the refresh token if the user still belongs to it,
+    // otherwise fall back to the first company.
+    let (company_id, role) = if let Some(cid) = token_company_id {
+        companies
+            .iter()
+            .find(|uc| uc.company_id == cid)
+            .map_or_else(
+                || {
+                    companies.first().map_or((None, None), |uc| {
+                        (Some(uc.company_id), Some(uc.role.clone()))
+                    })
+                },
+                |uc| (Some(uc.company_id), Some(uc.role.clone())),
+            )
+    } else {
+        companies.first().map_or((None, None), |uc| {
+            (Some(uc.company_id), Some(uc.role.clone()))
+        })
+    };
 
     let access_token = generate_access_token(
         user_id,
@@ -302,6 +316,7 @@ pub async fn refresh(
 
     let new_refresh_token = generate_refresh_token(
         user_id,
+        company_id,
         &state.config.jwt_secret,
         state.config.jwt_refresh_token_ttl_secs,
     )?;
@@ -359,6 +374,7 @@ pub async fn switch_company(
 
     let refresh_token = generate_refresh_token(
         auth_user.user_id,
+        Some(body.company_id),
         &state.config.jwt_secret,
         state.config.jwt_refresh_token_ttl_secs,
     )?;

@@ -2,6 +2,7 @@ import type { components } from "@heyloaf/api-client"
 import { AdvancedSelect } from "@heyloaf/ui/components/advanced-select"
 import { Badge } from "@heyloaf/ui/components/badge"
 import { Button } from "@heyloaf/ui/components/button"
+import { Card, CardContent } from "@heyloaf/ui/components/card"
 import { DataTable } from "@heyloaf/ui/components/data-table"
 import { DropdownMenuItem, DropdownMenuSeparator } from "@heyloaf/ui/components/dropdown-menu"
 import { Input } from "@heyloaf/ui/components/input"
@@ -32,6 +33,7 @@ import { useCallback, useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
+import { formatCurrency } from "@/lib/format-currency"
 
 type Contact = components["schemas"]["Contact"]
 
@@ -39,17 +41,10 @@ export const Route = createFileRoute("/_authenticated/contacts")({
   component: ContactsPage,
 })
 
-const badgeColor: Record<string, string> = {
-  customer: "blue",
-  supplier: "orange",
-  both: "purple",
-}
-
-function formatCurrency(amount: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(amount)
+const typeBadgeClasses: Record<string, string> = {
+  customer: "text-blue-600 border-blue-300",
+  supplier: "text-orange-600 border-orange-300",
+  both: "text-purple-600 border-purple-300",
 }
 
 const emptyForm = {
@@ -221,6 +216,32 @@ const statusFilterOptions = [
   { value: "inactive", label: "Inactive" },
 ]
 
+function computeFinancialSummary(allContacts: Contact[]) {
+  let totalReceivables = 0
+  let totalPayables = 0
+  const typeCounts = { customers: 0, suppliers: 0, both: 0 }
+  const typeMap: Record<string, keyof typeof typeCounts> = {
+    customer: "customers",
+    supplier: "suppliers",
+    both: "both",
+  }
+
+  for (const c of allContacts) {
+    const balance = c.balance ?? 0
+    if (balance > 0) totalReceivables += balance
+    if (balance < 0) totalPayables += Math.abs(balance)
+    const key = typeMap[c.contact_type]
+    if (key) typeCounts[key]++
+  }
+
+  return {
+    totalReceivables,
+    totalPayables,
+    netCashFlow: totalReceivables - totalPayables,
+    ...typeCounts,
+  }
+}
+
 function ContactsPage() {
   const client = useApi()
   const queryClient = useQueryClient()
@@ -264,6 +285,8 @@ function ContactsPage() {
   })
 
   const allContacts = data?.data ?? []
+
+  const financialSummary = useMemo(() => computeFinancialSummary(allContacts), [allContacts])
 
   const contacts = useMemo(() => {
     let filtered = allContacts
@@ -454,7 +477,7 @@ function ContactsPage() {
         cell: (row: Contact) => (
           <Badge
             variant="outline"
-            className={`text-${badgeColor[row.contact_type] ?? "gray"}-600 border-${badgeColor[row.contact_type] ?? "gray"}-300`}
+            className={typeBadgeClasses[row.contact_type] ?? "text-gray-600 border-gray-300"}
           >
             {row.contact_type}
           </Badge>
@@ -514,6 +537,47 @@ function ContactsPage() {
       </PageHeader>
 
       <div className="space-y-4 p-6">
+        <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-xs text-muted-foreground">Total Receivables</p>
+              <p className="text-xl font-bold text-green-600">
+                {formatCurrency(financialSummary.totalReceivables)}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-xs text-muted-foreground">Total Payables</p>
+              <p className="text-xl font-bold text-destructive">
+                {formatCurrency(financialSummary.totalPayables)}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-xs text-muted-foreground">Net Cash Flow</p>
+              <p
+                className={`text-xl font-bold ${financialSummary.netCashFlow >= 0 ? "text-green-600" : "text-destructive"}`}
+              >
+                {formatCurrency(financialSummary.netCashFlow)}
+              </p>
+            </CardContent>
+          </Card>
+          <Card>
+            <CardContent className="p-4">
+              <p className="text-xs text-muted-foreground">Contacts</p>
+              <p className="text-sm text-muted-foreground mt-1">
+                <span className="text-blue-600 font-medium">{financialSummary.customers}</span>{" "}
+                customers /{" "}
+                <span className="text-orange-600 font-medium">{financialSummary.suppliers}</span>{" "}
+                suppliers /{" "}
+                <span className="text-purple-600 font-medium">{financialSummary.both}</span> both
+              </p>
+            </CardContent>
+          </Card>
+        </div>
+
         <div className="flex items-center gap-4">
           <div className="relative flex-1 max-w-sm">
             <HugeiconsIcon

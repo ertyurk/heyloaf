@@ -23,6 +23,7 @@ import { useMemo, useState } from "react"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
+import { formatCurrency } from "@/lib/format-currency"
 
 type PriceListItem = components["schemas"]["PriceListItem"]
 
@@ -42,13 +43,6 @@ const emptyForm: ItemForm = {
   price: "",
   vat_rate: "",
   is_active: true,
-}
-
-function formatCurrency(amount: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(amount)
 }
 
 function PriceListItemsPage() {

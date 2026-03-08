@@ -1,8 +1,6 @@
-use argon2::password_hash::SaltString;
-use argon2::password_hash::rand_core::OsRng;
-use argon2::{Argon2, PasswordHasher};
 use axum::extract::{Path, State};
 use axum::{Extension, Json};
+use heyloaf_common::crypto::hash_password;
 use heyloaf_common::errors::AppError;
 use heyloaf_common::types::ApiResponse;
 use heyloaf_dal::models::user::{CompanyUser, UserCompany};
@@ -36,17 +34,6 @@ pub struct CreateUserRequest {
 pub struct UpdateRoleRequest {
     #[validate(length(min = 1, message = "Role is required"))]
     pub role: String,
-}
-
-// --- Helpers ---
-
-fn hash_password(password: &str) -> Result<String, AppError> {
-    let salt = SaltString::generate(&mut OsRng);
-    let argon2 = Argon2::default();
-    argon2
-        .hash_password(password.as_bytes(), &salt)
-        .map(|hash| hash.to_string())
-        .map_err(|e| AppError::Internal(anyhow::anyhow!("Password hashing failed: {e}")))
 }
 
 // --- Handlers ---

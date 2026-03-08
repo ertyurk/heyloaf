@@ -102,10 +102,19 @@ pub async fn unread_count(
 )]
 pub async fn mark_read(
     State(state): State<AppState>,
-    Extension(_ctx): Extension<CompanyContext>,
+    Extension(ctx): Extension<CompanyContext>,
     Extension(_auth): Extension<AuthUser>,
     Path(id): Path<Uuid>,
 ) -> Result<Json<ApiResponse<serde_json::Value>>, AppError> {
+    let notification = NotificationRepository::find_by_id(&state.pool, id)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .ok_or_else(|| AppError::NotFound("Notification not found".into()))?;
+
+    if notification.company_id != ctx.company_id {
+        return Err(AppError::NotFound("Notification not found".into()));
+    }
+
     NotificationRepository::mark_read(&state.pool, id)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;

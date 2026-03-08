@@ -55,6 +55,17 @@ const STATUS_OPTIONS = [
   { value: "active", label: "Active" },
 ]
 
+const SALE_UNIT_TYPE_OPTIONS = [
+  { value: "piece", label: "Piece" },
+  { value: "kg", label: "Kg" },
+  { value: "litre", label: "Litre" },
+]
+
+const PLU_TYPE_OPTIONS = [
+  { value: "weight", label: "Weight" },
+  { value: "piece", label: "Piece" },
+]
+
 function ProductsPage() {
   const client = useApi()
   const queryClient = useQueryClient()
@@ -88,6 +99,11 @@ function ProductsPage() {
     unit_of_measure: "piece",
     tax_rate: "",
     stock_tracking: false,
+    sale_unit_type: "piece",
+    plu_type: "piece",
+    plu_code: "",
+    scale_enabled: false,
+    min_stock_level: "",
   })
 
   // Edit form state
@@ -101,7 +117,11 @@ function ProductsPage() {
     unit_of_measure: "piece",
     tax_rate: "",
     stock_tracking: false,
+    sale_unit_type: "piece",
+    plu_type: "piece",
+    plu_code: "",
     scale_enabled: false,
+    min_stock_level: "",
   })
 
   const { data, isLoading } = useQuery({
@@ -192,7 +212,9 @@ function ProductsPage() {
       if (createForm.barcode) body.barcode = createForm.barcode
       if (createForm.category_id) body.category_id = createForm.category_id
       if (createForm.tax_rate) body.tax_rate = Number(createForm.tax_rate)
-      const { error } = await client.POST("/api/products", { body })
+      const { error } = await client.POST("/api/products", {
+        body,
+      })
       if (error)
         throw new Error((error as { message?: string }).message ?? "Failed to create product")
     },
@@ -207,35 +229,31 @@ function ProductsPage() {
     },
   })
 
+  function buildUpdateBody() {
+    return {
+      name: editForm.name,
+      unit_of_measure: editForm.unit_of_measure,
+      stock_tracking: editForm.stock_tracking,
+      scale_enabled: editForm.plu_type === "piece" ? false : editForm.scale_enabled,
+      status: editForm.status,
+      stock_status: editForm.stock_status,
+      code: editForm.code || null,
+      barcode: editForm.barcode || null,
+      category_id: editForm.category_id || null,
+      tax_rate: editForm.tax_rate ? Number(editForm.tax_rate) : null,
+      sale_unit_type: editForm.sale_unit_type || null,
+      plu_type: editForm.plu_type || null,
+      plu_code: editForm.plu_code || null,
+      min_stock_level: editForm.min_stock_level ? Number(editForm.min_stock_level) : null,
+    }
+  }
+
   const updateMutation = useMutation({
     mutationFn: async () => {
       if (!editingProduct) return
-      const body: {
-        name: string
-        unit_of_measure: string
-        status: string
-        stock_status: string
-        stock_tracking?: boolean
-        scale_enabled?: boolean
-        code?: string | null
-        barcode?: string | null
-        category_id?: string | null
-        tax_rate?: number | null
-      } = {
-        name: editForm.name,
-        unit_of_measure: editForm.unit_of_measure,
-        stock_tracking: editForm.stock_tracking,
-        scale_enabled: editForm.scale_enabled,
-        status: editForm.status,
-        stock_status: editForm.stock_status,
-      }
-      if (editForm.code) body.code = editForm.code
-      if (editForm.barcode) body.barcode = editForm.barcode
-      if (editForm.category_id) body.category_id = editForm.category_id
-      if (editForm.tax_rate) body.tax_rate = Number(editForm.tax_rate)
       const { error } = await client.PUT("/api/products/{id}", {
         params: { path: { id: editingProduct.id } },
-        body,
+        body: buildUpdateBody(),
       })
       if (error)
         throw new Error((error as { message?: string }).message ?? "Failed to update product")
@@ -278,6 +296,11 @@ function ProductsPage() {
       unit_of_measure: "piece",
       tax_rate: "",
       stock_tracking: false,
+      sale_unit_type: "piece",
+      plu_type: "piece",
+      plu_code: "",
+      scale_enabled: false,
+      min_stock_level: "",
     })
   }
 
@@ -293,7 +316,11 @@ function ProductsPage() {
       unit_of_measure: product.unit_of_measure ?? "piece",
       tax_rate: product.tax_rate?.toString() ?? "",
       stock_tracking: product.stock_tracking ?? false,
+      sale_unit_type: product.sale_unit_type ?? "piece",
+      plu_type: product.plu_type ?? "piece",
+      plu_code: product.plu_code ?? "",
       scale_enabled: product.scale_enabled ?? false,
+      min_stock_level: product.min_stock_level?.toString() ?? "",
     })
     setEditOpen(true)
   }
@@ -488,6 +515,82 @@ function ProductsPage() {
                 />
                 <Label htmlFor="create-stock-tracking">Stock Tracking</Label>
               </div>
+
+              {/* Sale Settings */}
+              <div className="border-t pt-4 mt-2">
+                <p className="text-sm font-medium mb-3">Sale Settings</p>
+                <div className="grid gap-4">
+                  <div className="grid gap-2">
+                    <Label>Sale Unit Type</Label>
+                    <AdvancedSelect
+                      options={SALE_UNIT_TYPE_OPTIONS}
+                      value={createForm.sale_unit_type}
+                      onValueChange={(val) =>
+                        setCreateForm((f) => ({ ...f, sale_unit_type: val ?? "piece" }))
+                      }
+                      searchable={false}
+                      className="w-full"
+                      aria-label="Sale unit type"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>PLU Type</Label>
+                    <AdvancedSelect
+                      options={PLU_TYPE_OPTIONS}
+                      value={createForm.plu_type}
+                      onValueChange={(val) =>
+                        setCreateForm((f) => ({
+                          ...f,
+                          plu_type: val ?? "piece",
+                          ...(val === "piece" ? { scale_enabled: false } : {}),
+                        }))
+                      }
+                      searchable={false}
+                      className="w-full"
+                      aria-label="PLU type"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="create-plu-code">PLU Code</Label>
+                    <Input
+                      id="create-plu-code"
+                      value={createForm.plu_code}
+                      onChange={(e) => setCreateForm((f) => ({ ...f, plu_code: e.target.value }))}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="create-scale-enabled"
+                      checked={createForm.scale_enabled}
+                      disabled={createForm.plu_type === "piece"}
+                      onCheckedChange={(checked) =>
+                        setCreateForm((f) => ({
+                          ...f,
+                          scale_enabled: checked === true,
+                        }))
+                      }
+                    />
+                    <Label htmlFor="create-scale-enabled">Scale Enabled</Label>
+                    {createForm.plu_type === "piece" && (
+                      <span className="text-xs text-muted-foreground">
+                        (disabled for piece PLU type)
+                      </span>
+                    )}
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="create-min-stock-level">Min Stock Level</Label>
+                    <Input
+                      id="create-min-stock-level"
+                      type="number"
+                      step="0.01"
+                      value={createForm.min_stock_level}
+                      onChange={(e) =>
+                        setCreateForm((f) => ({ ...f, min_stock_level: e.target.value }))
+                      }
+                    />
+                  </div>
+                </div>
+              </div>
             </SheetBody>
             <SheetFooter>
               <SheetClose render={<Button variant="outline" />}>Cancel</SheetClose>
@@ -616,18 +719,81 @@ function ProductsPage() {
                 />
                 <Label htmlFor="edit-stock-tracking">Stock Tracking</Label>
               </div>
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id="edit-scale-enabled"
-                  checked={editForm.scale_enabled}
-                  onCheckedChange={(checked) =>
-                    setEditForm((f) => ({
-                      ...f,
-                      scale_enabled: checked === true,
-                    }))
-                  }
-                />
-                <Label htmlFor="edit-scale-enabled">Scale Enabled</Label>
+
+              {/* Sale Settings */}
+              <div className="border-t pt-4 mt-2">
+                <p className="text-sm font-medium mb-3">Sale Settings</p>
+                <div className="grid gap-4">
+                  <div className="grid gap-2">
+                    <Label>Sale Unit Type</Label>
+                    <AdvancedSelect
+                      options={SALE_UNIT_TYPE_OPTIONS}
+                      value={editForm.sale_unit_type}
+                      onValueChange={(val) =>
+                        setEditForm((f) => ({ ...f, sale_unit_type: val ?? "piece" }))
+                      }
+                      searchable={false}
+                      className="w-full"
+                      aria-label="Sale unit type"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label>PLU Type</Label>
+                    <AdvancedSelect
+                      options={PLU_TYPE_OPTIONS}
+                      value={editForm.plu_type}
+                      onValueChange={(val) =>
+                        setEditForm((f) => ({
+                          ...f,
+                          plu_type: val ?? "piece",
+                          ...(val === "piece" ? { scale_enabled: false } : {}),
+                        }))
+                      }
+                      searchable={false}
+                      className="w-full"
+                      aria-label="PLU type"
+                    />
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-plu-code">PLU Code</Label>
+                    <Input
+                      id="edit-plu-code"
+                      value={editForm.plu_code}
+                      onChange={(e) => setEditForm((f) => ({ ...f, plu_code: e.target.value }))}
+                    />
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Checkbox
+                      id="edit-scale-enabled"
+                      checked={editForm.scale_enabled}
+                      disabled={editForm.plu_type === "piece"}
+                      onCheckedChange={(checked) =>
+                        setEditForm((f) => ({
+                          ...f,
+                          scale_enabled: checked === true,
+                        }))
+                      }
+                    />
+                    <Label htmlFor="edit-scale-enabled">Scale Enabled</Label>
+                    {editForm.plu_type === "piece" && (
+                      <span className="text-xs text-muted-foreground">
+                        (disabled for piece PLU type)
+                      </span>
+                    )}
+                  </div>
+                  <div className="grid gap-2">
+                    <Label htmlFor="edit-min-stock-level">Min Stock Level</Label>
+                    <Input
+                      id="edit-min-stock-level"
+                      type="number"
+                      step="0.01"
+                      value={editForm.min_stock_level}
+                      onChange={(e) =>
+                        setEditForm((f) => ({ ...f, min_stock_level: e.target.value }))
+                      }
+                    />
+                  </div>
+                </div>
               </div>
             </SheetBody>
             <SheetFooter>

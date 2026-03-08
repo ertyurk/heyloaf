@@ -150,8 +150,8 @@ impl ContactRepository {
             .await
     }
 
-    pub async fn update_balance(
-        pool: &PgPool,
+    pub async fn update_balance_with_executor<'e>(
+        executor: impl sqlx::PgExecutor<'e>,
         id: Uuid,
         delta: f64,
     ) -> Result<Contact, sqlx::Error> {
@@ -164,8 +164,16 @@ impl ContactRepository {
         sqlx::query_as::<_, Contact>(&sql)
             .bind(id)
             .bind(delta)
-            .fetch_one(pool)
+            .fetch_one(executor)
             .await
+    }
+
+    pub async fn update_balance(
+        pool: &PgPool,
+        id: Uuid,
+        delta: f64,
+    ) -> Result<Contact, sqlx::Error> {
+        Self::update_balance_with_executor(pool, id, delta).await
     }
 
     pub async fn delete(pool: &PgPool, id: Uuid) -> Result<(), sqlx::Error> {

@@ -6,6 +6,7 @@ use heyloaf_common::types::{ApiResponse, PaginatedResponse, PaginationParams};
 use heyloaf_dal::models::order::{Order, OrderItem};
 use heyloaf_dal::repositories::order::{OrderItemRepository, OrderItemTuple, OrderRepository};
 use heyloaf_services::audit_service::AuditBuilder;
+use heyloaf_services::stock_service::StockService;
 use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
@@ -48,6 +49,12 @@ pub struct CreateOrderItemRequest {
     pub unit_price: f64,
     pub vat_rate: f64,
     pub line_total: f64,
+}
+
+#[derive(Debug, Deserialize, Validate, ToSchema)]
+pub struct OrderReasonRequest {
+    #[validate(length(min = 1, message = "Reason is required"))]
+    pub reason: String,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -149,12 +156,16 @@ pub async fn create_order(
         .sum();
     let total = subtotal + tax_total;
 
-    let order_number = OrderRepository::next_number(&state.pool, ctx.company_id)
+    let mut tx = state.pool.begin().await.map_err(|e| {
+        AppError::Database(format!("Failed to start transaction: {e}"))
+    })?;
+
+    let order_number = OrderRepository::next_number_with_executor(&mut *tx)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
-    let order = OrderRepository::create(
-        &state.pool,
+    let order = OrderRepository::create_with_executor(
+        &mut *tx,
         ctx.company_id,
         &order_number,
         auth.user_id,
@@ -185,31 +196,35 @@ pub async fn create_order(
         })
         .collect();
 
-    let items = OrderItemRepository::create_batch(&state.pool, order.id, &batch_items)
-        .await
-        .map_err(|e| AppError::Database(e.to_string()))?;
+    let items =
+        OrderItemRepository::create_batch_with_executor(&mut *tx, order.id, &batch_items)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
 
     // Stock-out for each item with a product_id
     for item in &items {
         if let Some(product_id) = item.product_id {
-            state
-                .stock
-                .record_movement(
-                    ctx.company_id,
-                    product_id,
-                    "out",
-                    "sale",
-                    item.quantity,
-                    Some(item.unit_price),
-                    Some(item.vat_rate),
-                    Some("order"),
-                    Some(order.id),
-                    None,
-                    auth.user_id,
-                )
-                .await?;
+            StockService::record_movement_tx(
+                &mut tx,
+                ctx.company_id,
+                product_id,
+                "out",
+                "sale",
+                item.quantity,
+                Some(item.unit_price),
+                Some(item.vat_rate),
+                Some("order"),
+                Some(order.id),
+                None,
+                auth.user_id,
+            )
+            .await?;
         }
     }
+
+    tx.commit().await.map_err(|e| {
+        AppError::Database(format!("Failed to commit transaction: {e}"))
+    })?;
 
     AuditBuilder::new(state.audit.clone(), ctx.company_id, auth.user_id)
         .entity("order", order.id)
@@ -226,6 +241,7 @@ pub async fn create_order(
     tag = "orders",
     security(("bearer" = [])),
     params(("id" = Uuid, Path, description = "Order ID")),
+    request_body = OrderReasonRequest,
     responses((status = 200, body = inline(ApiResponse<Order>)))
 )]
 pub async fn void_order(
@@ -233,6 +249,7 @@ pub async fn void_order(
     Extension(ctx): Extension<CompanyContext>,
     Extension(auth): Extension<AuthUser>,
     Path(id): Path<Uuid>,
+    ValidatedJson(body): ValidatedJson<OrderReasonRequest>,
 ) -> Result<Json<ApiResponse<Order>>, AppError> {
     let existing = OrderRepository::find_by_id(&state.pool, id)
         .await
@@ -249,15 +266,23 @@ pub async fn void_order(
         ));
     }
 
-    let order = OrderRepository::update_status(&state.pool, id, "voided")
+    let mut tx = state.pool.begin().await.map_err(|e| {
+        AppError::Database(format!("Failed to start transaction: {e}"))
+    })?;
+
+    let order =
+        OrderRepository::update_status_with_notes_executor(
+            &mut *tx, id, "voided", &body.reason,
+        )
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
     // Reverse stock movements for voided order
-    state
-        .stock
-        .reverse_movements("order", id, auth.user_id)
-        .await?;
+    StockService::reverse_movements_tx(&mut tx, "order", id, auth.user_id).await?;
+
+    tx.commit().await.map_err(|e| {
+        AppError::Database(format!("Failed to commit transaction: {e}"))
+    })?;
 
     AuditBuilder::new(state.audit.clone(), ctx.company_id, auth.user_id)
         .entity("order", order.id)
@@ -275,6 +300,7 @@ pub async fn void_order(
     tag = "orders",
     security(("bearer" = [])),
     params(("id" = Uuid, Path, description = "Order ID")),
+    request_body = OrderReasonRequest,
     responses((status = 200, body = inline(ApiResponse<Order>)))
 )]
 pub async fn return_order(
@@ -282,6 +308,7 @@ pub async fn return_order(
     Extension(ctx): Extension<CompanyContext>,
     Extension(auth): Extension<AuthUser>,
     Path(id): Path<Uuid>,
+    ValidatedJson(body): ValidatedJson<OrderReasonRequest>,
 ) -> Result<Json<ApiResponse<Order>>, AppError> {
     let existing = OrderRepository::find_by_id(&state.pool, id)
         .await
@@ -298,15 +325,23 @@ pub async fn return_order(
         ));
     }
 
-    let order = OrderRepository::update_status(&state.pool, id, "returned")
+    let mut tx = state.pool.begin().await.map_err(|e| {
+        AppError::Database(format!("Failed to start transaction: {e}"))
+    })?;
+
+    let order =
+        OrderRepository::update_status_with_notes_executor(
+            &mut *tx, id, "returned", &body.reason,
+        )
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
     // Reverse stock movements for returned order
-    state
-        .stock
-        .reverse_movements("order", id, auth.user_id)
-        .await?;
+    StockService::reverse_movements_tx(&mut tx, "order", id, auth.user_id).await?;
+
+    tx.commit().await.map_err(|e| {
+        AppError::Database(format!("Failed to commit transaction: {e}"))
+    })?;
 
     AuditBuilder::new(state.audit.clone(), ctx.company_id, auth.user_id)
         .entity("order", order.id)

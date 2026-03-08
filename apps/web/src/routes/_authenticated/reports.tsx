@@ -21,6 +21,7 @@ import {
 } from "recharts"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
+import { formatCurrency } from "@/lib/format-currency"
 
 export const Route = createFileRoute("/_authenticated/reports")({
   component: ReportsPage,
@@ -36,10 +37,6 @@ const COLORS = [
   "hsl(200 70% 50%)",
   "hsl(60 70% 45%)",
 ]
-
-function formatCurrency(value: number) {
-  return value.toLocaleString(undefined, { minimumFractionDigits: 2 })
-}
 
 function ReportsPage() {
   const client = useApi()

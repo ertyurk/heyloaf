@@ -31,6 +31,7 @@ import { useMemo, useRef, useState } from "react"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
+import { formatCurrency } from "@/lib/format-currency"
 
 type Invoice = components["schemas"]["Invoice"]
 type Contact = components["schemas"]["Contact"]
@@ -49,13 +50,6 @@ const statusColor: Record<string, string> = {
 }
 
 const invoiceStatuses = ["draft", "pending", "paid", "overdue", "cancelled"]
-
-function formatCurrency(amount: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(amount)
-}
 
 function formatDate(dateStr: string | null) {
   if (!dateStr) return "\u2014"
@@ -102,6 +96,7 @@ const emptyInvoiceForm = {
   date: todayStr(),
   due_date: "",
   currency_code: "TRY",
+  exchange_rate: "1",
   notes: "",
 }
 
@@ -157,8 +152,19 @@ function InvoicesPage() {
     },
   })
 
+  const { data: companyData } = useQuery({
+    queryKey: ["company"],
+    queryFn: async () => {
+      const res = await client.GET("/api/company")
+      return res.data
+    },
+  })
+
   const invoices = data?.data ?? []
   const contacts = contactsData?.data ?? []
+  const defaultCurrency = companyData?.data?.default_currency ?? "TRY"
+
+  const showExchangeRate = createForm.currency_code !== defaultCurrency
 
   const filteredInvoices = useMemo(() => {
     let result = invoices
@@ -283,11 +289,33 @@ function InvoicesPage() {
 
   const grandTotal = subtotal + taxTotal
 
+  const creditLimitWarning = useMemo(() => {
+    if (!createForm.contact_id) return null
+    const contact = contacts.find((c: Contact) => c.id === createForm.contact_id)
+    if (!contact || contact.credit_limit == null) return null
+
+    const currentBalance = contact.balance ?? 0
+    const projectedBalance =
+      createForm.invoice_type === "purchase"
+        ? currentBalance - grandTotal
+        : currentBalance + grandTotal
+
+    if (Math.abs(projectedBalance) <= contact.credit_limit) return null
+
+    return {
+      contactName: contact.name,
+      projectedBalance,
+      creditLimit: contact.credit_limit,
+    }
+  }, [createForm.contact_id, createForm.invoice_type, contacts, grandTotal])
+
   function buildInvoiceBody() {
     const items = lineItems.map(({ id: _id, ...item }) => ({
       ...item,
       line_total: computeLineTotal(item),
     }))
+
+    const exchangeRate = showExchangeRate ? Number(createForm.exchange_rate) || 1 : 1
 
     return {
       invoice_type: createForm.invoice_type,
@@ -295,13 +323,13 @@ function InvoicesPage() {
       date: createForm.date,
       ...(createForm.due_date && { due_date: createForm.due_date }),
       currency_code: createForm.currency_code,
-      exchange_rate: 1,
+      exchange_rate: exchangeRate,
       ...(createForm.notes && { notes: createForm.notes }),
       line_items: items,
       subtotal,
       tax_total: taxTotal,
       grand_total: grandTotal,
-      base_currency_total: grandTotal,
+      base_currency_total: grandTotal * exchangeRate,
     }
   }
 
@@ -324,6 +352,7 @@ function InvoicesPage() {
       date: invoice.date ?? todayStr(),
       due_date: invoice.due_date ?? "",
       currency_code: invoice.currency_code ?? "TRY",
+      exchange_rate: invoice.exchange_rate?.toString() ?? "1",
       notes: invoice.notes ?? "",
     })
     const rawItems = (invoice.line_items ?? []) as Array<{
@@ -549,6 +578,14 @@ function InvoicesPage() {
                   </Select>
                 </div>
 
+                {creditLimitWarning && (
+                  <div className="rounded-md border border-yellow-300 bg-yellow-50 p-3 text-sm text-yellow-800">
+                    Warning: This invoice will push {creditLimitWarning.contactName}'s balance to{" "}
+                    {formatCurrency(creditLimitWarning.projectedBalance)}, exceeding their credit
+                    limit of {formatCurrency(creditLimitWarning.creditLimit)}.
+                  </div>
+                )}
+
                 <div className="grid grid-cols-2 gap-3">
                   <div className="grid gap-1.5">
                     <Label htmlFor="date">Date *</Label>
@@ -584,6 +621,28 @@ function InvoicesPage() {
                     }
                   />
                 </div>
+
+                {showExchangeRate && (
+                  <div className="grid gap-1.5">
+                    <Label htmlFor="exchange_rate">Exchange Rate</Label>
+                    <Input
+                      id="exchange_rate"
+                      type="number"
+                      step="0.0001"
+                      min="0"
+                      value={createForm.exchange_rate}
+                      onChange={(e) =>
+                        setCreateForm((f) => ({
+                          ...f,
+                          exchange_rate: e.target.value,
+                        }))
+                      }
+                    />
+                    <p className="text-xs text-muted-foreground">
+                      1 {createForm.currency_code} = {createForm.exchange_rate} {defaultCurrency}
+                    </p>
+                  </div>
+                )}
 
                 <div className="grid gap-1.5">
                   <Label htmlFor="notes">Notes</Label>
@@ -646,7 +705,7 @@ function InvoicesPage() {
                         <div className="grid gap-1">
                           <span className="text-xs text-muted-foreground">Total</span>
                           <p className="flex h-8 items-center text-sm font-medium tabular-nums">
-                            {computeLineTotal(item).toFixed(2)}
+                            {formatCurrency(computeLineTotal(item))}
                           </p>
                         </div>
                         <div>
@@ -677,15 +736,15 @@ function InvoicesPage() {
                 <div className="rounded-md border p-3 space-y-1 text-sm">
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Subtotal</span>
-                    <span className="tabular-nums">{subtotal.toFixed(2)}</span>
+                    <span className="tabular-nums">{formatCurrency(subtotal)}</span>
                   </div>
                   <div className="flex justify-between">
                     <span className="text-muted-foreground">Tax</span>
-                    <span className="tabular-nums">{taxTotal.toFixed(2)}</span>
+                    <span className="tabular-nums">{formatCurrency(taxTotal)}</span>
                   </div>
                   <div className="flex justify-between font-medium border-t pt-1">
                     <span>Total</span>
-                    <span className="tabular-nums">{grandTotal.toFixed(2)}</span>
+                    <span className="tabular-nums">{formatCurrency(grandTotal)}</span>
                   </div>
                 </div>
               </div>

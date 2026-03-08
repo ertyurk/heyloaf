@@ -39,10 +39,8 @@ interface MaterialRow {
   quantity: number
 }
 
-let nextMaterialId = 1
-
 function emptyMaterial(): MaterialRow {
-  return { id: `mat-${nextMaterialId++}`, product_id: "", quantity: 0 }
+  return { id: crypto.randomUUID(), product_id: "", quantity: 0 }
 }
 
 // ── Page ──
@@ -302,7 +300,7 @@ function RecordsTab({
       materials:
         record.materials?.length > 0
           ? record.materials.map((m) => ({
-              id: `mat-${nextMaterialId++}`,
+              id: crypto.randomUUID(),
               product_id: m.product_id,
               quantity: m.quantity,
             }))

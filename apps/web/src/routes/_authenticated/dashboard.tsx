@@ -1,17 +1,10 @@
 import { Badge } from "@heyloaf/ui/components/badge"
 import { Button } from "@heyloaf/ui/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@heyloaf/ui/components/card"
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@heyloaf/ui/components/table"
+import { DataTable } from "@heyloaf/ui/components/data-table"
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import { useMemo } from "react"
+import { useCallback, useMemo } from "react"
 import {
   CartesianGrid,
   Line,
@@ -23,6 +16,7 @@ import {
 } from "recharts"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
+import { formatCurrency } from "@/lib/format-currency"
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
@@ -33,10 +27,6 @@ const statusBadgeClass: Record<string, string> = {
   pending: "bg-secondary text-secondary-foreground",
   voided: "bg-destructive/10 text-destructive",
   returned: "bg-destructive/10 text-destructive",
-}
-
-function formatCurrency(value: number) {
-  return value.toLocaleString(undefined, { minimumFractionDigits: 2 })
 }
 
 function DashboardPage() {
@@ -103,17 +93,66 @@ function DashboardPage() {
       .slice(0, 5)
   }, [orders])
 
-  const getPaymentMethodName = (id: string | null | undefined) => {
-    if (!id) return "\u2014"
-    return paymentMethods.find((pm) => pm.id === id)?.name ?? "\u2014"
-  }
+  const getPaymentMethodName = useCallback(
+    (id: string | null | undefined) => {
+      if (!id) return "\u2014"
+      return paymentMethods.find((pm) => pm.id === id)?.name ?? "\u2014"
+    },
+    [paymentMethods]
+  )
+
+  type RecentOrder = (typeof recentOrders)[number]
+
+  const recentOrderColumns = useMemo(
+    () => [
+      {
+        id: "order_number",
+        header: "Order #",
+        cell: (row: RecentOrder) => <span className="font-medium">{row.order_number}</span>,
+      },
+      {
+        id: "date",
+        header: "Date",
+        cell: (row: RecentOrder) => (
+          <span className="text-muted-foreground">
+            {new Date(row.created_at).toLocaleDateString()}
+          </span>
+        ),
+      },
+      {
+        id: "total",
+        header: <span className="text-right block">Total</span>,
+        cell: (row: RecentOrder) => (
+          <span className="tabular-nums">{formatCurrency(row.total)}</span>
+        ),
+        className: "text-right",
+      },
+      {
+        id: "status",
+        header: "Status",
+        cell: (row: RecentOrder) => (
+          <Badge
+            className={statusBadgeClass[row.status] ?? "bg-secondary text-secondary-foreground"}
+          >
+            {row.status.charAt(0).toUpperCase() + row.status.slice(1)}
+          </Badge>
+        ),
+      },
+      {
+        id: "payment_method",
+        header: "Payment Method",
+        cell: (row: RecentOrder) => getPaymentMethodName(row.payment_method_id),
+      },
+    ],
+    [getPaymentMethodName]
+  )
 
   return (
     <>
       <PageHeader title="Dashboard" description="Business overview" />
       <div className="space-y-6 p-6">
         {/* Stat cards */}
-        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
@@ -173,6 +212,20 @@ function DashboardPage() {
               <p className="text-xs text-muted-foreground mt-1">due to suppliers</p>
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-sm font-medium text-muted-foreground">
+                Today's Production
+              </CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="text-2xl font-bold">
+                {(stats?.today_production_count ?? 0).toLocaleString()}
+              </div>
+              <p className="text-xs text-muted-foreground mt-1">batches produced</p>
+            </CardContent>
+          </Card>
         </div>
 
         {/* Sales Trend Chart */}
@@ -202,62 +255,16 @@ function DashboardPage() {
         </Card>
 
         {/* Recent Orders */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-sm font-medium text-muted-foreground">
-              Recent Orders
-            </CardTitle>
-          </CardHeader>
-          <CardContent>
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Order #</TableHead>
-                  <TableHead>Date</TableHead>
-                  <TableHead className="text-right">Total</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead>Payment Method</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {recentOrders.length === 0 ? (
-                  <TableRow>
-                    <TableCell colSpan={5} className="h-24 text-center text-muted-foreground">
-                      No orders yet.
-                    </TableCell>
-                  </TableRow>
-                ) : (
-                  recentOrders.map((order) => (
-                    <TableRow
-                      key={order.id}
-                      className="cursor-pointer"
-                      onClick={() => navigate({ to: "/orders" })}
-                    >
-                      <TableCell className="font-medium">{order.order_number}</TableCell>
-                      <TableCell className="text-muted-foreground">
-                        {new Date(order.created_at).toLocaleDateString()}
-                      </TableCell>
-                      <TableCell className="text-right tabular-nums">
-                        {order.total.toFixed(2)}
-                      </TableCell>
-                      <TableCell>
-                        <Badge
-                          className={
-                            statusBadgeClass[order.status] ??
-                            "bg-secondary text-secondary-foreground"
-                          }
-                        >
-                          {order.status.charAt(0).toUpperCase() + order.status.slice(1)}
-                        </Badge>
-                      </TableCell>
-                      <TableCell>{getPaymentMethodName(order.payment_method_id)}</TableCell>
-                    </TableRow>
-                  ))
-                )}
-              </TableBody>
-            </Table>
-          </CardContent>
-        </Card>
+        <div className="space-y-2">
+          <h2 className="text-sm font-medium text-muted-foreground">Recent Orders</h2>
+          <DataTable
+            columns={recentOrderColumns}
+            data={recentOrders}
+            getRowId={(row) => row.id}
+            emptyMessage="No orders yet."
+            onRowClick={() => navigate({ to: "/orders" })}
+          />
+        </div>
 
         {/* Quick Actions */}
         <div className="grid gap-4 md:grid-cols-3">

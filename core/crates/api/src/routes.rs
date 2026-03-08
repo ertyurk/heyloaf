@@ -167,11 +167,6 @@ fn open_routes() -> Router<AppState> {
             "/notifications/{id}/read",
             routing::post(handlers::notifications::mark_read),
         )
-        // Dashboard
-        .route(
-            "/dashboard",
-            routing::get(handlers::dashboard::get_dashboard),
-        )
 }
 
 /// Routes restricted to manager or above (admin, manager).
@@ -402,6 +397,11 @@ fn admin_routes() -> Router<AppState> {
         .route(
             "/audit-logs",
             routing::get(handlers::audit::list_audit_logs),
+        )
+        // Dashboard
+        .route(
+            "/dashboard",
+            routing::get(handlers::dashboard::get_dashboard),
         )
         .layer(axum_middleware::from_fn(middleware::rbac::admin_only))
 }

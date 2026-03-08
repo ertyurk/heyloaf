@@ -29,19 +29,13 @@ import { useMemo, useState } from "react"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
+import { formatCurrency } from "@/lib/format-currency"
 
 type Transaction = components["schemas"]["Transaction"]
 
 export const Route = createFileRoute("/_authenticated/contacts/$contactId")({
   component: ContactDetailPage,
 })
-
-function formatCurrency(amount: number) {
-  return new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-  }).format(amount)
-}
 
 function formatDate(dateStr: string | null) {
   if (!dateStr) return "\u2014"
@@ -64,6 +58,39 @@ const emptyPaymentForm = {
   payment_method_id: "",
   date: new Date().toISOString().slice(0, 10),
   description: "",
+}
+
+function escapeCsvField(value: string): string {
+  if (value.includes(",") || value.includes('"') || value.includes("\n")) {
+    return `"${value.replace(/"/g, '""')}"`
+  }
+  return value
+}
+
+function exportToCsv(
+  transactions: Transaction[],
+  paymentMethods: { id: string; name: string }[],
+  contactName: string
+) {
+  const headers = ["Date", "Type", "Description", "Amount", "Balance After", "Payment Method"]
+  const rows = transactions.map((t) => [
+    t.date ?? "",
+    t.transaction_type ?? "",
+    t.description ?? "",
+    String(t.amount ?? 0),
+    String(t.balance_after ?? 0),
+    paymentMethods.find((pm) => pm.id === t.payment_method_id)?.name ?? "",
+  ])
+
+  const csvContent = [headers, ...rows].map((row) => row.map(escapeCsvField).join(",")).join("\n")
+
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" })
+  const url = URL.createObjectURL(blob)
+  const link = document.createElement("a")
+  link.href = url
+  link.download = `${contactName.replace(/[^a-zA-Z0-9]/g, "_")}_statement.csv`
+  link.click()
+  URL.revokeObjectURL(url)
 }
 
 function ContactDetailPage() {
@@ -213,6 +240,16 @@ function ContactDetailPage() {
         <Button variant="outline" size="sm" onClick={() => navigate({ to: "/contacts" })}>
           <HugeiconsIcon icon={ArrowLeft01Icon} size={16} className="mr-1" />
           Back
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() =>
+            exportToCsv(sortedTransactions, paymentMethods, contact?.name ?? "contact")
+          }
+          disabled={sortedTransactions.length === 0}
+        >
+          Export Excel
         </Button>
         <Button
           onClick={() => {

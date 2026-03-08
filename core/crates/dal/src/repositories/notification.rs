@@ -9,6 +9,17 @@ impl NotificationRepository {
     const SELECT: &str = r"id, company_id, user_id, notification_type::text,
         title, message, is_read, entity_type, entity_id, created_at";
 
+    pub async fn find_by_id(
+        pool: &PgPool,
+        id: Uuid,
+    ) -> Result<Option<Notification>, sqlx::Error> {
+        let sql = format!("SELECT {} FROM notifications WHERE id = $1", Self::SELECT);
+        sqlx::query_as::<_, Notification>(&sql)
+            .bind(id)
+            .fetch_optional(pool)
+            .await
+    }
+
     pub async fn list(
         pool: &PgPool,
         company_id: Uuid,

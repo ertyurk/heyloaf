@@ -73,8 +73,8 @@ impl ProductionRecordRepository {
     }
 
     #[expect(clippy::too_many_arguments)]
-    pub async fn create(
-        pool: &PgPool,
+    pub async fn create_with_executor<'e>(
+        executor: impl sqlx::PgExecutor<'e>,
         company_id: Uuid,
         product_id: Uuid,
         variant_name: Option<&str>,
@@ -103,12 +103,32 @@ impl ProductionRecordRepository {
             .bind(materials)
             .bind(notes)
             .bind(produced_by)
-            .fetch_one(pool)
+            .fetch_one(executor)
             .await
     }
 
-    pub async fn update(
+    #[expect(clippy::too_many_arguments)]
+    pub async fn create(
         pool: &PgPool,
+        company_id: Uuid,
+        product_id: Uuid,
+        variant_name: Option<&str>,
+        quantity: f64,
+        unit: &str,
+        batch_size: f64,
+        materials: &serde_json::Value,
+        notes: Option<&str>,
+        produced_by: Uuid,
+    ) -> Result<ProductionRecord, sqlx::Error> {
+        Self::create_with_executor(
+            pool, company_id, product_id, variant_name, quantity, unit, batch_size,
+            materials, notes, produced_by,
+        )
+        .await
+    }
+
+    pub async fn update_with_executor<'e>(
+        executor: impl sqlx::PgExecutor<'e>,
         id: Uuid,
         quantity: f64,
         materials: &serde_json::Value,
@@ -126,15 +146,32 @@ impl ProductionRecordRepository {
             .bind(quantity)
             .bind(materials)
             .bind(notes)
-            .fetch_one(pool)
+            .fetch_one(executor)
             .await
     }
 
-    pub async fn delete(pool: &PgPool, id: Uuid) -> Result<(), sqlx::Error> {
+    pub async fn update(
+        pool: &PgPool,
+        id: Uuid,
+        quantity: f64,
+        materials: &serde_json::Value,
+        notes: Option<&str>,
+    ) -> Result<ProductionRecord, sqlx::Error> {
+        Self::update_with_executor(pool, id, quantity, materials, notes).await
+    }
+
+    pub async fn delete_with_executor<'e>(
+        executor: impl sqlx::PgExecutor<'e>,
+        id: Uuid,
+    ) -> Result<(), sqlx::Error> {
         sqlx::query("DELETE FROM production_records WHERE id = $1")
             .bind(id)
-            .execute(pool)
+            .execute(executor)
             .await?;
         Ok(())
+    }
+
+    pub async fn delete(pool: &PgPool, id: Uuid) -> Result<(), sqlx::Error> {
+        Self::delete_with_executor(pool, id).await
     }
 }

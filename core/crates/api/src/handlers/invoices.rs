@@ -7,6 +7,7 @@ use heyloaf_dal::models::invoice::Invoice;
 use heyloaf_dal::repositories::contact::ContactRepository;
 use heyloaf_dal::repositories::invoice::InvoiceRepository;
 use heyloaf_services::audit_service::AuditBuilder;
+use heyloaf_services::stock_service::StockService;
 use serde::Deserialize;
 use utoipa::ToSchema;
 use uuid::Uuid;
@@ -165,13 +166,17 @@ pub async fn create_invoice(
     Extension(auth): Extension<AuthUser>,
     ValidatedJson(body): ValidatedJson<CreateInvoiceRequest>,
 ) -> Result<Json<ApiResponse<Invoice>>, AppError> {
+    let mut tx = state.pool.begin().await.map_err(|e| {
+        AppError::Database(format!("Failed to start transaction: {e}"))
+    })?;
+
     let invoice_number =
-        InvoiceRepository::next_number(&state.pool, ctx.company_id, &body.invoice_type)
+        InvoiceRepository::next_number_with_executor(&mut *tx, &body.invoice_type)
             .await
             .map_err(|e| AppError::Database(e.to_string()))?;
 
-    let invoice = InvoiceRepository::create(
-        &state.pool,
+    let invoice = InvoiceRepository::create_with_executor(
+        &mut *tx,
         ctx.company_id,
         &invoice_number,
         &body.invoice_type,
@@ -192,11 +197,15 @@ pub async fn create_invoice(
     .await
     .map_err(|e| AppError::Database(e.to_string()))?;
 
-    // Stock movements for purchase invoices
-    record_invoice_stock_movements(&state, ctx.company_id, &invoice, auth.user_id).await?;
+    // Stock movements for purchase/sale invoices
+    record_invoice_stock_movements_tx(&mut tx, ctx.company_id, &invoice, auth.user_id).await?;
 
     // Contact balance update
-    apply_invoice_contact_balance(&state, &invoice).await?;
+    apply_invoice_contact_balance_tx(&mut tx, &invoice).await?;
+
+    tx.commit().await.map_err(|e| {
+        AppError::Database(format!("Failed to commit transaction: {e}"))
+    })?;
 
     AuditBuilder::new(state.audit.clone(), ctx.company_id, auth.user_id)
         .entity("invoice", invoice.id)
@@ -232,17 +241,18 @@ pub async fn update_invoice(
         return Err(AppError::NotFound("Invoice not found".into()));
     }
 
+    let mut tx = state.pool.begin().await.map_err(|e| {
+        AppError::Database(format!("Failed to start transaction: {e}"))
+    })?;
+
     // Reverse old stock movements
-    state
-        .stock
-        .reverse_movements("invoice", id, auth.user_id)
-        .await?;
+    StockService::reverse_movements_tx(&mut tx, "invoice", id, auth.user_id).await?;
 
     // Reverse old contact balance
-    reverse_invoice_contact_balance(&state, &existing).await?;
+    reverse_invoice_contact_balance_tx(&mut tx, &existing).await?;
 
-    let invoice = InvoiceRepository::update(
-        &state.pool,
+    let invoice = InvoiceRepository::update_with_executor(
+        &mut *tx,
         id,
         body.contact_id,
         body.date,
@@ -262,10 +272,14 @@ pub async fn update_invoice(
     .map_err(|e| AppError::Database(e.to_string()))?;
 
     // Re-apply stock movements for new data
-    record_invoice_stock_movements(&state, ctx.company_id, &invoice, auth.user_id).await?;
+    record_invoice_stock_movements_tx(&mut tx, ctx.company_id, &invoice, auth.user_id).await?;
 
     // Re-apply contact balance
-    apply_invoice_contact_balance(&state, &invoice).await?;
+    apply_invoice_contact_balance_tx(&mut tx, &invoice).await?;
+
+    tx.commit().await.map_err(|e| {
+        AppError::Database(format!("Failed to commit transaction: {e}"))
+    })?;
 
     AuditBuilder::new(state.audit.clone(), ctx.company_id, auth.user_id)
         .entity("invoice", invoice.id)
@@ -339,18 +353,23 @@ pub async fn delete_invoice(
         return Err(AppError::NotFound("Invoice not found".into()));
     }
 
+    let mut tx = state.pool.begin().await.map_err(|e| {
+        AppError::Database(format!("Failed to start transaction: {e}"))
+    })?;
+
     // Reverse stock movements
-    state
-        .stock
-        .reverse_movements("invoice", id, auth.user_id)
-        .await?;
+    StockService::reverse_movements_tx(&mut tx, "invoice", id, auth.user_id).await?;
 
     // Reverse contact balance
-    reverse_invoice_contact_balance(&state, &existing).await?;
+    reverse_invoice_contact_balance_tx(&mut tx, &existing).await?;
 
-    InvoiceRepository::delete(&state.pool, id)
+    InvoiceRepository::delete_with_executor(&mut *tx, id)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
+
+    tx.commit().await.map_err(|e| {
+        AppError::Database(format!("Failed to commit transaction: {e}"))
+    })?;
 
     AuditBuilder::new(state.audit.clone(), ctx.company_id, auth.user_id)
         .entity("invoice", id)
@@ -363,12 +382,12 @@ pub async fn delete_invoice(
     }))))
 }
 
-// --- Stock & balance helpers ---
+// --- Stock & balance helpers (transactional) ---
 
 /// For purchase invoices, record stock-in for each line item that has a
 /// `product_id`. For sales invoices, record stock-out.
-async fn record_invoice_stock_movements(
-    state: &AppState,
+async fn record_invoice_stock_movements_tx(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     company_id: Uuid,
     invoice: &Invoice,
     user_id: Uuid,
@@ -404,32 +423,31 @@ async fn record_invoice_stock_movements(
             .and_then(serde_json::Value::as_str)
             .unwrap_or("");
 
-        state
-            .stock
-            .record_movement(
-                company_id,
-                product_id,
-                movement_type,
-                source,
-                quantity,
-                unit_price,
-                vat_rate,
-                Some("invoice"),
-                Some(invoice.id),
-                Some(description),
-                user_id,
-            )
-            .await?;
+        StockService::record_movement_tx(
+            tx,
+            company_id,
+            product_id,
+            movement_type,
+            source,
+            quantity,
+            unit_price,
+            vat_rate,
+            Some("invoice"),
+            Some(invoice.id),
+            Some(description),
+            user_id,
+        )
+        .await?;
     }
 
     Ok(())
 }
 
-/// Apply contact balance delta for the invoice.
+/// Apply contact balance delta for the invoice within a transaction.
 /// Purchase  -> positive delta (you owe the supplier more).
 /// Sale      -> negative delta (customer owes you, reducing their balance).
-async fn apply_invoice_contact_balance(
-    state: &AppState,
+async fn apply_invoice_contact_balance_tx(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     invoice: &Invoice,
 ) -> Result<(), AppError> {
     let Some(contact_id) = invoice.contact_id else {
@@ -442,16 +460,17 @@ async fn apply_invoice_contact_balance(
         _ => return Ok(()),
     };
 
-    ContactRepository::update_balance(&state.pool, contact_id, delta)
+    ContactRepository::update_balance_with_executor(&mut **tx, contact_id, delta)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
     Ok(())
 }
 
-/// Reverse the contact balance that was applied by the given invoice.
-async fn reverse_invoice_contact_balance(
-    state: &AppState,
+/// Reverse the contact balance that was applied by the given invoice,
+/// within a transaction.
+async fn reverse_invoice_contact_balance_tx(
+    tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
     invoice: &Invoice,
 ) -> Result<(), AppError> {
     let Some(contact_id) = invoice.contact_id else {
@@ -464,7 +483,7 @@ async fn reverse_invoice_contact_balance(
         _ => return Ok(()),
     };
 
-    ContactRepository::update_balance(&state.pool, contact_id, delta)
+    ContactRepository::update_balance_with_executor(&mut **tx, contact_id, delta)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
