@@ -66,7 +66,11 @@ interface RecipeData {
 interface VariantBodyProps {
   variant: RecipeVariant
   materialOptions: { value: string; label: string }[]
-  updateVariant: <F extends keyof RecipeVariant>(key: string, field: F, value: RecipeVariant[F]) => void
+  updateVariant: <F extends keyof RecipeVariant>(
+    key: string,
+    field: F,
+    value: RecipeVariant[F]
+  ) => void
   addVariantOverride: (variantKey: string) => void
   removeVariantOverride: (variantKey: string, overrideKey: string) => void
   updateVariantOverride: (
@@ -124,9 +128,7 @@ function VariantBody({
           type="number"
           step="0.01"
           value={variant.price_modifier}
-          onChange={(e) =>
-            updateVariant(variant.key, "price_modifier", Number(e.target.value))
-          }
+          onChange={(e) => updateVariant(variant.key, "price_modifier", Number(e.target.value))}
           placeholder="0.00"
         />
         <p className="text-xs text-muted-foreground">
@@ -195,12 +197,8 @@ function VariantBody({
                   tabIndex={0}
                   aria-selected={false}
                   draggable
-                  onDragStart={(e) =>
-                    handleVariantDragStart(e, variant.key, ovrIdx)
-                  }
-                  onDragOver={(e) =>
-                    handleVariantDragOver(e, variant.key, ovrIdx)
-                  }
+                  onDragStart={(e) => handleVariantDragStart(e, variant.key, ovrIdx)}
+                  onDragOver={(e) => handleVariantDragOver(e, variant.key, ovrIdx)}
                   onDrop={(e) => handleVariantDrop(e, variant.key, ovrIdx)}
                   onDragEnd={handleVariantDragEnd}
                   className={cn(
@@ -215,18 +213,14 @@ function VariantBody({
                       <div className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors">
                         <HugeiconsIcon icon={DragDropVerticalIcon} size={14} />
                       </div>
-                      <span className="text-xs text-muted-foreground">
-                        Override {ovrIdx + 1}
-                      </span>
+                      <span className="text-xs text-muted-foreground">Override {ovrIdx + 1}</span>
                     </div>
                     <Button
                       type="button"
                       variant="ghost"
                       size="sm"
                       className="h-5 px-1.5 text-xs text-destructive"
-                      onClick={() =>
-                        removeVariantOverride(variant.key, ovr.key)
-                      }
+                      onClick={() => removeVariantOverride(variant.key, ovr.key)}
                     >
                       Remove
                     </Button>
@@ -236,12 +230,7 @@ function VariantBody({
                     options={materialOptions}
                     value={ovr.product_id}
                     onValueChange={(val) =>
-                      updateVariantOverride(
-                        variant.key,
-                        ovr.key,
-                        "product_id",
-                        val ?? ""
-                      )
+                      updateVariantOverride(variant.key, ovr.key, "product_id", val ?? "")
                     }
                     placeholder="Select product"
                     searchable
@@ -271,12 +260,7 @@ function VariantBody({
                       <Input
                         value={ovr.unit}
                         onChange={(e) =>
-                          updateVariantOverride(
-                            variant.key,
-                            ovr.key,
-                            "unit",
-                            e.target.value
-                          )
+                          updateVariantOverride(variant.key, ovr.key, "unit", e.target.value)
                         }
                         placeholder="kg, g, L, pcs"
                       />

@@ -36,6 +36,27 @@ const roles = [
   { value: "user", label: "User" },
 ] as const
 
+const MODULES = [
+  { key: "products", label: "Products" },
+  { key: "stock", label: "Stock" },
+  { key: "production", label: "Production" },
+  { key: "pos", label: "POS" },
+  { key: "sales", label: "Sales" },
+  { key: "purchase", label: "Purchase" },
+  { key: "finance", label: "Finance" },
+  { key: "reports", label: "Reports" },
+  { key: "settings", label: "Settings" },
+] as const
+
+const LEVELS = [
+  { value: "none", label: "None" },
+  { value: "viewer", label: "Viewer" },
+  { value: "editor", label: "Editor" },
+  { value: "admin", label: "Admin" },
+] as const
+
+type Permissions = Record<string, string>
+
 interface InviteForm {
   name: string
   email: string
@@ -50,12 +71,68 @@ const emptyForm: InviteForm = {
   role: "cashier",
 }
 
+function PermissionsEditor({
+  permissions,
+  onChange,
+}: {
+  permissions: Permissions
+  onChange: (perms: Permissions) => void
+}) {
+  return (
+    <div className="grid gap-2">
+      <Label>Module Permissions</Label>
+      <div className="rounded-md border">
+        <table className="w-full text-sm">
+          <thead>
+            <tr className="border-b">
+              <th className="px-3 py-2 text-left font-medium">Module</th>
+              <th className="px-3 py-2 text-left font-medium">Level</th>
+            </tr>
+          </thead>
+          <tbody>
+            {MODULES.map((mod) => (
+              <tr key={mod.key} className="border-b last:border-b-0">
+                <td className="px-3 py-1.5">{mod.label}</td>
+                <td className="px-3 py-1.5">
+                  <Select
+                    value={permissions[mod.key] ?? "none"}
+                    onValueChange={(val) =>
+                      onChange({ ...permissions, [mod.key]: val })
+                    }
+                  >
+                    <SelectTrigger size="sm" className="w-28">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {LEVELS.map((l) => (
+                        <SelectItem key={l.value} value={l.value}>
+                          {l.label}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </td>
+              </tr>
+            ))}
+          </tbody>
+        </table>
+      </div>
+    </div>
+  )
+}
+
 function UsersPage() {
   const client = useApi()
   const queryClient = useQueryClient()
 
   const [sheetOpen, setSheetOpen] = useState(false)
   const [form, setForm] = useState<InviteForm>(emptyForm)
+
+  // Permissions editor sheet state
+  const [permSheetOpen, setPermSheetOpen] = useState(false)
+  const [permUserId, setPermUserId] = useState<string | null>(null)
+  const [permUserName, setPermUserName] = useState("")
+  const [permValues, setPermValues] = useState<Permissions>({})
 
   const { data, isLoading } = useQuery({
     queryKey: ["users"],
@@ -95,6 +172,25 @@ function UsersPage() {
     onError: () => toast.error("Failed to update role"),
   })
 
+  const updatePermsMutation = useMutation({
+    mutationFn: async ({
+      id,
+      permissions,
+    }: { id: string; permissions: Permissions }) => {
+      const res = await client.PUT("/api/users/{id}/permissions", {
+        params: { path: { id } },
+        body: { permissions },
+      })
+      return res.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["users"] })
+      toast.success("Permissions updated")
+      setPermSheetOpen(false)
+    },
+    onError: () => toast.error("Failed to update permissions"),
+  })
+
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
       await client.DELETE("/api/users/{id}", {
@@ -118,10 +214,27 @@ function UsersPage() {
     setForm(emptyForm)
   }
 
+  function openPermissions(row: {
+    user_id: string
+    name: string
+    permissions?: Permissions
+  }) {
+    setPermUserId(row.user_id)
+    setPermUserName(row.name)
+    setPermValues(row.permissions && typeof row.permissions === "object" ? (row.permissions as Permissions) : {})
+    setPermSheetOpen(true)
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
     if (!form.name || !form.email || form.password.length < 8) return
     createMutation.mutate(form)
+  }
+
+  function handlePermSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!permUserId) return
+    updatePermsMutation.mutate({ id: permUserId, permissions: permValues })
   }
 
   return (
@@ -176,6 +289,11 @@ function UsersPage() {
           emptyMessage="No users found."
           rowActions={(row) => (
             <>
+              {row.role !== "admin" && (
+                <DropdownMenuItem onClick={() => openPermissions(row)}>
+                  Permissions
+                </DropdownMenuItem>
+              )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => deleteMutation.mutate(row.user_id)}>
                 Remove
@@ -185,6 +303,7 @@ function UsersPage() {
         />
       </div>
 
+      {/* Invite user sheet */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent side="right" className="sm:max-w-md">
           <SheetHeader>
@@ -245,6 +364,28 @@ function UsersPage() {
             <SheetFooter>
               <Button type="submit" disabled={createMutation.isPending}>
                 {createMutation.isPending ? "Inviting..." : "Invite User"}
+              </Button>
+            </SheetFooter>
+          </form>
+        </SheetContent>
+      </Sheet>
+
+      {/* Permissions editor sheet */}
+      <Sheet open={permSheetOpen} onOpenChange={setPermSheetOpen}>
+        <SheetContent side="right" className="sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>Permissions for {permUserName}</SheetTitle>
+          </SheetHeader>
+          <form onSubmit={handlePermSubmit} className="flex flex-1 flex-col">
+            <SheetBody className="grid gap-4">
+              <PermissionsEditor
+                permissions={permValues}
+                onChange={setPermValues}
+              />
+            </SheetBody>
+            <SheetFooter>
+              <Button type="submit" disabled={updatePermsMutation.isPending}>
+                {updatePermsMutation.isPending ? "Saving..." : "Save Permissions"}
               </Button>
             </SheetFooter>
           </form>
