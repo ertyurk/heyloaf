@@ -1,0 +1,141 @@
+[workspace]
+resolver = "2"
+members = [
+    "crates/api",
+    "crates/dal",
+    "crates/common",
+    "crates/services",
+    "crates/cli",
+]
+
+[workspace.package]
+edition = "2024"
+rust-version = "1.85"
+license = "MIT"
+
+[workspace.dependencies]
+# Async
+tokio = { version = "1", features = ["full"] }
+futures = "0.3"
+
+# Web framework
+axum = { version = "0.8", features = ["macros", "ws"] }
+axum-extra = { version = "0.10", features = ["typed-header", "cookie"] }
+tower-http = { version = "0.6", features = ["trace", "cors", "compression-gzip"] }
+tower = { version = "0.5" }
+
+# Database
+sqlx = { version = "0.8", features = ["runtime-tokio-rustls", "postgres", "uuid", "chrono", "json", "migrate"] }
+
+# Serialization
+serde = { version = "1", features = ["derive"] }
+serde_json = "1"
+
+# OpenAPI
+utoipa = { version = "5", features = ["chrono", "uuid", "axum_extras"] }
+utoipa-axum = "0.2"
+utoipa-swagger-ui = { version = "9", features = ["axum"] }
+
+# Auth / Crypto
+jsonwebtoken = { version = "9", features = ["use_pem"] }
+argon2 = "0.5"
+
+# Validation
+validator = { version = "0.20", features = ["derive"] }
+
+# Types
+uuid = { version = "1", features = ["v4", "serde"] }
+chrono = { version = "0.4", features = ["serde"] }
+
+# Error handling
+thiserror = "2"
+anyhow = "1"
+
+# CLI
+clap = { version = "4", features = ["derive"] }
+
+# Config
+dotenvy = "0.15"
+
+# Observability
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter", "json"] }
+
+# Utilities
+rand = "0.9"
+base64 = "0.22"
+
+# Internal crates
+heyloaf-common = { path = "crates/common" }
+heyloaf-dal = { path = "crates/dal" }
+heyloaf-services = { path = "crates/services" }
+
+[workspace.lints.rust]
+unsafe_code = "forbid"
+
+[workspace.lints.clippy]
+# Pedantic base — all pedantic lints at warn, then allow specific ones
+pedantic = { level = "warn", priority = -1 }
+
+# Allow: documentation noise
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+doc_markdown = "allow"
+
+# Allow: style preferences / false positives
+similar_names = "allow"
+too_many_lines = "allow"
+module_name_repetitions = "allow"
+struct_excessive_bools = "allow"
+fn_params_excessive_bools = "allow"
+items_after_statements = "allow"
+uninlined_format_args = "allow"
+return_self_not_must_use = "allow"
+default_trait_access = "allow"
+match_same_arms = "allow"
+unused_async = "allow"
+manual_let_else = "allow"
+used_underscore_binding = "allow"
+ref_option_ref = "allow"
+format_push_string = "allow"
+case_sensitive_file_extension_comparisons = "allow"
+unnecessary_wraps = "allow"
+needless_pass_by_value = "allow"
+trivially_copy_pass_by_ref = "allow"
+no_effect_underscore_binding = "allow"
+redundant_closure_for_method_calls = "allow"
+needless_for_each = "allow"
+result_large_err = "allow"
+
+# Allow: cast lints (except cast_lossless)
+cast_possible_truncation = "allow"
+cast_sign_loss = "allow"
+cast_precision_loss = "allow"
+cast_possible_wrap = "allow"
+
+# Deny: panic safety — hard errors
+unwrap_used = "deny"
+expect_used = "deny"
+panic = "deny"
+unreachable = "deny"
+string_slice = "deny"
+get_unwrap = "deny"
+allow_attributes = "deny"
+dbg_macro = "deny"
+todo = "deny"
+unimplemented = "deny"
+print_stdout = "deny"
+print_stderr = "deny"
+
+[profile.dev]
+split-debuginfo = "unpacked"
+
+[profile.dev.package."*"]
+opt-level = 2
+
+[profile.release]
+lto = true
+opt-level = 3
+codegen-units = 1
+strip = true
+panic = "abort"

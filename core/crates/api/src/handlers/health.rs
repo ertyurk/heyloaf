@@ -1,0 +1,10 @@
+use axum::Json;
+use serde_json::{Value, json};
+
+pub async fn health_check() -> Json<Value> {
+    Json(json!({
+        "status": "healthy",
+        "service": "heyloaf-api",
+        "timestamp": chrono::Utc::now().to_rfc3339(),
+    }))
+}

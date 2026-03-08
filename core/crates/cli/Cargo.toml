@@ -1,0 +1,27 @@
+[package]
+name = "heyloaf-cli"
+version = "0.1.0"
+edition.workspace = true
+
+[[bin]]
+name = "heyloaf-cli"
+path = "src/main.rs"
+
+[dependencies]
+heyloaf-common = { workspace = true }
+heyloaf-dal = { workspace = true }
+clap = { workspace = true }
+tokio = { workspace = true }
+sqlx = { workspace = true }
+dotenvy = { workspace = true }
+anyhow = { workspace = true }
+argon2 = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+tracing = { workspace = true }
+tracing-subscriber = { workspace = true }
+rand = { workspace = true }
+serde_json = { workspace = true }
+
+[lints]
+workspace = true

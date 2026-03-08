@@ -1,0 +1,36 @@
+[package]
+name = "heyloaf-api"
+version = "0.1.0"
+edition.workspace = true
+
+[[bin]]
+name = "heyloaf-api"
+path = "src/main.rs"
+
+[dependencies]
+heyloaf-common = { workspace = true }
+heyloaf-dal = { workspace = true }
+heyloaf-services = { workspace = true }
+axum = { workspace = true }
+axum-extra = { workspace = true }
+tower-http = { workspace = true }
+tower = { workspace = true }
+tokio = { workspace = true }
+sqlx = { workspace = true }
+serde = { workspace = true }
+serde_json = { workspace = true }
+uuid = { workspace = true }
+chrono = { workspace = true }
+tracing = { workspace = true }
+jsonwebtoken = { workspace = true }
+argon2 = { workspace = true }
+validator = { workspace = true }
+utoipa = { workspace = true }
+utoipa-axum = { workspace = true }
+utoipa-swagger-ui = { workspace = true }
+anyhow = { workspace = true }
+rand = { workspace = true }
+base64 = { workspace = true }
+
+[lints]
+workspace = true

@@ -1,0 +1,47 @@
+# Dependencies
+node_modules
+.pnp
+.pnp.js
+
+# Local env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
+
+# Testing
+coverage
+
+# Turbo
+.turbo
+
+# Build Outputs
+dist
+.output
+.nitro
+.tanstack
+.vinxi
+
+# Rust
+core/target/
+**/*.rs.bk
+
+# SQLx
+core/crates/dal/.sqlx/
+
+# Docker
+infrastructure/postgres_data/
+
+# IDE
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Debug
+npm-debug.log*
+
+# Misc
+.DS_Store
+*.pem
