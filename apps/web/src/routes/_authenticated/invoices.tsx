@@ -16,6 +16,7 @@ import {
 import {
   Sheet,
   SheetBody,
+  SheetClose,
   SheetContent,
   SheetFooter,
   SheetHeader,
@@ -123,7 +124,8 @@ function InvoicesPage() {
   const client = useApi()
   const queryClient = useQueryClient()
 
-  const [createOpen, setCreateOpen] = useState(false)
+  const [sheetMode, setSheetMode] = useState<"create" | "edit" | null>(null)
+  const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null)
   const [createForm, setCreateForm] = useState(emptyInvoiceForm)
   const [lineItems, setLineItems] = useState<LineItem[]>([emptyLineItem()])
 
@@ -182,13 +184,34 @@ function InvoicesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["invoices"] })
-      setCreateOpen(false)
+      setSheetMode(null)
       setCreateForm(emptyInvoiceForm)
       setLineItems([emptyLineItem()])
       toast.success("Invoice created")
     },
     onError: () => {
       toast.error("Failed to create invoice")
+    },
+  })
+
+  const updateMutation = useMutation({
+    mutationFn: async ({ id, body }: { id: string; body: Record<string, unknown> }) => {
+      const { error } = await client.PUT("/api/invoices/{id}", {
+        params: { path: { id } },
+        body: body as unknown as components["schemas"]["CreateInvoiceRequest"],
+      })
+      if (error) throw new Error("Failed to update invoice")
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["invoices"] })
+      setSheetMode(null)
+      setEditingInvoice(null)
+      setCreateForm(emptyInvoiceForm)
+      setLineItems([emptyLineItem()])
+      toast.success("Invoice updated")
+    },
+    onError: () => {
+      toast.error("Failed to update invoice")
     },
   })
 
@@ -260,14 +283,13 @@ function InvoicesPage() {
 
   const grandTotal = subtotal + taxTotal
 
-  function handleCreate(e: React.FormEvent) {
-    e.preventDefault()
+  function buildInvoiceBody() {
     const items = lineItems.map(({ id: _id, ...item }) => ({
       ...item,
       line_total: computeLineTotal(item),
     }))
 
-    createMutation.mutate({
+    return {
       invoice_type: createForm.invoice_type,
       ...(createForm.contact_id && { contact_id: createForm.contact_id }),
       date: createForm.date,
@@ -280,7 +302,46 @@ function InvoicesPage() {
       tax_total: taxTotal,
       grand_total: grandTotal,
       base_currency_total: grandTotal,
+    }
+  }
+
+  function handleCreate(e: React.FormEvent) {
+    e.preventDefault()
+    createMutation.mutate(buildInvoiceBody())
+  }
+
+  function handleEdit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!editingInvoice) return
+    updateMutation.mutate({ id: editingInvoice.id, body: buildInvoiceBody() })
+  }
+
+  function openEditSheet(invoice: Invoice) {
+    setEditingInvoice(invoice)
+    setCreateForm({
+      invoice_type: invoice.invoice_type ?? "sales",
+      contact_id: invoice.contact_id ?? "",
+      date: invoice.date ?? todayStr(),
+      due_date: invoice.due_date ?? "",
+      currency_code: invoice.currency_code ?? "TRY",
+      notes: invoice.notes ?? "",
     })
+    const rawItems = (invoice.line_items ?? []) as Array<{
+      description?: string
+      quantity?: number
+      unit_price?: number
+      vat_rate?: number
+    }>
+    const existingItems: LineItem[] = rawItems.map((item) => ({
+      id: `li-${nextLineItemId++}`,
+      description: item.description ?? "",
+      quantity: item.quantity ?? 1,
+      unit_price: item.unit_price ?? 0,
+      vat_rate: item.vat_rate ?? 0,
+      line_total: (item.quantity ?? 1) * (item.unit_price ?? 0),
+    }))
+    setLineItems(existingItems.length > 0 ? existingItems : [emptyLineItem()])
+    setSheetMode("edit")
   }
 
   function handleDelete(invoice: Invoice) {
@@ -359,7 +420,8 @@ function InvoicesPage() {
           onClick={() => {
             setCreateForm(emptyInvoiceForm)
             setLineItems([emptyLineItem()])
-            setCreateOpen(true)
+            setEditingInvoice(null)
+            setSheetMode("create")
           }}
         >
           New Invoice
@@ -405,8 +467,11 @@ function InvoicesPage() {
           getRowId={(row) => row.id}
           isLoading={isLoading}
           emptyMessage="No invoices found."
+          onRowClick={openEditSheet}
           rowActions={(row) => (
             <>
+              <DropdownMenuItem onClick={() => openEditSheet(row)}>Edit</DropdownMenuItem>
+              <DropdownMenuSeparator />
               {invoiceStatuses.map((s) => (
                 <DropdownMenuItem
                   key={s}
@@ -425,12 +490,23 @@ function InvoicesPage() {
         />
       </div>
 
-      <Sheet open={createOpen} onOpenChange={setCreateOpen}>
+      <Sheet
+        open={sheetMode !== null}
+        onOpenChange={(open) => {
+          if (!open) {
+            setSheetMode(null)
+            setEditingInvoice(null)
+          }
+        }}
+      >
         <SheetContent side="right" className="sm:max-w-lg">
           <SheetHeader>
-            <SheetTitle>Create Invoice</SheetTitle>
+            <SheetTitle>{sheetMode === "edit" ? "Edit Invoice" : "Create Invoice"}</SheetTitle>
           </SheetHeader>
-          <form onSubmit={handleCreate} className="flex flex-col flex-1 overflow-hidden">
+          <form
+            onSubmit={sheetMode === "edit" ? handleEdit : handleCreate}
+            className="flex flex-col flex-1 overflow-hidden"
+          >
             <SheetBody>
               <div className="grid gap-4">
                 <div className="grid gap-1.5">
@@ -615,11 +691,22 @@ function InvoicesPage() {
               </div>
             </SheetBody>
             <SheetFooter>
+              <SheetClose render={<Button variant="outline" />}>Cancel</SheetClose>
               <Button
                 type="submit"
-                disabled={createMutation.isPending || !createForm.date || !hasValidLineItems}
+                disabled={
+                  (sheetMode === "edit" ? updateMutation.isPending : createMutation.isPending) ||
+                  !createForm.date ||
+                  !hasValidLineItems
+                }
               >
-                {createMutation.isPending ? "Creating..." : "Create Invoice"}
+                {sheetMode === "edit"
+                  ? updateMutation.isPending
+                    ? "Saving..."
+                    : "Save Invoice"
+                  : createMutation.isPending
+                    ? "Creating..."
+                    : "Create Invoice"}
               </Button>
             </SheetFooter>
           </form>

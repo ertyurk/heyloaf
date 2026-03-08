@@ -8,6 +8,13 @@ import { DropdownMenuItem, DropdownMenuSeparator } from "@heyloaf/ui/components/
 import { Input } from "@heyloaf/ui/components/input"
 import { Label } from "@heyloaf/ui/components/label"
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@heyloaf/ui/components/select"
+import {
   Sheet,
   SheetBody,
   SheetClose,
@@ -63,6 +70,7 @@ function CategoriesPage() {
   const [createForm, setCreateForm] = useState({
     name: "",
     description: "",
+    parent_id: "",
     display_order: "0",
     pos_visible: true,
   })
@@ -71,6 +79,7 @@ function CategoriesPage() {
   const [editForm, setEditForm] = useState({
     name: "",
     description: "",
+    parent_id: "",
     display_order: "0",
     pos_visible: true,
   })
@@ -140,6 +149,7 @@ function CategoriesPage() {
         display_order: Number(createForm.display_order),
         pos_visible: createForm.pos_visible,
         ...(createForm.description ? { description: createForm.description } : {}),
+        ...(createForm.parent_id ? { parent_id: createForm.parent_id } : {}),
       }
       const { error } = await client.POST("/api/categories", { body })
       if (error)
@@ -164,6 +174,7 @@ function CategoriesPage() {
         display_order: Number(editForm.display_order),
         pos_visible: editForm.pos_visible,
         ...(editForm.description ? { description: editForm.description } : {}),
+        ...(editForm.parent_id ? { parent_id: editForm.parent_id } : { parent_id: null }),
       }
       const { error } = await client.PUT("/api/categories/{id}", {
         params: { path: { id: editingCategory.id } },
@@ -204,6 +215,7 @@ function CategoriesPage() {
     setCreateForm({
       name: "",
       description: "",
+      parent_id: "",
       display_order: "0",
       pos_visible: true,
     })
@@ -214,6 +226,7 @@ function CategoriesPage() {
     setEditForm({
       name: category.name ?? "",
       description: category.description ?? "",
+      parent_id: category.parent_id ?? "",
       display_order: (category.display_order ?? 0).toString(),
       pos_visible: category.pos_visible ?? true,
     })
@@ -315,6 +328,25 @@ function CategoriesPage() {
                 />
               </div>
               <div className="grid gap-2">
+                <Label>Parent Category</Label>
+                <Select
+                  value={createForm.parent_id}
+                  onValueChange={(val) => setCreateForm((f) => ({ ...f, parent_id: val ?? "" }))}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="None (Top Level)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">None (Top Level)</SelectItem>
+                    {categories.map((cat: Category) => (
+                      <SelectItem key={cat.id} value={cat.id}>
+                        {cat.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="grid gap-2">
                 <Label htmlFor="create-cat-display-order">Display Order</Label>
                 <Input
                   id="create-cat-display-order"
@@ -376,6 +408,27 @@ function CategoriesPage() {
                   value={editForm.description}
                   onChange={(e) => setEditForm((f) => ({ ...f, description: e.target.value }))}
                 />
+              </div>
+              <div className="grid gap-2">
+                <Label>Parent Category</Label>
+                <Select
+                  value={editForm.parent_id}
+                  onValueChange={(val) => setEditForm((f) => ({ ...f, parent_id: val ?? "" }))}
+                >
+                  <SelectTrigger className="w-full">
+                    <SelectValue placeholder="None (Top Level)" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="">None (Top Level)</SelectItem>
+                    {categories
+                      .filter((cat: Category) => cat.id !== editingCategory?.id)
+                      .map((cat: Category) => (
+                        <SelectItem key={cat.id} value={cat.id}>
+                          {cat.name}
+                        </SelectItem>
+                      ))}
+                  </SelectContent>
+                </Select>
               </div>
               <div className="grid gap-2">
                 <Label htmlFor="edit-cat-display-order">Display Order</Label>

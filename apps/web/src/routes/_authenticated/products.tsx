@@ -439,8 +439,10 @@ function ProductsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="raw">Raw</SelectItem>
+                    <SelectItem value="semi">Semi</SelectItem>
                     <SelectItem value="finished">Finished</SelectItem>
                     <SelectItem value="commercial">Commercial</SelectItem>
+                    <SelectItem value="consumable">Consumable</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
@@ -550,6 +552,13 @@ function ProductsPage() {
                 </Select>
               </div>
               <div className="grid gap-2">
+                <Label>Product Type</Label>
+                <Input value={editingProduct?.product_type ?? ""} disabled className="capitalize" />
+                <p className="text-xs text-muted-foreground">
+                  Product type cannot be changed after creation.
+                </p>
+              </div>
+              <div className="grid gap-2">
                 <Label>Status</Label>
                 <Select
                   value={editForm.status}
@@ -560,8 +569,8 @@ function ProductsPage() {
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="draft">Draft</SelectItem>
+                    <SelectItem value="inactive">Inactive</SelectItem>
                     <SelectItem value="active">Active</SelectItem>
-                    <SelectItem value="archived">Archived</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

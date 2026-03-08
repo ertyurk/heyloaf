@@ -37,6 +37,11 @@ const sections = [
     description: "Manage team members and permissions",
     to: "/settings/users",
   },
+  {
+    title: "Audit Logs",
+    description: "View system activity history",
+    to: "/settings/audit",
+  },
 ] as const
 
 function SettingsIndexPage() {

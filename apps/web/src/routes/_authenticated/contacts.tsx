@@ -16,6 +16,7 @@ import {
 import {
   Sheet,
   SheetBody,
+  SheetClose,
   SheetContent,
   SheetDescription,
   SheetFooter,
@@ -227,6 +228,15 @@ function ContactsPage() {
   const [sheetMode, setSheetMode] = useState<"create" | "edit" | null>(null)
   const [editingContact, setEditingContact] = useState<Contact | null>(null)
 
+  const [paymentOpen, setPaymentOpen] = useState(false)
+  const [paymentContact, setPaymentContact] = useState<Contact | null>(null)
+  const [paymentForm, setPaymentForm] = useState({
+    amount: "",
+    payment_method: "cash",
+    date: new Date().toISOString().slice(0, 10),
+    description: "",
+  })
+
   const [createForm, setCreateForm] = useState(emptyForm)
   const [editForm, setEditForm] = useState(emptyForm)
 
@@ -335,6 +345,63 @@ function ContactsPage() {
       toast.error("Failed to delete contact")
     },
   })
+
+  const paymentMutation = useMutation({
+    mutationFn: async ({
+      contactId,
+      body,
+    }: {
+      contactId: string
+      body: { amount: number; payment_method: string; date: string; description?: string }
+    }) => {
+      const { error } = await client.POST("/api/contacts/{id}/payment", {
+        params: { path: { id: contactId } },
+        body,
+      })
+      if (error) throw new Error("Failed to record payment")
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["contacts"] })
+      queryClient.invalidateQueries({ queryKey: ["transactions"] })
+      setPaymentOpen(false)
+      setPaymentContact(null)
+      setPaymentForm({
+        amount: "",
+        payment_method: "cash",
+        date: new Date().toISOString().slice(0, 10),
+        description: "",
+      })
+      toast.success("Payment recorded")
+    },
+    onError: () => {
+      toast.error("Failed to record payment")
+    },
+  })
+
+  function openPaymentSheet(contact: Contact) {
+    setPaymentContact(contact)
+    setPaymentForm({
+      amount: "",
+      payment_method: "cash",
+      date: new Date().toISOString().slice(0, 10),
+      description: "",
+    })
+    setPaymentOpen(true)
+  }
+
+  function handlePaymentSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    if (!paymentContact) return
+    paymentMutation.mutate({
+      contactId: paymentContact.id,
+      body: {
+        amount: Number(paymentForm.amount),
+        payment_method: paymentForm.payment_method,
+        date: paymentForm.date,
+        ...(paymentForm.description && { description: paymentForm.description }),
+      },
+    })
+  }
 
   function openEdit(contact: Contact) {
     setEditingContact(contact)
@@ -489,6 +556,9 @@ function ContactsPage() {
           rowActions={(row) => (
             <>
               <DropdownMenuItem onClick={() => openEdit(row)}>Edit</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => openPaymentSheet(row)}>
+                Record Payment
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem variant="destructive" onClick={() => handleDelete(row)}>
                 Delete
@@ -541,6 +611,79 @@ function ContactsPage() {
                   {editMutation.isPending ? "Saving..." : "Save"}
                 </Button>
               )}
+            </SheetFooter>
+          </form>
+        </SheetContent>
+      </Sheet>
+
+      {/* Record Payment Sheet */}
+      <Sheet open={paymentOpen} onOpenChange={setPaymentOpen}>
+        <SheetContent side="right" className="sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>Record Payment</SheetTitle>
+            <SheetDescription>
+              Record a payment for {paymentContact?.name ?? "contact"}.
+            </SheetDescription>
+          </SheetHeader>
+          <form onSubmit={handlePaymentSubmit} className="contents">
+            <SheetBody>
+              <div className="grid gap-3">
+                <div className="grid gap-1.5">
+                  <Label htmlFor="payment-amount">Amount *</Label>
+                  <Input
+                    id="payment-amount"
+                    type="number"
+                    step="0.01"
+                    required
+                    value={paymentForm.amount}
+                    onChange={(e) => setPaymentForm((f) => ({ ...f, amount: e.target.value }))}
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="payment-method">Payment Method</Label>
+                  <Select
+                    value={paymentForm.payment_method}
+                    onValueChange={(val) =>
+                      setPaymentForm((f) => ({ ...f, payment_method: val as string }))
+                    }
+                  >
+                    <SelectTrigger className="w-full">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="cash">Cash</SelectItem>
+                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
+                      <SelectItem value="credit_card">Credit Card</SelectItem>
+                      <SelectItem value="check">Check</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="payment-date">Date *</Label>
+                  <Input
+                    id="payment-date"
+                    type="date"
+                    required
+                    value={paymentForm.date}
+                    onChange={(e) => setPaymentForm((f) => ({ ...f, date: e.target.value }))}
+                  />
+                </div>
+                <div className="grid gap-1.5">
+                  <Label htmlFor="payment-description">Description</Label>
+                  <Textarea
+                    id="payment-description"
+                    value={paymentForm.description}
+                    onChange={(e) => setPaymentForm((f) => ({ ...f, description: e.target.value }))}
+                  />
+                </div>
+              </div>
+            </SheetBody>
+            <SheetFooter>
+              <SheetClose render={<Button variant="outline" />}>Cancel</SheetClose>
+              <Button type="submit" disabled={paymentMutation.isPending || !paymentForm.amount}>
+                {paymentMutation.isPending ? "Recording..." : "Record Payment"}
+              </Button>
             </SheetFooter>
           </form>
         </SheetContent>
