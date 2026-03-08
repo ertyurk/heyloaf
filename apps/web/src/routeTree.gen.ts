@@ -29,9 +29,12 @@ import { Route as AuthenticatedChannelsRouteImport } from './routes/_authenticat
 import { Route as AuthenticatedCategoriesRouteImport } from './routes/_authenticated/categories'
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedSettingsUsersRouteImport } from './routes/_authenticated/settings/users'
+import { Route as AuthenticatedSettingsStockRouteImport } from './routes/_authenticated/settings/stock'
 import { Route as AuthenticatedSettingsPriceListsRouteImport } from './routes/_authenticated/settings/price-lists'
 import { Route as AuthenticatedSettingsPosTerminalsRouteImport } from './routes/_authenticated/settings/pos-terminals'
 import { Route as AuthenticatedSettingsPaymentMethodsRouteImport } from './routes/_authenticated/settings/payment-methods'
+import { Route as AuthenticatedSettingsNotificationsRouteImport } from './routes/_authenticated/settings/notifications'
+import { Route as AuthenticatedSettingsGeneralRouteImport } from './routes/_authenticated/settings/general'
 import { Route as AuthenticatedSettingsCurrenciesRouteImport } from './routes/_authenticated/settings/currencies'
 import { Route as AuthenticatedSettingsCompanyRouteImport } from './routes/_authenticated/settings/company'
 import { Route as AuthenticatedSettingsAuditRouteImport } from './routes/_authenticated/settings/audit'
@@ -142,6 +145,12 @@ const AuthenticatedSettingsUsersRoute =
     path: '/settings/users',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedSettingsStockRoute =
+  AuthenticatedSettingsStockRouteImport.update({
+    id: '/settings/stock',
+    path: '/settings/stock',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedSettingsPriceListsRoute =
   AuthenticatedSettingsPriceListsRouteImport.update({
     id: '/settings/price-lists',
@@ -158,6 +167,18 @@ const AuthenticatedSettingsPaymentMethodsRoute =
   AuthenticatedSettingsPaymentMethodsRouteImport.update({
     id: '/settings/payment-methods',
     path: '/settings/payment-methods',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedSettingsNotificationsRoute =
+  AuthenticatedSettingsNotificationsRouteImport.update({
+    id: '/settings/notifications',
+    path: '/settings/notifications',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
+const AuthenticatedSettingsGeneralRoute =
+  AuthenticatedSettingsGeneralRouteImport.update({
+    id: '/settings/general',
+    path: '/settings/general',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
 const AuthenticatedSettingsCurrenciesRoute =
@@ -220,9 +241,12 @@ export interface FileRoutesByFullPath {
   '/settings/audit': typeof AuthenticatedSettingsAuditRoute
   '/settings/company': typeof AuthenticatedSettingsCompanyRoute
   '/settings/currencies': typeof AuthenticatedSettingsCurrenciesRoute
+  '/settings/general': typeof AuthenticatedSettingsGeneralRoute
+  '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/settings/payment-methods': typeof AuthenticatedSettingsPaymentMethodsRoute
   '/settings/pos-terminals': typeof AuthenticatedSettingsPosTerminalsRoute
   '/settings/price-lists': typeof AuthenticatedSettingsPriceListsRouteWithChildren
+  '/settings/stock': typeof AuthenticatedSettingsStockRoute
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
   '/settings/price-lists/$listId': typeof AuthenticatedSettingsPriceListsListIdRoute
@@ -250,9 +274,12 @@ export interface FileRoutesByTo {
   '/settings/audit': typeof AuthenticatedSettingsAuditRoute
   '/settings/company': typeof AuthenticatedSettingsCompanyRoute
   '/settings/currencies': typeof AuthenticatedSettingsCurrenciesRoute
+  '/settings/general': typeof AuthenticatedSettingsGeneralRoute
+  '/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/settings/payment-methods': typeof AuthenticatedSettingsPaymentMethodsRoute
   '/settings/pos-terminals': typeof AuthenticatedSettingsPosTerminalsRoute
   '/settings/price-lists': typeof AuthenticatedSettingsPriceListsRouteWithChildren
+  '/settings/stock': typeof AuthenticatedSettingsStockRoute
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
   '/settings/price-lists/$listId': typeof AuthenticatedSettingsPriceListsListIdRoute
@@ -282,9 +309,12 @@ export interface FileRoutesById {
   '/_authenticated/settings/audit': typeof AuthenticatedSettingsAuditRoute
   '/_authenticated/settings/company': typeof AuthenticatedSettingsCompanyRoute
   '/_authenticated/settings/currencies': typeof AuthenticatedSettingsCurrenciesRoute
+  '/_authenticated/settings/general': typeof AuthenticatedSettingsGeneralRoute
+  '/_authenticated/settings/notifications': typeof AuthenticatedSettingsNotificationsRoute
   '/_authenticated/settings/payment-methods': typeof AuthenticatedSettingsPaymentMethodsRoute
   '/_authenticated/settings/pos-terminals': typeof AuthenticatedSettingsPosTerminalsRoute
   '/_authenticated/settings/price-lists': typeof AuthenticatedSettingsPriceListsRouteWithChildren
+  '/_authenticated/settings/stock': typeof AuthenticatedSettingsStockRoute
   '/_authenticated/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
   '/_authenticated/settings/price-lists/$listId': typeof AuthenticatedSettingsPriceListsListIdRoute
@@ -314,9 +344,12 @@ export interface FileRouteTypes {
     | '/settings/audit'
     | '/settings/company'
     | '/settings/currencies'
+    | '/settings/general'
+    | '/settings/notifications'
     | '/settings/payment-methods'
     | '/settings/pos-terminals'
     | '/settings/price-lists'
+    | '/settings/stock'
     | '/settings/users'
     | '/settings/'
     | '/settings/price-lists/$listId'
@@ -344,9 +377,12 @@ export interface FileRouteTypes {
     | '/settings/audit'
     | '/settings/company'
     | '/settings/currencies'
+    | '/settings/general'
+    | '/settings/notifications'
     | '/settings/payment-methods'
     | '/settings/pos-terminals'
     | '/settings/price-lists'
+    | '/settings/stock'
     | '/settings/users'
     | '/settings'
     | '/settings/price-lists/$listId'
@@ -375,9 +411,12 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/audit'
     | '/_authenticated/settings/company'
     | '/_authenticated/settings/currencies'
+    | '/_authenticated/settings/general'
+    | '/_authenticated/settings/notifications'
     | '/_authenticated/settings/payment-methods'
     | '/_authenticated/settings/pos-terminals'
     | '/_authenticated/settings/price-lists'
+    | '/_authenticated/settings/stock'
     | '/_authenticated/settings/users'
     | '/_authenticated/settings/'
     | '/_authenticated/settings/price-lists/$listId'
@@ -531,6 +570,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AuthenticatedSettingsUsersRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
+    '/_authenticated/settings/stock': {
+      id: '/_authenticated/settings/stock'
+      path: '/settings/stock'
+      fullPath: '/settings/stock'
+      preLoaderRoute: typeof AuthenticatedSettingsStockRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
     '/_authenticated/settings/price-lists': {
       id: '/_authenticated/settings/price-lists'
       path: '/settings/price-lists'
@@ -550,6 +596,20 @@ declare module '@tanstack/react-router' {
       path: '/settings/payment-methods'
       fullPath: '/settings/payment-methods'
       preLoaderRoute: typeof AuthenticatedSettingsPaymentMethodsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/settings/notifications': {
+      id: '/_authenticated/settings/notifications'
+      path: '/settings/notifications'
+      fullPath: '/settings/notifications'
+      preLoaderRoute: typeof AuthenticatedSettingsNotificationsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/settings/general': {
+      id: '/_authenticated/settings/general'
+      path: '/settings/general'
+      fullPath: '/settings/general'
+      preLoaderRoute: typeof AuthenticatedSettingsGeneralRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/settings/currencies': {
@@ -655,9 +715,12 @@ interface AuthenticatedRouteChildren {
   AuthenticatedSettingsAuditRoute: typeof AuthenticatedSettingsAuditRoute
   AuthenticatedSettingsCompanyRoute: typeof AuthenticatedSettingsCompanyRoute
   AuthenticatedSettingsCurrenciesRoute: typeof AuthenticatedSettingsCurrenciesRoute
+  AuthenticatedSettingsGeneralRoute: typeof AuthenticatedSettingsGeneralRoute
+  AuthenticatedSettingsNotificationsRoute: typeof AuthenticatedSettingsNotificationsRoute
   AuthenticatedSettingsPaymentMethodsRoute: typeof AuthenticatedSettingsPaymentMethodsRoute
   AuthenticatedSettingsPosTerminalsRoute: typeof AuthenticatedSettingsPosTerminalsRoute
   AuthenticatedSettingsPriceListsRoute: typeof AuthenticatedSettingsPriceListsRouteWithChildren
+  AuthenticatedSettingsStockRoute: typeof AuthenticatedSettingsStockRoute
   AuthenticatedSettingsUsersRoute: typeof AuthenticatedSettingsUsersRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
 }
@@ -681,12 +744,16 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedSettingsAuditRoute: AuthenticatedSettingsAuditRoute,
   AuthenticatedSettingsCompanyRoute: AuthenticatedSettingsCompanyRoute,
   AuthenticatedSettingsCurrenciesRoute: AuthenticatedSettingsCurrenciesRoute,
+  AuthenticatedSettingsGeneralRoute: AuthenticatedSettingsGeneralRoute,
+  AuthenticatedSettingsNotificationsRoute:
+    AuthenticatedSettingsNotificationsRoute,
   AuthenticatedSettingsPaymentMethodsRoute:
     AuthenticatedSettingsPaymentMethodsRoute,
   AuthenticatedSettingsPosTerminalsRoute:
     AuthenticatedSettingsPosTerminalsRoute,
   AuthenticatedSettingsPriceListsRoute:
     AuthenticatedSettingsPriceListsRouteWithChildren,
+  AuthenticatedSettingsStockRoute: AuthenticatedSettingsStockRoute,
   AuthenticatedSettingsUsersRoute: AuthenticatedSettingsUsersRoute,
   AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
 }

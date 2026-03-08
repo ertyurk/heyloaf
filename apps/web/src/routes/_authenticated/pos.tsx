@@ -41,12 +41,24 @@ function PosPage() {
   const queryClient = useQueryClient()
   const navigate = useNavigate()
 
-  const [cart, setCart] = useState<CartItem[]>([])
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    try {
+      const saved = localStorage.getItem("heyloaf-pos-cart")
+      return saved ? JSON.parse(saved) : []
+    } catch {
+      return []
+    }
+  })
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [search, setSearch] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(null)
   const [paymentMethodId, setPaymentMethodId] = useState<string>("")
+
+  // Persist cart to localStorage
+  useEffect(() => {
+    localStorage.setItem("heyloaf-pos-cart", JSON.stringify(cart))
+  }, [cart])
 
   function handleSearchChange(value: string) {
     setSearch(value)
@@ -238,6 +250,7 @@ function PosPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders"] })
       setCart([])
+      localStorage.removeItem("heyloaf-pos-cart")
       setPaymentMethodId("")
       toast.success("Order placed")
     },

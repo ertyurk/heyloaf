@@ -8,6 +8,11 @@ export const Route = createFileRoute("/_authenticated/settings/")({
 
 const sections = [
   {
+    title: "General Settings",
+    description: "Default tax rate, currency, language, and timezone",
+    to: "/settings/general",
+  },
+  {
     title: "Company Settings",
     description: "Manage your company profile and preferences",
     to: "/settings/company",
@@ -33,9 +38,19 @@ const sections = [
     to: "/settings/pos-terminals",
   },
   {
+    title: "Stock Settings",
+    description: "Minimum stock levels and precision defaults",
+    to: "/settings/stock",
+  },
+  {
     title: "Users",
     description: "Manage team members and permissions",
     to: "/settings/users",
+  },
+  {
+    title: "Notification Settings",
+    description: "Configure low stock and overdue invoice alerts",
+    to: "/settings/notifications",
   },
   {
     title: "Audit Logs",

@@ -57,6 +57,7 @@ function TransactionsPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(null)
   const [typeFilter, setTypeFilter] = useState("__all__")
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState("")
   const [dateFrom, setDateFrom] = useState("")
   const [dateTo, setDateTo] = useState("")
 
@@ -120,12 +121,15 @@ function TransactionsPage() {
     if (dateTo) {
       result = result.filter((t) => t.date <= dateTo.slice(0, 10))
     }
+    if (paymentMethodFilter) {
+      result = result.filter((t) => t.payment_method_id === paymentMethodFilter)
+    }
     // Sort by date descending
     result = [...result].sort(
       (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     )
     return result
-  }, [transactions, debouncedSearch, typeFilter, dateFrom, dateTo])
+  }, [transactions, debouncedSearch, typeFilter, paymentMethodFilter, dateFrom, dateTo])
 
   const columns = useMemo(
     () => [
@@ -230,6 +234,16 @@ function TransactionsPage() {
             placeholder="Type"
             searchable={false}
             className="w-40"
+          />
+          <AdvancedSelect
+            options={[
+              { value: "", label: "All Methods" },
+              ...paymentMethods.map((pm) => ({ value: pm.id, label: pm.name })),
+            ]}
+            value={paymentMethodFilter}
+            onValueChange={(val) => setPaymentMethodFilter(val ?? "")}
+            placeholder="Payment Method"
+            className="w-44"
           />
           <DateRangeFilter
             from={dateFrom}
