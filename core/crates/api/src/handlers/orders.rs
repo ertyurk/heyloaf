@@ -57,6 +57,22 @@ pub struct OrderReasonRequest {
     pub reason: String,
 }
 
+#[derive(Debug, Deserialize, Validate, ToSchema)]
+pub struct ReturnOrderRequest {
+    #[validate(length(min = 1, message = "Reason is required"))]
+    pub reason: String,
+    /// If provided, only return these specific items (partial return).
+    /// If `None`, do a full return (existing behavior).
+    #[serde(default)]
+    pub items: Option<Vec<ReturnItem>>,
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct ReturnItem {
+    pub order_item_id: Uuid,
+    pub quantity: f64,
+}
+
 #[derive(Debug, Serialize, ToSchema)]
 pub struct OrderWithItems {
     #[serde(flatten)]

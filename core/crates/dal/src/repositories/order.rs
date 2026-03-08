@@ -213,6 +213,20 @@ impl OrderItemRepository {
     const SELECT: &str = r"id, order_id, product_id, product_name, variant_name,
         quantity, unit_price, vat_rate, line_total, created_at";
 
+    pub async fn find_by_id(
+        pool: &PgPool,
+        id: Uuid,
+    ) -> Result<Option<OrderItem>, sqlx::Error> {
+        let sql = format!(
+            "SELECT {} FROM order_items WHERE id = $1",
+            Self::SELECT
+        );
+        sqlx::query_as::<_, OrderItem>(&sql)
+            .bind(id)
+            .fetch_optional(pool)
+            .await
+    }
+
     pub async fn list_by_order(
         pool: &PgPool,
         order_id: Uuid,
@@ -224,6 +238,20 @@ impl OrderItemRepository {
         sqlx::query_as::<_, OrderItem>(&sql)
             .bind(order_id)
             .fetch_all(pool)
+            .await
+    }
+
+    pub async fn list_by_order_with_executor<'e>(
+        executor: impl sqlx::PgExecutor<'e>,
+        order_id: Uuid,
+    ) -> Result<Vec<OrderItem>, sqlx::Error> {
+        let sql = format!(
+            "SELECT {} FROM order_items WHERE order_id = $1 ORDER BY created_at",
+            Self::SELECT
+        );
+        sqlx::query_as::<_, OrderItem>(&sql)
+            .bind(order_id)
+            .fetch_all(executor)
             .await
     }
 
