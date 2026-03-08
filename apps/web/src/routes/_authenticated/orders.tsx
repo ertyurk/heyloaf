@@ -2,6 +2,7 @@ import { AdvancedSelect } from "@heyloaf/ui/components/advanced-select"
 import { Badge } from "@heyloaf/ui/components/badge"
 import { Button } from "@heyloaf/ui/components/button"
 import { DataTable } from "@heyloaf/ui/components/data-table"
+import { DateRangeFilter } from "@heyloaf/ui/components/date-range-filter"
 import { DropdownMenuItem } from "@heyloaf/ui/components/dropdown-menu"
 import { Input } from "@heyloaf/ui/components/input"
 import { Label } from "@heyloaf/ui/components/label"
@@ -88,6 +89,8 @@ function OrdersPage() {
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(null)
   const [statusFilter, setStatusFilter] = useState("__all__")
+  const [dateFrom, setDateFrom] = useState("")
+  const [dateTo, setDateTo] = useState("")
 
   function handleSearchChange(value: string) {
     setSearch(value)
@@ -123,8 +126,16 @@ function OrdersPage() {
     if (statusFilter !== "__all__") {
       result = result.filter((order) => order.status === statusFilter)
     }
+    if (dateFrom) {
+      const from = new Date(dateFrom).getTime()
+      result = result.filter((order) => new Date(order.created_at).getTime() >= from)
+    }
+    if (dateTo) {
+      const to = new Date(dateTo).getTime()
+      result = result.filter((order) => new Date(order.created_at).getTime() <= to)
+    }
     return result
-  }, [orders, debouncedSearch, statusFilter])
+  }, [orders, debouncedSearch, statusFilter, dateFrom, dateTo])
 
   const createOrder = useMutation({
     mutationFn: async () => {
@@ -307,6 +318,14 @@ function OrdersPage() {
             placeholder="Status"
             searchable={false}
             className="w-40"
+          />
+          <DateRangeFilter
+            from={dateFrom}
+            to={dateTo}
+            onChange={(from, to) => {
+              setDateFrom(from)
+              setDateTo(to)
+            }}
           />
         </div>
 

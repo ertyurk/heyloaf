@@ -85,6 +85,202 @@ interface SplitPaymentRow {
   amount: number
 }
 
+// --- Barcode detection helpers (outside component to reduce complexity) ---
+function isInputElement(target: HTMLElement): boolean {
+  return (
+    target.tagName === "INPUT" ||
+    target.tagName === "TEXTAREA" ||
+    target.tagName === "SELECT" ||
+    target.isContentEditable
+  )
+}
+
+function isSinglePrintableChar(e: KeyboardEvent): boolean {
+  return e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey
+}
+
+// --- Receipt Sheet component ---
+interface ReceiptSheetProps {
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  order: {
+    items: CartItem[]
+    subtotal: number
+    taxTotal: number
+    grandTotal: number
+    paymentMethod: string
+    date: Date
+  } | null
+  companyName: string
+}
+
+function ReceiptSheet({ open, onOpenChange, order, companyName }: ReceiptSheetProps) {
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" id="pos-receipt-sheet" className="sm:max-w-md">
+        <SheetHeader>
+          <SheetTitle>Receipt</SheetTitle>
+        </SheetHeader>
+        <SheetBody>
+          {order && (
+            <div className="space-y-4">
+              <div className="text-center">
+                <p className="text-lg font-bold">{companyName}</p>
+                <p className="text-xs text-muted-foreground">
+                  {order.date.toLocaleDateString()} {order.date.toLocaleTimeString()}
+                </p>
+              </div>
+              <Separator />
+              <div className="space-y-1.5">
+                {order.items.map((item) => (
+                  <div key={item.productId} className="flex items-start justify-between text-sm">
+                    <div>
+                      <span>{item.name}</span>
+                      <span className="ml-1 text-xs text-muted-foreground">x{item.quantity}</span>
+                      <span className="ml-1 text-xs text-muted-foreground">
+                        @ {formatCurrency(item.price)}
+                      </span>
+                    </div>
+                    <span className="tabular-nums">
+                      {formatCurrency(item.price * item.quantity)}
+                    </span>
+                  </div>
+                ))}
+              </div>
+              <Separator />
+              <div className="space-y-1 text-sm">
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Subtotal</span>
+                  <span className="tabular-nums">{formatCurrency(order.subtotal)}</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-muted-foreground">Tax</span>
+                  <span className="tabular-nums">{formatCurrency(order.taxTotal)}</span>
+                </div>
+                <Separator />
+                <div className="flex justify-between font-semibold">
+                  <span>Total</span>
+                  <span className="tabular-nums">{formatCurrency(order.grandTotal)}</span>
+                </div>
+              </div>
+              <Separator />
+              <div className="text-sm">
+                <span className="text-muted-foreground">Payment: </span>
+                <span>{order.paymentMethod}</span>
+              </div>
+            </div>
+          )}
+        </SheetBody>
+        <SheetFooter className="no-print">
+          <Button variant="outline" onClick={() => window.print()}>
+            Print
+          </Button>
+          <SheetClose render={<Button>Close</Button>} />
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
+  )
+}
+
+// --- Split Payment UI component ---
+interface SplitPaymentPanelProps {
+  splitPayments: SplitPaymentRow[]
+  paymentMethods: { id: string; name: string }[]
+  splitTotal: number
+  grandTotal: number
+  onUpdateRow: (index: number, field: "methodId" | "amount", value: string | number) => void
+  onRemoveRow: (index: number) => void
+  onAddRow: () => void
+  onCancel: () => void
+}
+
+function SplitPaymentPanel({
+  splitPayments,
+  paymentMethods,
+  splitTotal,
+  grandTotal,
+  onUpdateRow,
+  onRemoveRow,
+  onAddRow,
+  onCancel,
+}: SplitPaymentPanelProps) {
+  return (
+    <div className="mb-2 space-y-2">
+      <div className="flex items-center justify-between">
+        <span className="text-xs font-medium">Split Payment</span>
+        <Button variant="ghost" size="sm" className="h-6 px-1 text-xs" onClick={onCancel}>
+          Cancel
+        </Button>
+      </div>
+      {splitPayments.map((row) => (
+        <div key={row.methodId} className="flex items-center gap-1.5">
+          <Select
+            value={row.methodId}
+            onValueChange={(val) => {
+              const idx = splitPayments.findIndex((r) => r.methodId === row.methodId)
+              if (idx >= 0) onUpdateRow(idx, "methodId", val as string)
+            }}
+          >
+            <SelectTrigger className="h-8 flex-1 text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {paymentMethods.map((pm) => (
+                <SelectItem key={pm.id} value={pm.id}>
+                  {pm.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Input
+            type="number"
+            min={0}
+            step={0.01}
+            value={row.amount || ""}
+            onChange={(e) => {
+              const idx = splitPayments.findIndex((r) => r.methodId === row.methodId)
+              if (idx >= 0) onUpdateRow(idx, "amount", Number.parseFloat(e.target.value) || 0)
+            }}
+            className="h-8 w-24 text-xs tabular-nums"
+            placeholder="0.00"
+          />
+          {splitPayments.length > 2 && (
+            <Button
+              variant="ghost"
+              size="icon-sm"
+              className="h-6 w-6 text-destructive"
+              onClick={() => {
+                const idx = splitPayments.findIndex((r) => r.methodId === row.methodId)
+                if (idx >= 0) onRemoveRow(idx)
+              }}
+            >
+              &times;
+            </Button>
+          )}
+        </div>
+      ))}
+      <div className="flex items-center justify-between">
+        <Button
+          variant="outline"
+          size="sm"
+          className="h-6 text-xs"
+          disabled={splitPayments.length >= paymentMethods.length}
+          onClick={onAddRow}
+        >
+          + Add Method
+        </Button>
+        <span
+          className={`text-xs tabular-nums ${
+            Math.abs(splitTotal - grandTotal) > 0.01 ? "text-destructive" : "text-muted-foreground"
+          }`}
+        >
+          {formatCurrency(splitTotal)} / {formatCurrency(grandTotal)}
+        </span>
+      </div>
+    </div>
+  )
+}
+
 function PosPage() {
   const client = useApi()
   const queryClient = useQueryClient()
@@ -239,40 +435,49 @@ function PosPage() {
   }, [posProducts, selectedCategory, debouncedSearch])
 
   // Get price for a product
-  function getProductPrice(product: Product): number {
-    const priceItem = priceMap.get(product.id)
-    if (priceItem) return priceItem.price
-    return 0
-  }
+  const getProductPrice = useCallback(
+    (product: Product): number => {
+      const priceItem = priceMap.get(product.id)
+      if (priceItem) return priceItem.price
+      return 0
+    },
+    [priceMap]
+  )
 
   // Get tax rate for a product (prefer price list vat_rate, fall back to product tax_rate)
-  function getProductTaxRate(product: Product): number {
-    const priceItem = priceMap.get(product.id)
-    if (priceItem?.vat_rate != null) return priceItem.vat_rate
-    return product.tax_rate ?? 0
-  }
+  const getProductTaxRate = useCallback(
+    (product: Product): number => {
+      const priceItem = priceMap.get(product.id)
+      if (priceItem?.vat_rate != null) return priceItem.vat_rate
+      return product.tax_rate ?? 0
+    },
+    [priceMap]
+  )
 
   // Cart operations
-  function addToCart(product: Product) {
-    setCart((prev) => {
-      const existing = prev.find((item) => item.productId === product.id)
-      if (existing) {
-        return prev.map((item) =>
-          item.productId === product.id ? { ...item, quantity: item.quantity + 1 } : item
-        )
-      }
-      return [
-        ...prev,
-        {
-          productId: product.id,
-          name: product.name,
-          price: getProductPrice(product),
-          taxRate: getProductTaxRate(product),
-          quantity: 1,
-        },
-      ]
-    })
-  }
+  const addToCart = useCallback(
+    (product: Product) => {
+      setCart((prev) => {
+        const existing = prev.find((item) => item.productId === product.id)
+        if (existing) {
+          return prev.map((item) =>
+            item.productId === product.id ? { ...item, quantity: item.quantity + 1 } : item
+          )
+        }
+        return [
+          ...prev,
+          {
+            productId: product.id,
+            name: product.name,
+            price: getProductPrice(product),
+            taxRate: getProductTaxRate(product),
+            quantity: 1,
+          },
+        ]
+      })
+    },
+    [getProductPrice, getProductTaxRate]
+  )
 
   function updateQuantity(productId: string, delta: number) {
     setCart((prev) => {
@@ -286,15 +491,15 @@ function PosPage() {
     })
   }
 
-  function setItemQuantity(productId: string, quantity: number) {
+  const setItemQuantity = useCallback((productId: string, quantity: number) => {
     if (quantity <= 0) {
-      removeFromCart(productId)
+      setCart((prev) => prev.filter((item) => item.productId !== productId))
       return
     }
     setCart((prev) =>
       prev.map((item) => (item.productId === productId ? { ...item, quantity } : item))
     )
-  }
+  }, [])
 
   function removeFromCart(productId: string) {
     setCart((prev) => prev.filter((item) => item.productId !== productId))
@@ -323,15 +528,18 @@ function PosPage() {
     setSplitPayments((prev) => prev.filter((_, i) => i !== index))
   }
 
-  function updateSplitRow(index: number, field: "methodId" | "amount", value: string | number) {
-    setSplitPayments((prev) =>
-      prev.map((row, i) => {
-        if (i !== index) return row
-        if (field === "methodId") return { ...row, methodId: value as string }
-        return { ...row, amount: value as number }
-      })
-    )
-  }
+  const updateSplitRow = useCallback(
+    (index: number, field: "methodId" | "amount", value: string | number) => {
+      setSplitPayments((prev) =>
+        prev.map((row, i) => {
+          if (i !== index) return row
+          if (field === "methodId") return { ...row, methodId: value as string }
+          return { ...row, amount: value as number }
+        })
+      )
+    },
+    []
+  )
 
   const splitTotal = useMemo(() => {
     return splitPayments.reduce((sum, r) => sum + r.amount, 0)
@@ -477,69 +685,64 @@ function PosPage() {
         toast.error(`Product not found for barcode: ${trimmed}`)
       }
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [posProducts, priceMap]
+    [posProducts, addToCart]
   )
 
+  // Barcode scanner keydown listener
   useEffect(() => {
-    function onKeyDown(e: KeyboardEvent) {
-      const target = e.target as HTMLElement
-      // Ignore if user is typing in a real input (search, quantity, split amount, etc.)
-      if (
-        target.tagName === "INPUT" ||
-        target.tagName === "TEXTAREA" ||
-        target.tagName === "SELECT" ||
-        target.isContentEditable
-      ) {
+    function clearBarcodeBuffer() {
+      barcodeBuffer.current = ""
+      setBarcodeActive(false)
+    }
+
+    function resetBarcodeTimer() {
+      if (barcodeTimer.current) clearTimeout(barcodeTimer.current)
+      barcodeTimer.current = setTimeout(clearBarcodeBuffer, 100)
+    }
+
+    function handleBarcodeEnter(e: KeyboardEvent): boolean {
+      if (e.key !== "Enter" || barcodeBuffer.current.length <= 2) return false
+      e.preventDefault()
+      handleBarcodeInput(barcodeBuffer.current)
+      barcodeBuffer.current = ""
+      setBarcodeActive(false)
+      if (barcodeTimer.current) clearTimeout(barcodeTimer.current)
+      return true
+    }
+
+    function appendToBuffer(char: string) {
+      barcodeBuffer.current += char
+      setBarcodeActive(barcodeBuffer.current.length > 2)
+      resetBarcodeTimer()
+    }
+
+    function handleBarcodeChar(e: KeyboardEvent, timeDiff: number) {
+      if (!isSinglePrintableChar(e)) return
+      const isRapid = timeDiff < 50
+      const bufferActive = barcodeBuffer.current.length > 0
+
+      if (!isRapid && !bufferActive) {
+        barcodeBuffer.current = e.key
+        resetBarcodeTimer()
         return
       }
+      // Fresh start when first char wasn't rapid
+      if (!bufferActive) {
+        barcodeBuffer.current = e.key
+      } else {
+        appendToBuffer(e.key)
+      }
+      if (!bufferActive) resetBarcodeTimer()
+      if (barcodeBuffer.current.length > 2) e.preventDefault()
+    }
 
+    function onKeyDown(e: KeyboardEvent) {
+      if (isInputElement(e.target as HTMLElement)) return
       const now = Date.now()
       const timeDiff = now - lastKeyTime.current
       lastKeyTime.current = now
-
-      // Detect rapid input (barcode scanner sends chars < 50ms apart)
-      if (e.key === "Enter" && barcodeBuffer.current.length > 2) {
-        e.preventDefault()
-        handleBarcodeInput(barcodeBuffer.current)
-        barcodeBuffer.current = ""
-        setBarcodeActive(false)
-        if (barcodeTimer.current) clearTimeout(barcodeTimer.current)
-        return
-      }
-
-      if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        if (timeDiff < 50 || barcodeBuffer.current.length > 0) {
-          // Rapid input detected - likely barcode scanner
-          if (barcodeBuffer.current.length === 0 && timeDiff >= 50) {
-            // First char - not fast enough, just a regular keypress. Start fresh.
-            barcodeBuffer.current = e.key
-          } else {
-            barcodeBuffer.current += e.key
-          }
-          setBarcodeActive(barcodeBuffer.current.length > 2)
-
-          // Reset buffer after 100ms of no input
-          if (barcodeTimer.current) clearTimeout(barcodeTimer.current)
-          barcodeTimer.current = setTimeout(() => {
-            barcodeBuffer.current = ""
-            setBarcodeActive(false)
-          }, 100)
-
-          // Prevent the char from appearing elsewhere if we think it's a barcode
-          if (barcodeBuffer.current.length > 2) {
-            e.preventDefault()
-          }
-          return
-        }
-        // Single regular keypress - start buffer but don't prevent default
-        barcodeBuffer.current = e.key
-        if (barcodeTimer.current) clearTimeout(barcodeTimer.current)
-        barcodeTimer.current = setTimeout(() => {
-          barcodeBuffer.current = ""
-          setBarcodeActive(false)
-        }, 100)
-      }
+      if (handleBarcodeEnter(e)) return
+      handleBarcodeChar(e, timeDiff)
     }
 
     window.addEventListener("keydown", onKeyDown, true)
@@ -561,53 +764,53 @@ function PosPage() {
     navigate({ to: "/dashboard" })
   }, [navigate])
 
+  // F-key and numpad keyboard shortcut handler
   useEffect(() => {
-    function handleKeyDown(e: KeyboardEvent) {
-      const tag = (e.target as HTMLElement).tagName
-      const isInput = tag === "INPUT" || tag === "TEXTAREA" || tag === "SELECT"
+    function parseFKeyIndex(key: string): number {
+      const m = key.match(/^F(\d)$/)
+      if (!m) return -1
+      return Number.parseInt(m[1]!, 10) - 1
+    }
 
-      // Enter to place order (not from inputs, not if barcode buffer is active)
+    function handleFKeyShortcut(e: KeyboardEvent) {
+      const idx = parseFKeyIndex(e.key)
+      if (idx < 0 || idx >= paymentMethods.length) return
+      e.preventDefault()
+      const methodId = paymentMethods[idx]!.id
+      if (!splitMode || splitPayments.length === 0) {
+        setPaymentMethodId(methodId)
+        return
+      }
+      const emptyIdx = splitPayments.findIndex((r) => r.amount === 0)
+      if (emptyIdx >= 0) updateSplitRow(emptyIdx, "methodId", methodId)
+    }
+
+    function handleNumpadShortcut(e: KeyboardEvent) {
+      if (selectedCartIndex < 0 || selectedCartIndex >= cart.length) return
+      if (!/^(Numpad)?\d$/.test(e.code)) return
+      const digit = Number.parseInt(e.key, 10)
+      if (Number.isNaN(digit)) return
+      e.preventDefault()
+      const item = cart[selectedCartIndex]!
+      setItemQuantity(item.productId, digit === 0 ? 10 : digit)
+    }
+
+    function handleKeyDown(e: KeyboardEvent) {
+      const isInput = isInputElement(e.target as HTMLElement)
+
       if (e.key === "Enter" && !e.repeat && !isInput && barcodeBuffer.current.length <= 2) {
         e.preventDefault()
         handlePlaceOrder()
       }
 
-      // Escape to exit
       if (e.key === "Escape") {
         handleExit()
       }
 
-      // F1-F8: select payment method
-      const fKeyMatch = e.key.match(/^F(\d)$/)
-      if (fKeyMatch) {
-        const idx = Number.parseInt(fKeyMatch[1]!, 10) - 1
-        if (idx >= 0 && idx < paymentMethods.length) {
-          e.preventDefault()
-          if (splitMode && splitPayments.length > 0) {
-            // In split mode, set the first empty row's method
-            const emptyIdx = splitPayments.findIndex((r) => r.amount === 0)
-            if (emptyIdx >= 0) {
-              updateSplitRow(emptyIdx, "methodId", paymentMethods[idx]!.id)
-            }
-          } else {
-            setPaymentMethodId(paymentMethods[idx]!.id)
-          }
-        }
-      }
+      handleFKeyShortcut(e)
 
-      // Numpad digits for quick quantity on selected cart item
-      if (
-        !isInput &&
-        selectedCartIndex >= 0 &&
-        selectedCartIndex < cart.length &&
-        /^(Numpad)?\d$/.test(e.code)
-      ) {
-        const digit = Number.parseInt(e.key, 10)
-        if (!Number.isNaN(digit)) {
-          e.preventDefault()
-          const item = cart[selectedCartIndex]!
-          setItemQuantity(item.productId, digit === 0 ? 10 : digit)
-        }
+      if (!isInput) {
+        handleNumpadShortcut(e)
       }
     }
     window.addEventListener("keydown", handleKeyDown)
@@ -620,6 +823,8 @@ function PosPage() {
     splitPayments,
     cart,
     selectedCartIndex,
+    setItemQuantity,
+    updateSplitRow,
   ])
 
   // Auto-select default payment method
@@ -629,11 +834,6 @@ function PosPage() {
       setPaymentMethodId(defaultPm?.id ?? paymentMethods[0]!.id)
     }
   }, [paymentMethods, paymentMethodId])
-
-  // --- Print receipt ---
-  function handlePrintReceipt() {
-    window.print()
-  }
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background print:static print:z-auto">
@@ -841,13 +1041,13 @@ function PosPage() {
                 <div className="py-12 text-center text-sm text-muted-foreground">Cart is empty</div>
               )}
               {cart.map((item, index) => (
-                <div
+                <button
+                  type="button"
                   key={item.productId}
-                  className={`flex items-center gap-2 rounded-md border p-2 cursor-pointer ${
+                  className={`flex w-full items-center gap-2 rounded-md border p-2 text-left ${
                     selectedCartIndex === index ? "ring-2 ring-primary" : ""
                   }`}
                   onClick={() => setSelectedCartIndex(index)}
-                  onKeyDown={() => {}}
                 >
                   <div className="min-w-0 flex-1">
                     <p className="truncate text-sm font-medium">{item.name}</p>
@@ -889,7 +1089,7 @@ function PosPage() {
                       &times;
                     </Button>
                   </div>
-                </div>
+                </button>
               ))}
             </div>
           </ScrollArea>
@@ -942,79 +1142,16 @@ function PosPage() {
                   </Button>
                 </>
               ) : (
-                <div className="mb-2 space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span className="text-xs font-medium">Split Payment</span>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      className="h-6 px-1 text-xs"
-                      onClick={exitSplitMode}
-                    >
-                      Cancel
-                    </Button>
-                  </div>
-                  {splitPayments.map((row, idx) => (
-                    <div key={`split-${idx}-${row.methodId}`} className="flex items-center gap-1.5">
-                      <Select
-                        value={row.methodId}
-                        onValueChange={(val) => updateSplitRow(idx, "methodId", val as string)}
-                      >
-                        <SelectTrigger className="h-8 flex-1 text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {paymentMethods.map((pm) => (
-                            <SelectItem key={pm.id} value={pm.id}>
-                              {pm.name}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                      <Input
-                        type="number"
-                        min={0}
-                        step={0.01}
-                        value={row.amount || ""}
-                        onChange={(e) =>
-                          updateSplitRow(idx, "amount", Number.parseFloat(e.target.value) || 0)
-                        }
-                        className="h-8 w-24 text-xs tabular-nums"
-                        placeholder="0.00"
-                      />
-                      {splitPayments.length > 2 && (
-                        <Button
-                          variant="ghost"
-                          size="icon-sm"
-                          className="h-6 w-6 text-destructive"
-                          onClick={() => removeSplitRow(idx)}
-                        >
-                          &times;
-                        </Button>
-                      )}
-                    </div>
-                  ))}
-                  <div className="flex items-center justify-between">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      className="h-6 text-xs"
-                      disabled={splitPayments.length >= paymentMethods.length}
-                      onClick={addSplitRow}
-                    >
-                      + Add Method
-                    </Button>
-                    <span
-                      className={`text-xs tabular-nums ${
-                        Math.abs(splitTotal - grandTotal) > 0.01
-                          ? "text-destructive"
-                          : "text-muted-foreground"
-                      }`}
-                    >
-                      {formatCurrency(splitTotal)} / {formatCurrency(grandTotal)}
-                    </span>
-                  </div>
-                </div>
+                <SplitPaymentPanel
+                  splitPayments={splitPayments}
+                  paymentMethods={paymentMethods}
+                  splitTotal={splitTotal}
+                  grandTotal={grandTotal}
+                  onUpdateRow={updateSplitRow}
+                  onRemoveRow={removeSplitRow}
+                  onAddRow={addSplitRow}
+                  onCancel={exitSplitMode}
+                />
               )}
 
               <Button
@@ -1036,80 +1173,12 @@ function PosPage() {
         </div>
       </div>
 
-      {/* Receipt Sheet */}
-      <Sheet open={receiptOpen} onOpenChange={setReceiptOpen}>
-        <SheetContent side="right" id="pos-receipt-sheet" className="sm:max-w-md">
-          <SheetHeader>
-            <SheetTitle>Receipt</SheetTitle>
-          </SheetHeader>
-          <SheetBody>
-            {lastOrder && (
-              <div className="space-y-4">
-                {/* Company name */}
-                <div className="text-center">
-                  <p className="text-lg font-bold">{company?.name ?? "Company"}</p>
-                  <p className="text-xs text-muted-foreground">
-                    {lastOrder.date.toLocaleDateString()} {lastOrder.date.toLocaleTimeString()}
-                  </p>
-                </div>
-
-                <Separator />
-
-                {/* Items */}
-                <div className="space-y-1.5">
-                  {lastOrder.items.map((item) => (
-                    <div key={item.productId} className="flex items-start justify-between text-sm">
-                      <div>
-                        <span>{item.name}</span>
-                        <span className="ml-1 text-xs text-muted-foreground">x{item.quantity}</span>
-                        <span className="ml-1 text-xs text-muted-foreground">
-                          @ {formatCurrency(item.price)}
-                        </span>
-                      </div>
-                      <span className="tabular-nums">
-                        {formatCurrency(item.price * item.quantity)}
-                      </span>
-                    </div>
-                  ))}
-                </div>
-
-                <Separator />
-
-                {/* Totals */}
-                <div className="space-y-1 text-sm">
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Subtotal</span>
-                    <span className="tabular-nums">{formatCurrency(lastOrder.subtotal)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-muted-foreground">Tax</span>
-                    <span className="tabular-nums">{formatCurrency(lastOrder.taxTotal)}</span>
-                  </div>
-                  <Separator />
-                  <div className="flex justify-between font-semibold">
-                    <span>Total</span>
-                    <span className="tabular-nums">{formatCurrency(lastOrder.grandTotal)}</span>
-                  </div>
-                </div>
-
-                <Separator />
-
-                {/* Payment method */}
-                <div className="text-sm">
-                  <span className="text-muted-foreground">Payment: </span>
-                  <span>{lastOrder.paymentMethod}</span>
-                </div>
-              </div>
-            )}
-          </SheetBody>
-          <SheetFooter className="no-print">
-            <Button variant="outline" onClick={handlePrintReceipt}>
-              Print
-            </Button>
-            <SheetClose render={<Button>Close</Button>} />
-          </SheetFooter>
-        </SheetContent>
-      </Sheet>
+      <ReceiptSheet
+        open={receiptOpen}
+        onOpenChange={setReceiptOpen}
+        order={lastOrder}
+        companyName={company?.name ?? "Company"}
+      />
     </div>
   )
 }

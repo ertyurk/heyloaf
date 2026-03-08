@@ -316,7 +316,7 @@ pub async fn void_order(
     tag = "orders",
     security(("bearer" = [])),
     params(("id" = Uuid, Path, description = "Order ID")),
-    request_body = OrderReasonRequest,
+    request_body = ReturnOrderRequest,
     responses((status = 200, body = inline(ApiResponse<Order>)))
 )]
 pub async fn return_order(
@@ -324,7 +324,7 @@ pub async fn return_order(
     Extension(ctx): Extension<CompanyContext>,
     Extension(auth): Extension<AuthUser>,
     Path(id): Path<Uuid>,
-    ValidatedJson(body): ValidatedJson<OrderReasonRequest>,
+    ValidatedJson(body): ValidatedJson<ReturnOrderRequest>,
 ) -> Result<Json<ApiResponse<Order>>, AppError> {
     let existing = OrderRepository::find_by_id(&state.pool, id)
         .await
@@ -345,15 +345,71 @@ pub async fn return_order(
         AppError::Database(format!("Failed to start transaction: {e}"))
     })?;
 
-    let order =
-        OrderRepository::update_status_with_notes_executor(
-            &mut *tx, id, "returned", &body.reason,
-        )
-        .await
-        .map_err(|e| AppError::Database(e.to_string()))?;
+    match body.items {
+        Some(return_items) => {
+            // Partial return: only reverse stock for specified items
+            let order_items =
+                OrderItemRepository::list_by_order_with_executor(&mut *tx, id)
+                    .await
+                    .map_err(|e| AppError::Database(e.to_string()))?;
 
-    // Reverse stock movements for returned order
-    StockService::reverse_movements_tx(&mut tx, "order", id, auth.user_id).await?;
+            for ri in &return_items {
+                let order_item = order_items
+                    .iter()
+                    .find(|oi| oi.id == ri.order_item_id)
+                    .ok_or_else(|| {
+                        AppError::BadRequest(format!(
+                            "Order item {} not found in this order",
+                            ri.order_item_id
+                        ))
+                    })?;
+
+                if ri.quantity > order_item.quantity || ri.quantity <= 0.0 {
+                    return Err(AppError::BadRequest(format!(
+                        "Invalid return quantity {} for item {}",
+                        ri.quantity, ri.order_item_id
+                    )));
+                }
+
+                if let Some(product_id) = order_item.product_id {
+                    StockService::record_movement_tx(
+                        &mut tx,
+                        ctx.company_id,
+                        product_id,
+                        "in",
+                        "return",
+                        ri.quantity,
+                        Some(order_item.unit_price),
+                        Some(order_item.vat_rate),
+                        Some("order"),
+                        Some(id),
+                        Some("Partial return"),
+                        auth.user_id,
+                    )
+                    .await?;
+                }
+            }
+        }
+        None => {
+            // Full return: reverse all stock movements
+            StockService::reverse_movements_tx(
+                &mut tx,
+                "order",
+                id,
+                auth.user_id,
+            )
+            .await?;
+        }
+    }
+
+    let order = OrderRepository::update_status_with_notes_executor(
+        &mut *tx,
+        id,
+        "returned",
+        &body.reason,
+    )
+    .await
+    .map_err(|e| AppError::Database(e.to_string()))?;
 
     tx.commit().await.map_err(|e| {
         AppError::Database(format!("Failed to commit transaction: {e}"))

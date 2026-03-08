@@ -2,13 +2,26 @@ import type { components } from "@heyloaf/api-client"
 import { Badge } from "@heyloaf/ui/components/badge"
 import { Button } from "@heyloaf/ui/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@heyloaf/ui/components/card"
+import { Checkbox } from "@heyloaf/ui/components/checkbox"
 import { DataTable } from "@heyloaf/ui/components/data-table"
+import { Input } from "@heyloaf/ui/components/input"
+import { Label } from "@heyloaf/ui/components/label"
 import { Separator } from "@heyloaf/ui/components/separator"
+import {
+  Sheet,
+  SheetBody,
+  SheetContent,
+  SheetFooter,
+  SheetHeader,
+  SheetTitle,
+} from "@heyloaf/ui/components/sheet"
+import { Textarea } from "@heyloaf/ui/components/textarea"
 import ArrowLeft01Icon from "@hugeicons/core-free-icons/ArrowLeft01Icon"
+import PrinterIcon from "@hugeicons/core-free-icons/PrinterIcon"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
-import { useMemo } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
@@ -38,11 +51,20 @@ function formatDate(dateStr: string) {
   })
 }
 
+interface ReturnSelection {
+  selected: boolean
+  quantity: number
+}
+
 function OrderDetailPage() {
   const { orderId } = Route.useParams()
   const client = useApi()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
+
+  const [returnOpen, setReturnOpen] = useState(false)
+  const [returnReason, setReturnReason] = useState("")
+  const [returnSelections, setReturnSelections] = useState<Record<string, ReturnSelection>>({})
 
   const { data: orderData, isLoading } = useQuery({
     queryKey: ["orders", orderId],
@@ -94,17 +116,23 @@ function OrderDetailPage() {
   })
 
   const returnMutation = useMutation({
-    mutationFn: async () => {
+    mutationFn: async (payload: {
+      reason: string
+      items?: Array<{ order_item_id: string; quantity: number }>
+    }) => {
       await client.POST(
         "/api/orders/{id}/return" as never,
         {
           params: { path: { id: orderId } },
+          body: payload,
         } as never
       )
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders", orderId] })
       queryClient.invalidateQueries({ queryKey: ["orders"] })
+      setReturnOpen(false)
+      resetReturnForm()
       toast.success("Order returned")
     },
     onError: () => {
@@ -118,11 +146,63 @@ function OrderDetailPage() {
     }
   }
 
-  function handleReturn() {
-    if (window.confirm("Are you sure you want to return this order?")) {
-      returnMutation.mutate()
-    }
+  function resetReturnForm() {
+    setReturnReason("")
+    setReturnSelections({})
   }
+
+  function openReturnSheet() {
+    resetReturnForm()
+    if (order) {
+      const initial: Record<string, ReturnSelection> = {}
+      for (const item of order.items) {
+        initial[item.id] = { selected: false, quantity: item.quantity }
+      }
+      setReturnSelections(initial)
+    }
+    setReturnOpen(true)
+  }
+
+  function handleReturnSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    const selectedItems = Object.entries(returnSelections)
+      .filter(([, sel]) => sel.selected)
+      .map(([id, sel]) => ({
+        order_item_id: id,
+        quantity: sel.quantity,
+      }))
+
+    if (selectedItems.length === 0) {
+      toast.error("Select at least one item to return")
+      return
+    }
+
+    const isFullReturn =
+      order?.items.length === selectedItems.length &&
+      selectedItems.every((si) => {
+        const item = order?.items.find((i) => i.id === si.order_item_id)
+        return item && si.quantity === item.quantity
+      })
+
+    returnMutation.mutate({
+      reason: returnReason,
+      items: isFullReturn ? undefined : selectedItems,
+    })
+  }
+
+  const handleReprintReceipt = useCallback(() => {
+    window.print()
+  }, [])
+
+  const hasValidReturnSelection = useMemo(() => {
+    if (!returnReason.trim()) return false
+    const selected = Object.entries(returnSelections).filter(([, sel]) => sel.selected)
+    if (selected.length === 0) return false
+    return selected.every(([id, sel]) => {
+      const item = order?.items.find((i) => i.id === id)
+      return item && sel.quantity > 0 && sel.quantity <= item.quantity
+    })
+  }, [returnSelections, returnReason, order])
 
   const orderTitle = order?.order_number ? `Order #${order.order_number}` : "Order Detail"
 
@@ -194,20 +274,39 @@ function OrderDetailPage() {
 
   return (
     <>
+      <style
+        // biome-ignore lint/security/noDangerouslySetInnerHtml: print styles
+        dangerouslySetInnerHTML={{
+          __html: `
+            @media print {
+              nav, header, [data-slot="page-header"] > div > button,
+              [data-slot="sheet-overlay"], [data-slot="sheet-content"] {
+                display: none !important;
+              }
+              body { background: white; }
+            }
+          `,
+        }}
+      />
+
       <PageHeader title={orderTitle} description={`Created ${formatDate(order.created_at)}`}>
         <Button variant="outline" size="sm" onClick={() => navigate({ to: "/orders" })}>
           <HugeiconsIcon icon={ArrowLeft01Icon} size={16} className="mr-1" />
           Back
+        </Button>
+        <Button variant="outline" size="sm" onClick={handleReprintReceipt}>
+          <HugeiconsIcon icon={PrinterIcon} size={16} className="mr-1" />
+          Reprint Receipt
         </Button>
         {canModify && (
           <>
             <Button
               variant="outline"
               size="sm"
-              onClick={handleReturn}
+              onClick={openReturnSheet}
               disabled={returnMutation.isPending}
             >
-              {returnMutation.isPending ? "Returning..." : "Return Order"}
+              Return Items
             </Button>
             <Button
               variant="destructive"
@@ -305,6 +404,91 @@ function OrderDetailPage() {
           </div>
         )}
       </div>
+
+      {/* Return Items Sheet */}
+      <Sheet open={returnOpen} onOpenChange={setReturnOpen}>
+        <SheetContent side="right" className="sm:max-w-lg">
+          <SheetHeader>
+            <SheetTitle>Return Items</SheetTitle>
+          </SheetHeader>
+          <form onSubmit={handleReturnSubmit} className="flex flex-col flex-1 overflow-hidden">
+            <SheetBody>
+              <div className="grid gap-4">
+                <div className="grid gap-2">
+                  <Label>Select items to return</Label>
+                  <div className="space-y-3">
+                    {order.items.map((item) => {
+                      const sel = returnSelections[item.id]
+                      return (
+                        <div key={item.id} className="flex items-start gap-3 rounded-md border p-3">
+                          <Checkbox
+                            checked={sel?.selected ?? false}
+                            onCheckedChange={(checked) =>
+                              setReturnSelections((prev) => ({
+                                ...prev,
+                                [item.id]: {
+                                  ...prev[item.id]!,
+                                  selected: Boolean(checked),
+                                },
+                              }))
+                            }
+                            className="mt-0.5"
+                          />
+                          <div className="flex-1 space-y-1">
+                            <p className="text-sm font-medium">{item.product_name}</p>
+                            {item.variant_name && (
+                              <p className="text-xs text-muted-foreground">{item.variant_name}</p>
+                            )}
+                            <p className="text-xs text-muted-foreground">
+                              {formatCurrency(item.unit_price)} x {item.quantity} ={" "}
+                              {formatCurrency(item.line_total)}
+                            </p>
+                          </div>
+                          {sel?.selected && (
+                            <div className="w-20">
+                              <Label className="text-xs">Qty</Label>
+                              <Input
+                                type="number"
+                                min={1}
+                                max={item.quantity}
+                                value={sel.quantity}
+                                onChange={(e) =>
+                                  setReturnSelections((prev) => ({
+                                    ...prev,
+                                    [item.id]: {
+                                      ...prev[item.id]!,
+                                      quantity: Number(e.target.value) || 0,
+                                    },
+                                  }))
+                                }
+                              />
+                            </div>
+                          )}
+                        </div>
+                      )
+                    })}
+                  </div>
+                </div>
+                <div className="grid gap-2">
+                  <Label htmlFor="return-reason">Reason (required)</Label>
+                  <Textarea
+                    id="return-reason"
+                    placeholder="Enter reason for return..."
+                    value={returnReason}
+                    onChange={(e) => setReturnReason(e.target.value)}
+                    required
+                  />
+                </div>
+              </div>
+            </SheetBody>
+            <SheetFooter>
+              <Button type="submit" disabled={!hasValidReturnSelection || returnMutation.isPending}>
+                {returnMutation.isPending ? "Processing..." : "Submit Return"}
+              </Button>
+            </SheetFooter>
+          </form>
+        </SheetContent>
+      </Sheet>
     </>
   )
 }
