@@ -31,6 +31,7 @@ pub struct UpdateCompanyRequest {
     pub default_language: String,
     #[validate(length(min = 1, message = "Timezone is required"))]
     pub timezone: String,
+    pub settings: Option<serde_json::Value>,
 }
 
 #[utoipa::path(
@@ -71,6 +72,18 @@ pub async fn update_company(
         .map_err(|e| AppError::Database(e.to_string()))?
         .ok_or_else(|| AppError::NotFound("Company not found".into()))?;
 
+    let settings = if let Some(ref incoming) = body.settings {
+        let mut merged = existing.settings.clone();
+        if let (Some(base), Some(patch)) = (merged.as_object_mut(), incoming.as_object()) {
+            for (k, v) in patch {
+                base.insert(k.clone(), v.clone());
+            }
+        }
+        merged
+    } else {
+        existing.settings.clone()
+    };
+
     let company = CompanyRepository::update(
         &state.pool,
         ctx.company_id,
@@ -85,6 +98,7 @@ pub async fn update_company(
         body.default_tax_rate,
         &body.default_language,
         &body.timezone,
+        &settings,
     )
     .await
     .map_err(|e| AppError::Database(e.to_string()))?;

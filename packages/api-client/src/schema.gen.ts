@@ -1752,6 +1752,7 @@ export interface components {
       email?: string | null
       name: string
       phone?: string | null
+      settings?: Record<string, unknown> | null
       tax_number?: string | null
       tax_office?: string | null
       timezone: string

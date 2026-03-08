@@ -2,10 +2,12 @@ import { Button } from "@heyloaf/ui/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@heyloaf/ui/components/card"
 import { Input } from "@heyloaf/ui/components/input"
 import { Label } from "@heyloaf/ui/components/label"
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { useEffect, useState } from "react"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/page-header"
+import { useApi } from "@/hooks/use-api"
 
 export const Route = createFileRoute("/_authenticated/settings/stock")({
   component: StockSettingsPage,
@@ -17,39 +19,97 @@ interface StockForm {
   stock_precision_pieces: string
 }
 
-const STORAGE_KEY = "heyloaf:stock-settings"
-
 const defaultForm: StockForm = {
   default_min_stock_level: "0",
   stock_precision_kg: "3",
   stock_precision_pieces: "0",
 }
 
-function loadSettings(): StockForm {
-  try {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (raw) return { ...defaultForm, ...JSON.parse(raw) }
-  } catch {
-    /* ignore */
-  }
-  return defaultForm
-}
-
 function StockSettingsPage() {
+  const client = useApi()
+  const queryClient = useQueryClient()
+
   const [form, setForm] = useState<StockForm>(defaultForm)
 
+  const { data, isLoading } = useQuery({
+    queryKey: ["company"],
+    queryFn: async () => {
+      const res = await client.GET("/api/company")
+      return res.data
+    },
+  })
+
+  const company = data?.data
+
   useEffect(() => {
-    setForm(loadSettings())
-  }, [])
+    if (company) {
+      const stock = (company.settings as Record<string, unknown>)?.stock as
+        | Record<string, unknown>
+        | undefined
+      if (stock) {
+        setForm({
+          default_min_stock_level: String(
+            stock.default_min_stock_level ?? defaultForm.default_min_stock_level
+          ),
+          stock_precision_kg: String(stock.stock_precision_kg ?? defaultForm.stock_precision_kg),
+          stock_precision_pieces: String(
+            stock.stock_precision_pieces ?? defaultForm.stock_precision_pieces
+          ),
+        })
+      }
+    }
+  }, [company])
+
+  const updateMutation = useMutation({
+    mutationFn: async (stockSettings: StockForm) => {
+      if (!company) throw new Error("Company not loaded")
+      const res = await client.PUT("/api/company", {
+        body: {
+          name: company.name,
+          tax_number: company.tax_number,
+          tax_office: company.tax_office,
+          address: company.address,
+          phone: company.phone,
+          email: company.email,
+          website: company.website,
+          default_currency: company.default_currency,
+          default_tax_rate: company.default_tax_rate,
+          default_language: company.default_language,
+          timezone: company.timezone,
+          settings: {
+            stock: {
+              default_min_stock_level: Number(stockSettings.default_min_stock_level),
+              stock_precision_kg: Number(stockSettings.stock_precision_kg),
+              stock_precision_pieces: Number(stockSettings.stock_precision_pieces),
+            },
+          },
+        },
+      })
+      return res.data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["company"] })
+      toast.success("Stock settings saved")
+    },
+    onError: () => toast.error("Failed to save stock settings"),
+  })
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(form))
-    toast.success("Stock settings saved")
+    updateMutation.mutate(form)
   }
 
   function updateField(field: keyof StockForm, value: string) {
     setForm((f) => ({ ...f, [field]: value }))
+  }
+
+  if (isLoading) {
+    return (
+      <>
+        <PageHeader title="Stock Settings" description="Configure inventory tracking defaults" />
+        <p className="text-muted-foreground py-8 text-center text-sm">Loading...</p>
+      </>
+    )
   }
 
   return (
@@ -115,7 +175,9 @@ function StockSettingsPage() {
               </div>
 
               <div className="flex justify-end pt-4">
-                <Button type="submit">Save Changes</Button>
+                <Button type="submit" disabled={updateMutation.isPending}>
+                  {updateMutation.isPending ? "Saving..." : "Save Changes"}
+                </Button>
               </div>
             </form>
           </CardContent>
