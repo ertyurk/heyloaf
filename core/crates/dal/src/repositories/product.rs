@@ -179,6 +179,17 @@ impl ProductRepository {
             .await
     }
 
+    pub async fn find_by_ids(pool: &PgPool, ids: &[Uuid]) -> Result<Vec<Product>, sqlx::Error> {
+        let sql = format!(
+            "SELECT {} FROM products WHERE id = ANY($1)",
+            Self::SELECT
+        );
+        sqlx::query_as::<_, Product>(&sql)
+            .bind(ids)
+            .fetch_all(pool)
+            .await
+    }
+
     pub async fn delete(pool: &PgPool, id: Uuid) -> Result<(), sqlx::Error> {
         sqlx::query("DELETE FROM products WHERE id = $1")
             .bind(id)

@@ -125,11 +125,18 @@ impl ProductionSessionRepository {
         Self::complete_with_executor(pool, id, completed_by).await
     }
 
-    pub async fn delete(pool: &PgPool, id: Uuid) -> Result<(), sqlx::Error> {
+    pub async fn delete_with_executor<'e>(
+        executor: impl sqlx::PgExecutor<'e>,
+        id: Uuid,
+    ) -> Result<(), sqlx::Error> {
         sqlx::query("DELETE FROM production_sessions WHERE id = $1")
             .bind(id)
-            .execute(pool)
+            .execute(executor)
             .await?;
         Ok(())
+    }
+
+    pub async fn delete(pool: &PgPool, id: Uuid) -> Result<(), sqlx::Error> {
+        Self::delete_with_executor(pool, id).await
     }
 }

@@ -74,13 +74,9 @@ pub async fn get_user(
     Extension(ctx): Extension<CompanyContext>,
     Path(id): Path<Uuid>,
 ) -> Result<Json<ApiResponse<CompanyUser>>, AppError> {
-    let users = UserRepository::list_by_company(&state.pool, ctx.company_id)
+    let user = UserRepository::find_by_user_and_company(&state.pool, id, ctx.company_id)
         .await
-        .map_err(|e| AppError::Database(e.to_string()))?;
-
-    let user = users
-        .into_iter()
-        .find(|u| u.user_id == id)
+        .map_err(|e| AppError::Database(e.to_string()))?
         .ok_or_else(|| AppError::NotFound("User not found in this company".into()))?;
 
     Ok(Json(ApiResponse::new(user)))
@@ -136,14 +132,11 @@ pub async fn create_user(
         .emit();
 
     // Return the CompanyUser view
-    let users = UserRepository::list_by_company(&state.pool, ctx.company_id)
-        .await
-        .map_err(|e| AppError::Database(e.to_string()))?;
-
-    let company_user = users
-        .into_iter()
-        .find(|u| u.user_id == user.id)
-        .ok_or_else(|| AppError::Database("Failed to retrieve created user".into()))?;
+    let company_user =
+        UserRepository::find_by_user_and_company(&state.pool, user.id, ctx.company_id)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?
+            .ok_or_else(|| AppError::Database("Failed to retrieve created user".into()))?;
 
     Ok(Json(ApiResponse::new(company_user)))
 }

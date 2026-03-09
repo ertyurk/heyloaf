@@ -176,7 +176,7 @@ pub async fn create_order(
         AppError::Database(format!("Failed to start transaction: {e}"))
     })?;
 
-    let order_number = OrderRepository::next_number_with_executor(&mut *tx)
+    let order_number = OrderRepository::next_number_with_executor(&mut *tx, ctx.company_id)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
@@ -335,9 +335,9 @@ pub async fn return_order(
         return Err(AppError::NotFound("Order not found".into()));
     }
 
-    if existing.status != "completed" {
+    if existing.status != "completed" && existing.status != "partially_returned" {
         return Err(AppError::BadRequest(
-            "Only completed orders can be returned".into(),
+            "Only completed or partially returned orders can be returned".into(),
         ));
     }
 
@@ -345,67 +345,91 @@ pub async fn return_order(
         AppError::Database(format!("Failed to start transaction: {e}"))
     })?;
 
-    match body.items {
-        Some(return_items) => {
-            // Partial return: only reverse stock for specified items
-            let order_items =
-                OrderItemRepository::list_by_order_with_executor(&mut *tx, id)
-                    .await
-                    .map_err(|e| AppError::Database(e.to_string()))?;
+    let final_status = if let Some(return_items) = body.items {
+        // Partial return: only reverse stock for specified items
+        let order_items =
+            OrderItemRepository::list_by_order_with_executor(&mut *tx, id)
+                .await
+                .map_err(|e| AppError::Database(e.to_string()))?;
 
-            for ri in &return_items {
-                let order_item = order_items
-                    .iter()
-                    .find(|oi| oi.id == ri.order_item_id)
-                    .ok_or_else(|| {
-                        AppError::BadRequest(format!(
-                            "Order item {} not found in this order",
-                            ri.order_item_id
-                        ))
-                    })?;
+        for ri in &return_items {
+            let order_item = order_items
+                .iter()
+                .find(|oi| oi.id == ri.order_item_id)
+                .ok_or_else(|| {
+                    AppError::BadRequest(format!(
+                        "Order item {} not found in this order",
+                        ri.order_item_id
+                    ))
+                })?;
 
-                if ri.quantity > order_item.quantity || ri.quantity <= 0.0 {
-                    return Err(AppError::BadRequest(format!(
-                        "Invalid return quantity {} for item {}",
-                        ri.quantity, ri.order_item_id
-                    )));
-                }
-
-                if let Some(product_id) = order_item.product_id {
-                    StockService::record_movement_tx(
-                        &mut tx,
-                        ctx.company_id,
-                        product_id,
-                        "in",
-                        "return",
-                        ri.quantity,
-                        Some(order_item.unit_price),
-                        Some(order_item.vat_rate),
-                        Some("order"),
-                        Some(id),
-                        Some("Partial return"),
-                        auth.user_id,
-                    )
-                    .await?;
-                }
+            let remaining = order_item.quantity - order_item.returned_quantity;
+            if ri.quantity > remaining || ri.quantity <= 0.0 {
+                return Err(AppError::BadRequest(format!(
+                    "Invalid return quantity {} for item {} (remaining: {})",
+                    ri.quantity, ri.order_item_id, remaining
+                )));
             }
-        }
-        None => {
-            // Full return: reverse all stock movements
-            StockService::reverse_movements_tx(
-                &mut tx,
-                "order",
-                id,
-                auth.user_id,
+
+            if let Some(product_id) = order_item.product_id {
+                StockService::record_movement_tx(
+                    &mut tx,
+                    ctx.company_id,
+                    product_id,
+                    "in",
+                    "return",
+                    ri.quantity,
+                    Some(order_item.unit_price),
+                    Some(order_item.vat_rate),
+                    Some("order"),
+                    Some(id),
+                    Some("Partial return"),
+                    auth.user_id,
+                )
+                .await?;
+            }
+
+            // Update returned_quantity in the DB
+            OrderItemRepository::update_returned_quantity_with_executor(
+                &mut *tx,
+                ri.order_item_id,
+                order_item.returned_quantity + ri.quantity,
             )
-            .await?;
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
         }
-    }
+
+        // Re-fetch items to determine final status
+        let updated_items =
+            OrderItemRepository::list_by_order_with_executor(&mut *tx, id)
+                .await
+                .map_err(|e| AppError::Database(e.to_string()))?;
+
+        let all_fully_returned = updated_items
+            .iter()
+            .all(|oi| (oi.returned_quantity - oi.quantity).abs() < f64::EPSILON);
+
+        if all_fully_returned {
+            "returned"
+        } else {
+            "partially_returned"
+        }
+    } else {
+        // Full return: reverse all stock movements
+        StockService::reverse_movements_tx(
+            &mut tx,
+            "order",
+            id,
+            auth.user_id,
+        )
+        .await?;
+        "returned"
+    };
 
     let order = OrderRepository::update_status_with_notes_executor(
         &mut *tx,
         id,
-        "returned",
+        final_status,
         &body.reason,
     )
     .await

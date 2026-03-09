@@ -10,7 +10,7 @@ use heyloaf_dal::repositories::stock_count::StockCountRepository;
 use heyloaf_dal::repositories::stock_movement::StockMovementRepository;
 use heyloaf_services::audit_service::AuditBuilder;
 use heyloaf_services::stock_service::StockService;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
@@ -46,10 +46,16 @@ pub struct MovementListParams {
     pub pagination: PaginationParams,
 }
 
+#[derive(Debug, Deserialize, Serialize, Validate, ToSchema)]
+pub struct StockCountItem {
+    pub product_id: Uuid,
+    pub counted_quantity: f64,
+}
+
 #[derive(Debug, Deserialize, Validate, ToSchema)]
 pub struct CreateStockCountRequest {
     pub notes: Option<String>,
-    pub items: serde_json::Value,
+    pub items: Vec<StockCountItem>,
 }
 
 // --- Handlers ---
@@ -245,12 +251,15 @@ pub async fn create_stock_count(
     Extension(auth): Extension<AuthUser>,
     ValidatedJson(body): ValidatedJson<CreateStockCountRequest>,
 ) -> Result<Json<ApiResponse<StockCount>>, AppError> {
+    let items_json = serde_json::to_value(&body.items)
+        .map_err(|e| AppError::BadRequest(format!("Invalid items: {e}")))?;
+
     let stock_count = StockCountRepository::create(
         &state.pool,
         ctx.company_id,
         auth.user_id,
         body.notes.as_deref(),
-        body.items,
+        items_json,
     )
     .await
     .map_err(|e| AppError::Database(e.to_string()))?;
@@ -293,8 +302,10 @@ pub async fn complete_stock_count(
         ));
     }
 
-    // Process count items — generate adjustment movements
-    let stock_service = StockService::new(state.pool.clone());
+    // Process count items — generate adjustment movements in a single transaction
+    let mut tx = state.pool.begin().await.map_err(|e| {
+        AppError::Database(format!("Failed to start transaction: {e}"))
+    })?;
 
     if let Some(items) = existing.items.as_array() {
         for item in items {
@@ -317,29 +328,33 @@ pub async fn complete_stock_count(
                 if diff.abs() > f64::EPSILON {
                     let movement_type = if diff > 0.0 { "in" } else { "out" };
 
-                    stock_service
-                        .record_movement(
-                            ctx.company_id,
-                            product_id,
-                            movement_type,
-                            "stock_count",
-                            diff.abs(),
-                            None,
-                            None,
-                            Some("stock_count"),
-                            Some(id),
-                            Some("Stock count adjustment"),
-                            auth.user_id,
-                        )
-                        .await?;
+                    StockService::record_movement_tx(
+                        &mut tx,
+                        ctx.company_id,
+                        product_id,
+                        movement_type,
+                        "stock_count",
+                        diff.abs(),
+                        None,
+                        None,
+                        Some("stock_count"),
+                        Some(id),
+                        Some("Stock count adjustment"),
+                        auth.user_id,
+                    )
+                    .await?;
                 }
             }
         }
     }
 
-    let stock_count = StockCountRepository::complete(&state.pool, id)
+    let stock_count = StockCountRepository::complete_with_executor(&mut *tx, id)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
+
+    tx.commit().await.map_err(|e| {
+        AppError::Database(format!("Failed to commit transaction: {e}"))
+    })?;
 
     AuditBuilder::new(state.audit.clone(), ctx.company_id, auth.user_id)
         .entity("stock_count", stock_count.id)

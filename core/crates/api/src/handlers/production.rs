@@ -9,7 +9,7 @@ use heyloaf_dal::repositories::production_record::ProductionRecordRepository;
 use heyloaf_dal::repositories::production_session::ProductionSessionRepository;
 use heyloaf_services::audit_service::AuditBuilder;
 use heyloaf_services::stock_service::StockService;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
@@ -70,9 +70,19 @@ pub struct CreateProductionSessionRequest {
     pub name: Option<String>,
 }
 
+#[derive(Debug, Deserialize, Serialize, Validate, ToSchema)]
+pub struct SessionItem {
+    pub product_id: Uuid,
+    pub quantity: f64,
+    #[serde(default)]
+    pub notes: Option<String>,
+    #[serde(default = "default_materials")]
+    pub materials: serde_json::Value,
+}
+
 #[derive(Debug, Deserialize, Validate, ToSchema)]
 pub struct AddSessionItemRequest {
-    pub item: serde_json::Value,
+    pub item: SessionItem,
 }
 
 // --- Production Record Handlers ---
@@ -440,7 +450,10 @@ pub async fn add_session_item(
         ));
     }
 
-    let session = ProductionSessionRepository::add_item(&state.pool, id, &body.item)
+    let item_json = serde_json::to_value(&body.item)
+        .map_err(|e| AppError::BadRequest(format!("Failed to serialize item: {e}")))?;
+
+    let session = ProductionSessionRepository::add_item(&state.pool, id, &item_json)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
@@ -575,17 +588,22 @@ pub async fn delete_production_session(
         return Err(AppError::NotFound("Production session not found".into()));
     }
 
+    let mut tx = state.pool.begin().await.map_err(|e| {
+        AppError::Database(format!("Failed to start transaction: {e}"))
+    })?;
+
     // Reverse stock movements if the session was completed
     if existing.status == "completed" {
-        state
-            .stock
-            .reverse_movements("production", id, auth.user_id)
-            .await?;
+        StockService::reverse_movements_tx(&mut tx, "production", id, auth.user_id).await?;
     }
 
-    ProductionSessionRepository::delete(&state.pool, id)
+    ProductionSessionRepository::delete_with_executor(&mut *tx, id)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
+
+    tx.commit().await.map_err(|e| {
+        AppError::Database(format!("Failed to commit transaction: {e}"))
+    })?;
 
     AuditBuilder::new(state.audit.clone(), ctx.company_id, auth.user_id)
         .entity("production_session", id)

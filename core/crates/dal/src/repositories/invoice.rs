@@ -263,26 +263,36 @@ impl InvoiceRepository {
 
     pub async fn next_number_with_executor<'e>(
         executor: impl sqlx::PgExecutor<'e>,
+        company_id: Uuid,
         invoice_type: &str,
     ) -> Result<String, sqlx::Error> {
-        let (prefix, seq) = match invoice_type {
-            "purchase" => ("AL", "invoice_purchase_seq"),
-            _ => ("ST", "invoice_sales_seq"),
+        let (prefix, counter_type) = match invoice_type {
+            "purchase" => ("AL", "invoice_purchase"),
+            _ => ("ST", "invoice_sales"),
         };
 
         let year = chrono::Utc::now().format("%Y");
-        let query = format!("SELECT nextval('{seq}')");
 
-        let next: i64 = sqlx::query_scalar(&query).fetch_one(executor).await?;
+        let next: i64 = sqlx::query_scalar(
+            r"INSERT INTO counters (company_id, counter_type, last_value)
+            VALUES ($1, $2, 1)
+            ON CONFLICT (company_id, counter_type)
+            DO UPDATE SET last_value = counters.last_value + 1
+            RETURNING last_value",
+        )
+        .bind(company_id)
+        .bind(counter_type)
+        .fetch_one(executor)
+        .await?;
 
         Ok(format!("{prefix}-{year}-{next:06}"))
     }
 
     pub async fn next_number(
         pool: &PgPool,
-        _company_id: Uuid,
+        company_id: Uuid,
         invoice_type: &str,
     ) -> Result<String, sqlx::Error> {
-        Self::next_number_with_executor(pool, invoice_type).await
+        Self::next_number_with_executor(pool, company_id, invoice_type).await
     }
 }

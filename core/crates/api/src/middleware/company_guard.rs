@@ -34,7 +34,13 @@ pub async fn company_guard_middleware(
         .map_err(|e| AppError::Database(e.to_string()))?
         .ok_or_else(|| AppError::Forbidden("User does not belong to this company".into()))?;
 
+    // Overwrite the JWT-claimed role with the authoritative DB role so that
+    // demoted users lose privileges immediately.
+    let mut refreshed_auth = auth_user;
+    refreshed_auth.role = Some(uc.role.clone());
+
     let mut request = request;
+    request.extensions_mut().insert(refreshed_auth);
     request
         .extensions_mut()
         .insert(CompanyContext {

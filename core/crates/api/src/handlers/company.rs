@@ -77,7 +77,12 @@ pub async fn update_company(
         let mut merged = existing.settings.clone();
         if let (Some(base), Some(patch)) = (merged.as_object_mut(), incoming.as_object()) {
             for (k, v) in patch {
-                base.insert(k.clone(), v.clone());
+                if v.is_null() {
+                    // Null values mean "delete this key"
+                    base.remove(k);
+                } else {
+                    base.insert(k.clone(), v.clone());
+                }
             }
         }
         merged

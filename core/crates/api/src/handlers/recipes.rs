@@ -182,16 +182,20 @@ pub async fn get_recipe_cost(
         .and_then(|v| serde_json::from_value(v.clone()).ok())
         .unwrap_or_default();
 
+    // Batch-fetch all material products in one query to avoid N+1
+    let material_ids: Vec<Uuid> = materials.iter().map(|m| m.product_id).collect();
+    let mat_products = ProductRepository::find_by_ids(&state.pool, &material_ids)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?;
+
     let mut cost_lines = Vec::with_capacity(materials.len());
     let mut total_cost = 0.0;
 
     for mat in &materials {
-        let mat_product = ProductRepository::find_by_id(&state.pool, mat.product_id)
-            .await
-            .map_err(|e| AppError::Database(e.to_string()))?;
+        let mat_product = mat_products.iter().find(|p| p.id == mat.product_id);
 
         let (product_name, unit_price) = match mat_product {
-            Some(ref p) => {
+            Some(p) => {
                 let price = p.last_purchase_price.or(p.calculated_cost);
                 (p.name.clone(), price)
             }

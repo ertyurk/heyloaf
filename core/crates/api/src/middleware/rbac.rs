@@ -78,18 +78,17 @@ fn check_module_permission(
 /// ```ignore
 /// .layer(axum_middleware::from_fn(require_module_permission(Module::Products, PermissionLevel::Editor)))
 /// ```
+type PermissionMiddlewareFuture =
+    std::pin::Pin<Box<dyn std::future::Future<Output = Result<Response, AppError>> + Send>>;
+
 pub fn require_module_permission(
     module: Module,
     min_level: PermissionLevel,
-) -> impl Fn(
-    Request<axum::body::Body>,
-    Next,
-) -> std::pin::Pin<
-    Box<dyn std::future::Future<Output = Result<Response, AppError>> + Send>,
-> + Clone
-+ Send
-+ Sync
-+ 'static {
+) -> impl Fn(Request<axum::body::Body>, Next) -> PermissionMiddlewareFuture
+       + Clone
+       + Send
+       + Sync
+       + 'static {
     move |request: Request<axum::body::Body>, next: Next| {
         Box::pin(async move {
             let auth_user = request
@@ -101,8 +100,10 @@ pub fn require_module_permission(
             let permissions = request
                 .extensions()
                 .get::<CompanyContext>()
-                .map(|ctx| ctx.permissions.clone())
-                .unwrap_or(serde_json::Value::Object(serde_json::Map::new()));
+                .map_or_else(
+                    || serde_json::Value::Object(serde_json::Map::new()),
+                    |ctx| ctx.permissions.clone(),
+                );
 
             check_module_permission(
                 auth_user.role.as_deref(),

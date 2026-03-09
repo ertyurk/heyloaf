@@ -109,6 +109,25 @@ impl UserRepository {
         .await
     }
 
+    pub async fn find_by_user_and_company(
+        pool: &PgPool,
+        user_id: Uuid,
+        company_id: Uuid,
+    ) -> Result<Option<CompanyUser>, sqlx::Error> {
+        sqlx::query_as::<_, CompanyUser>(
+            r"SELECT u.id AS user_id, u.name, u.email,
+                uc.role::text, uc.permissions, uc.is_active,
+                uc.created_at AS joined_at
+            FROM user_companies uc
+            JOIN users u ON u.id = uc.user_id
+            WHERE uc.company_id = $1 AND uc.user_id = $2",
+        )
+        .bind(company_id)
+        .bind(user_id)
+        .fetch_optional(pool)
+        .await
+    }
+
     pub async fn update_role(
         pool: &PgPool,
         user_id: Uuid,

@@ -50,7 +50,10 @@ impl StockCountRepository {
             .await
     }
 
-    pub async fn complete(pool: &PgPool, id: Uuid) -> Result<StockCount, sqlx::Error> {
+    pub async fn complete_with_executor<'e>(
+        executor: impl sqlx::PgExecutor<'e>,
+        id: Uuid,
+    ) -> Result<StockCount, sqlx::Error> {
         let sql = format!(
             r"UPDATE stock_counts SET status = 'completed'
             WHERE id = $1
@@ -59,8 +62,12 @@ impl StockCountRepository {
         );
         sqlx::query_as::<_, StockCount>(&sql)
             .bind(id)
-            .fetch_one(pool)
+            .fetch_one(executor)
             .await
+    }
+
+    pub async fn complete(pool: &PgPool, id: Uuid) -> Result<StockCount, sqlx::Error> {
+        Self::complete_with_executor(pool, id).await
     }
 
     pub async fn delete(pool: &PgPool, id: Uuid) -> Result<(), sqlx::Error> {

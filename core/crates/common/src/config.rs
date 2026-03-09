@@ -1,4 +1,5 @@
 use anyhow::{Context, anyhow};
+use tracing::warn;
 
 /// Application configuration loaded from environment variables.
 #[derive(Debug, Clone)]
@@ -52,6 +53,22 @@ impl Config {
         let log_level = std::env::var("LOG_LEVEL").unwrap_or_else(|_| "debug".to_string());
 
         let log_format = std::env::var("LOG_FORMAT").unwrap_or_else(|_| "pretty".to_string());
+
+        if jwt_secret.len() < 32 {
+            let is_production = std::env::var("APP_ENV")
+                .unwrap_or_default()
+                .eq_ignore_ascii_case("production");
+            if is_production {
+                return Err(anyhow!(
+                    "JWT_SECRET must be at least 32 characters in production"
+                ));
+            }
+            warn!(
+                "JWT_SECRET is shorter than 32 characters ({} chars). \
+                 Use a longer secret in production.",
+                jwt_secret.len()
+            );
+        }
 
         Ok(Self {
             database_url,

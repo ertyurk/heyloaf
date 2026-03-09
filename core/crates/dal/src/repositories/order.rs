@@ -191,19 +191,26 @@ impl OrderRepository {
 
     pub async fn next_number_with_executor<'e>(
         executor: impl sqlx::PgExecutor<'e>,
+        company_id: Uuid,
     ) -> Result<String, sqlx::Error> {
         let today = Utc::now().format("%Y%m%d").to_string();
 
-        let next: i64 =
-            sqlx::query_scalar("SELECT nextval('order_number_seq')")
-                .fetch_one(executor)
-                .await?;
+        let next: i64 = sqlx::query_scalar(
+            r"INSERT INTO counters (company_id, counter_type, last_value)
+            VALUES ($1, 'order', 1)
+            ON CONFLICT (company_id, counter_type)
+            DO UPDATE SET last_value = counters.last_value + 1
+            RETURNING last_value",
+        )
+        .bind(company_id)
+        .fetch_one(executor)
+        .await?;
 
         Ok(format!("ORD-{today}-{next:04}"))
     }
 
-    pub async fn next_number(pool: &PgPool, _company_id: Uuid) -> Result<String, sqlx::Error> {
-        Self::next_number_with_executor(pool).await
+    pub async fn next_number(pool: &PgPool, company_id: Uuid) -> Result<String, sqlx::Error> {
+        Self::next_number_with_executor(pool, company_id).await
     }
 }
 
@@ -211,7 +218,7 @@ pub struct OrderItemRepository;
 
 impl OrderItemRepository {
     const SELECT: &str = r"id, order_id, product_id, product_name, variant_name,
-        quantity, unit_price, vat_rate, line_total, created_at";
+        quantity, unit_price, vat_rate, line_total, returned_quantity, created_at";
 
     pub async fn find_by_id(
         pool: &PgPool,
@@ -353,5 +360,23 @@ impl OrderItemRepository {
         items: &[OrderItemTuple],
     ) -> Result<Vec<OrderItem>, sqlx::Error> {
         Self::create_batch_with_executor(pool, order_id, items).await
+    }
+
+    pub async fn update_returned_quantity_with_executor<'e>(
+        executor: impl sqlx::PgExecutor<'e>,
+        id: Uuid,
+        returned_quantity: f64,
+    ) -> Result<OrderItem, sqlx::Error> {
+        let sql = format!(
+            r"UPDATE order_items SET returned_quantity = $2
+            WHERE id = $1
+            RETURNING {}",
+            Self::SELECT
+        );
+        sqlx::query_as::<_, OrderItem>(&sql)
+            .bind(id)
+            .bind(returned_quantity)
+            .fetch_one(executor)
+            .await
     }
 }

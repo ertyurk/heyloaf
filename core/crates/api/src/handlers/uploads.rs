@@ -16,7 +16,6 @@ const ALLOWED_CONTENT_TYPES: &[&str] = &[
     "image/jpeg",
     "image/png",
     "image/webp",
-    "image/svg+xml",
 ];
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -29,7 +28,6 @@ fn extension_for_content_type(content_type: &str) -> Option<&'static str> {
         "image/jpeg" => Some("jpg"),
         "image/png" => Some("png"),
         "image/webp" => Some("webp"),
-        "image/svg+xml" => Some("svg"),
         _ => None,
     }
 }
@@ -59,7 +57,7 @@ pub async fn upload_file(
 
     if !ALLOWED_CONTENT_TYPES.contains(&content_type.as_str()) {
         return Err(AppError::BadRequest(format!(
-            "Unsupported file type: {content_type}. Allowed: JPEG, PNG, WebP, SVG"
+            "Unsupported file type: {content_type}. Allowed: JPEG, PNG, WebP"
         )));
     }
 

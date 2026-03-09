@@ -22,6 +22,10 @@ pub struct DashboardData {
 }
 
 // --- Helpers ---
+// NOTE: These inline SQL queries are intentionally placed here rather than in a
+// repository because they are read-only aggregation queries that span multiple
+// tables. They do not belong to any single repository per the "repos are 1:1
+// with tables" convention.
 
 async fn query_today_sales_total(
     pool: &sqlx::PgPool,

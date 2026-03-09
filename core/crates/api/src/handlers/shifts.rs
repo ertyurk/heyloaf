@@ -127,7 +127,15 @@ pub async fn open_shift(
         body.opening_balance,
     )
     .await
-    .map_err(|e| AppError::Database(e.to_string()))?;
+    .map_err(|e| {
+        // Catch the unique constraint violation from idx_one_open_shift_per_user
+        let msg = e.to_string();
+        if msg.contains("idx_one_open_shift_per_user") || msg.contains("unique") {
+            AppError::Conflict("You already have an open shift".into())
+        } else {
+            AppError::Database(msg)
+        }
+    })?;
 
     AuditBuilder::new(state.audit.clone(), ctx.company_id, auth.user_id)
         .entity("shift", shift.id)

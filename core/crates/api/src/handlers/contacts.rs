@@ -369,12 +369,17 @@ pub async fn record_payment(
 
     let date = body.date.unwrap_or_else(|| chrono::Utc::now().date_naive());
 
-    let updated_contact = ContactRepository::update_balance(&state.pool, id, -body.amount)
-        .await
-        .map_err(|e| AppError::Database(e.to_string()))?;
+    let mut tx = state.pool.begin().await.map_err(|e| {
+        AppError::Database(format!("Failed to start transaction: {e}"))
+    })?;
 
-    let transaction = TransactionRepository::create(
-        &state.pool,
+    let updated_contact =
+        ContactRepository::update_balance_with_executor(&mut *tx, id, -body.amount)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+
+    let transaction = TransactionRepository::create_with_executor(
+        &mut *tx,
         ctx.company_id,
         Some(id),
         "payment",
@@ -388,6 +393,10 @@ pub async fn record_payment(
     )
     .await
     .map_err(|e| AppError::Database(e.to_string()))?;
+
+    tx.commit().await.map_err(|e| {
+        AppError::Database(format!("Failed to commit transaction: {e}"))
+    })?;
 
     AuditBuilder::new(state.audit.clone(), ctx.company_id, auth.user_id)
         .entity("transaction", transaction.id)

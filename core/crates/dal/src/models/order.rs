@@ -33,5 +33,6 @@ pub struct OrderItem {
     pub unit_price: f64,
     pub vat_rate: f64,
     pub line_total: f64,
+    pub returned_quantity: f64,
     pub created_at: DateTime<Utc>,
 }

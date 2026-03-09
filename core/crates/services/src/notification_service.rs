@@ -1,23 +1,55 @@
+use std::collections::HashMap;
+use std::sync::{Arc, Mutex};
+use std::time::Instant;
+
 use heyloaf_common::errors::AppError;
 use heyloaf_dal::repositories::notification::NotificationRepository;
 use heyloaf_dal::repositories::stock::StockRepository;
 use sqlx::PgPool;
 use uuid::Uuid;
 
+/// Minimum interval between notification checks for the same company.
+const RATE_LIMIT_SECS: u64 = 300; // 5 minutes
+
 #[derive(Clone)]
 pub struct NotificationService {
     pool: PgPool,
+    /// Tracks the last time low_stock was checked per company.
+    low_stock_last_check: Arc<Mutex<HashMap<Uuid, Instant>>>,
+    /// Tracks the last time overdue_invoices was checked per company.
+    overdue_last_check: Arc<Mutex<HashMap<Uuid, Instant>>>,
 }
 
 impl NotificationService {
     #[must_use]
     pub fn new(pool: PgPool) -> Self {
-        Self { pool }
+        Self {
+            pool,
+            low_stock_last_check: Arc::new(Mutex::new(HashMap::new())),
+            overdue_last_check: Arc::new(Mutex::new(HashMap::new())),
+        }
+    }
+
+    /// Returns `true` if the check should be skipped (was done recently).
+    fn rate_limited(cache: &Mutex<HashMap<Uuid, Instant>>, company_id: Uuid) -> bool {
+        let mut map = cache.lock().unwrap_or_else(|e| e.into_inner());
+        if let Some(last) = map.get(&company_id)
+            && last.elapsed().as_secs() < RATE_LIMIT_SECS
+        {
+            return true;
+        }
+        map.insert(company_id, Instant::now());
+        false
     }
 
     /// Check all products with low stock and create notifications for any
     /// that don't already have an unread low-stock notification.
+    /// Skips the check if it was done for the same company within the last 5 minutes.
     pub async fn check_low_stock(&self, company_id: Uuid) -> Result<(), AppError> {
+        if Self::rate_limited(&self.low_stock_last_check, company_id) {
+            return Ok(());
+        }
+
         let low_stock_items = StockRepository::list_low_stock(&self.pool, company_id)
             .await
             .map_err(|e| AppError::Database(e.to_string()))?;
@@ -71,7 +103,12 @@ impl NotificationService {
     /// Check all pending invoices with a due date in the past and create
     /// notifications for any that don't already have an unread overdue
     /// notification.
+    /// Skips the check if it was done for the same company within the last 5 minutes.
     pub async fn check_overdue_invoices(&self, company_id: Uuid) -> Result<(), AppError> {
+        if Self::rate_limited(&self.overdue_last_check, company_id) {
+            return Ok(());
+        }
+
         let overdue_invoices: Vec<OverdueInvoice> = sqlx::query_as::<_, OverdueInvoice>(
             r"SELECT id, invoice_number FROM invoices
                 WHERE company_id = $1

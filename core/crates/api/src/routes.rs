@@ -1,6 +1,8 @@
+use axum::extract::DefaultBodyLimit;
 use axum::{Router, middleware as axum_middleware, routing};
 use heyloaf_common::types::{Module, PermissionLevel};
 use tower_http::services::ServeDir;
+use tower_http::set_header::SetResponseHeaderLayer;
 use utoipa::OpenApi;
 use utoipa_swagger_ui::SwaggerUi;
 
@@ -104,8 +106,9 @@ fn products_read_routes() -> Router<AppState> {
 fn products_write_routes() -> Router<AppState> {
     with_perm(
         Router::new()
-            // Uploads
+            // Uploads (5MB body limit)
             .route("/uploads", routing::post(handlers::uploads::upload_file))
+            .layer(DefaultBodyLimit::max(5 * 1024 * 1024))
             // Categories (write)
             .route(
                 "/categories",
@@ -587,10 +590,25 @@ pub fn create_routes(state: AppState) -> Router {
             middleware::language::language_middleware,
         ));
 
+    let uploads_service = Router::new()
+        .nest_service("/uploads", ServeDir::new("./uploads"))
+        .layer(SetResponseHeaderLayer::overriding(
+            axum::http::header::HeaderName::from_static("x-content-type-options"),
+            axum::http::header::HeaderValue::from_static("nosniff"),
+        ))
+        .layer(SetResponseHeaderLayer::overriding(
+            axum::http::header::CONTENT_DISPOSITION,
+            axum::http::header::HeaderValue::from_static("inline"),
+        ))
+        .layer(axum_middleware::from_fn_with_state(
+            state.clone(),
+            middleware::auth::auth_middleware,
+        ));
+
     Router::new()
         .merge(public_routes)
         .nest("/api", protected_routes)
-        .nest_service("/uploads", ServeDir::new("./uploads"))
+        .merge(uploads_service)
         .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
         .with_state(state)
 }

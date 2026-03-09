@@ -167,12 +167,23 @@ pub async fn create_invoice(
     Extension(auth): Extension<AuthUser>,
     ValidatedJson(body): ValidatedJson<CreateInvoiceRequest>,
 ) -> Result<Json<ApiResponse<Invoice>>, AppError> {
+    // Validate invoice_type against known values
+    if body.invoice_type != "purchase" && body.invoice_type != "sale" {
+        return Err(AppError::Validation {
+            field: "invoice_type".into(),
+            message: format!(
+                "Unknown invoice type '{}'. Must be 'purchase' or 'sale'",
+                body.invoice_type
+            ),
+        });
+    }
+
     let mut tx = state.pool.begin().await.map_err(|e| {
         AppError::Database(format!("Failed to start transaction: {e}"))
     })?;
 
     let invoice_number =
-        InvoiceRepository::next_number_with_executor(&mut *tx, &body.invoice_type)
+        InvoiceRepository::next_number_with_executor(&mut *tx, ctx.company_id, &body.invoice_type)
             .await
             .map_err(|e| AppError::Database(e.to_string()))?;
 
@@ -326,6 +337,19 @@ pub async fn update_invoice_status(
 
     if existing.company_id != ctx.company_id {
         return Err(AppError::NotFound("Invoice not found".into()));
+    }
+
+    // Valid status transitions: draft -> pending, pending -> paid/cancelled, paid -> (none)
+    let valid_transition = matches!(
+        (existing.status.as_str(), body.status.as_str()),
+        ("draft", "pending" | "cancelled") | ("pending", "paid" | "cancelled")
+    );
+
+    if !valid_transition {
+        return Err(AppError::BadRequest(format!(
+            "Invalid status transition from '{}' to '{}'",
+            existing.status, body.status
+        )));
     }
 
     let invoice = InvoiceRepository::update_status(&state.pool, id, &body.status)
