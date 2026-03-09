@@ -33,6 +33,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { useApi } from "@/hooks/use-api"
 import { useAuthStore } from "@/lib/auth"
@@ -174,11 +175,12 @@ interface ReceiptSheetProps {
 }
 
 function ReceiptSheet({ open, onOpenChange, order, companyName }: ReceiptSheetProps) {
+  const { t } = useTranslation()
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" id="pos-receipt-sheet" className="sm:max-w-md">
         <SheetHeader>
-          <SheetTitle>Receipt</SheetTitle>
+          <SheetTitle>{t("pos.receipt")}</SheetTitle>
         </SheetHeader>
         <SheetBody>
           {order && (
@@ -209,22 +211,22 @@ function ReceiptSheet({ open, onOpenChange, order, companyName }: ReceiptSheetPr
               <Separator />
               <div className="space-y-1 text-sm">
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Subtotal</span>
+                  <span className="text-muted-foreground">{t("common.subtotal")}</span>
                   <span className="tabular-nums">{formatCurrency(order.subtotal)}</span>
                 </div>
                 <div className="flex justify-between">
-                  <span className="text-muted-foreground">Tax</span>
+                  <span className="text-muted-foreground">{t("common.tax")}</span>
                   <span className="tabular-nums">{formatCurrency(order.taxTotal)}</span>
                 </div>
                 <Separator />
                 <div className="flex justify-between font-semibold">
-                  <span>Total</span>
+                  <span>{t("common.total")}</span>
                   <span className="tabular-nums">{formatCurrency(order.grandTotal)}</span>
                 </div>
               </div>
               <Separator />
               <div className="text-sm">
-                <span className="text-muted-foreground">Payment: </span>
+                <span className="text-muted-foreground">{t("pos.payment")}: </span>
                 <span>{order.paymentMethod}</span>
               </div>
             </div>
@@ -232,9 +234,9 @@ function ReceiptSheet({ open, onOpenChange, order, companyName }: ReceiptSheetPr
         </SheetBody>
         <SheetFooter className="no-print">
           <Button variant="outline" onClick={() => window.print()}>
-            Print
+            {t("common.print")}
           </Button>
-          <SheetClose render={<Button>Close</Button>} />
+          <SheetClose render={<Button>{t("common.close")}</Button>} />
         </SheetFooter>
       </SheetContent>
     </Sheet>
@@ -263,12 +265,13 @@ function SplitPaymentPanel({
   onAddRow,
   onCancel,
 }: SplitPaymentPanelProps) {
+  const { t } = useTranslation()
   return (
     <div className="mb-2 space-y-2">
       <div className="flex items-center justify-between">
-        <span className="text-xs font-medium">Split Payment</span>
+        <span className="text-xs font-medium">{t("pos.splitPayment")}</span>
         <Button variant="ghost" size="sm" className="h-6 px-1 text-xs" onClick={onCancel}>
-          Cancel
+          {t("common.cancel")}
         </Button>
       </div>
       {splitPayments.map((row) => (
@@ -326,7 +329,7 @@ function SplitPaymentPanel({
           disabled={splitPayments.length >= paymentMethods.length}
           onClick={onAddRow}
         >
-          + Add Method
+          {t("pos.addMethod")}
         </Button>
         <span
           className={`text-xs tabular-nums ${
@@ -342,6 +345,7 @@ function SplitPaymentPanel({
 
 // biome-ignore lint/complexity/noExcessiveCognitiveComplexity: POS page is inherently complex with cart, payments, and keyboard handling
 function PosPage() {
+  const { t } = useTranslation()
   const client = useApi()
   const queryClient = useQueryClient()
   const navigate = useNavigate()
@@ -373,6 +377,10 @@ function PosPage() {
   // Parked carts state
   const [parkedCarts, setParkedCarts] = useState<ParkedCart[]>(loadParkedCarts)
 
+  // Park cart label state (replaces window.prompt)
+  const [parkLabelOpen, setParkLabelOpen] = useState(false)
+  const [parkLabel, setParkLabel] = useState("")
+
   // Barcode scanner state
   const barcodeBuffer = useRef("")
   const barcodeTimer = useRef<ReturnType<typeof setTimeout>>(null)
@@ -383,6 +391,13 @@ function PosPage() {
   useEffect(() => {
     localStorage.setItem("heyloaf-pos-cart", JSON.stringify(cart))
   }, [cart])
+
+  // Debounce cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimer.current) clearTimeout(searchTimer.current)
+    }
+  }, [])
 
   function handleSearchChange(value: string) {
     setSearch(value)
@@ -655,21 +670,25 @@ function PosPage() {
       localStorage.removeItem("heyloaf-pos-cart")
       setPaymentMethodId("")
       exitSplitMode()
-      toast.success("Order placed")
+      toast.success(t("pos.orderPlaced"))
     },
     onError: () => {
-      toast.error("Failed to place order")
+      toast.error(t("pos.failedToPlaceOrder"))
     },
   })
 
   // --- Park/Retrieve carts ---
-  function parkCart() {
+  function openParkDialog() {
     if (cart.length === 0) return
-    const label = prompt("Label for parked cart:")
-    if (!label) return
+    setParkLabel("")
+    setParkLabelOpen(true)
+  }
+
+  function confirmParkCart() {
+    if (!parkLabel.trim()) return
     const parked: ParkedCart = {
       id: crypto.randomUUID(),
-      label,
+      label: parkLabel.trim(),
       items: [...cart],
       total: grandTotal,
       itemCount: cart.reduce((sum, item) => sum + item.quantity, 0),
@@ -680,7 +699,9 @@ function PosPage() {
     saveParkedCarts(updated)
     setCart([])
     localStorage.removeItem("heyloaf-pos-cart")
-    toast.success("Cart parked")
+    setParkLabelOpen(false)
+    setParkLabel("")
+    toast.success(t("pos.cartParked"))
   }
 
   function retrieveCart(parked: ParkedCart) {
@@ -688,7 +709,7 @@ function PosPage() {
     const updated = parkedCarts.filter((c) => c.id !== parked.id)
     setParkedCarts(updated)
     saveParkedCarts(updated)
-    toast.success("Cart retrieved")
+    toast.success(t("pos.cartRetrieved"))
   }
 
   function deleteParkedCart(id: string) {
@@ -705,12 +726,12 @@ function PosPage() {
       const product = posProducts.find((p) => p.barcode === trimmed || p.code === trimmed)
       if (product) {
         addToCart(product)
-        toast.success(`Added: ${product.name}`)
+        toast.success(t("pos.addedProduct", { name: product.name }))
       } else {
-        toast.error(`Product not found for barcode: ${trimmed}`)
+        toast.error(t("pos.productNotFoundForBarcode", { barcode: trimmed }))
       }
     },
-    [posProducts, addToCart]
+    [posProducts, addToCart, t]
   )
 
   // Barcode scanner keydown listener
@@ -778,12 +799,12 @@ function PosPage() {
   const handlePlaceOrder = useCallback(() => {
     if (cart.length > 0 && !placeOrder.isPending) {
       if (splitMode && !splitValid) {
-        toast.error("Split payment amounts must equal the total")
+        toast.error(t("pos.splitAmountsMustEqual"))
         return
       }
       placeOrder.mutate()
     }
-  }, [cart.length, placeOrder, splitMode, splitValid])
+  }, [cart.length, placeOrder, splitMode, splitValid, t])
 
   const handleExit = useCallback(() => {
     navigate({ to: "/dashboard" })
@@ -881,10 +902,10 @@ function PosPage() {
       {/* Header */}
       <div className="flex h-12 shrink-0 items-center justify-between border-b bg-foreground px-4 no-print">
         <div className="flex items-center gap-3">
-          <span className="text-sm font-bold tracking-tight text-background">Point of Sale</span>
+          <span className="text-sm font-bold tracking-tight text-background">{t("pos.title")}</span>
           {barcodeActive && (
             <Badge variant="secondary" className="text-xs">
-              Scanning...
+              {t("pos.scanning")}
             </Badge>
           )}
         </div>
@@ -895,7 +916,7 @@ function PosPage() {
             className="text-background hover:bg-background/20 hover:text-background"
             onClick={handleExit}
           >
-            Exit
+            {t("common.exit")}
           </Button>
         </div>
       </div>
@@ -909,19 +930,21 @@ function PosPage() {
               <button
                 type="button"
                 onClick={() => setSelectedCategory(null)}
+                aria-pressed={selectedCategory === null}
                 className={`rounded-md px-3 py-2 text-left text-sm transition-colors ${
                   selectedCategory === null
                     ? "bg-background font-medium text-foreground shadow-sm"
                     : "text-muted-foreground hover:bg-background/50 hover:text-foreground"
                 }`}
               >
-                All
+                {t("pos.allCategories")}
               </button>
               {posCategories.map((cat: Category) => (
                 <button
                   key={cat.id}
                   type="button"
                   onClick={() => setSelectedCategory(cat.id)}
+                  aria-pressed={selectedCategory === cat.id}
                   className={`rounded-md px-3 py-2 text-left text-sm transition-colors ${
                     selectedCategory === cat.id
                       ? "bg-background font-medium text-foreground shadow-sm"
@@ -946,7 +969,7 @@ function PosPage() {
                 className="text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2"
               />
               <Input
-                placeholder="Search products..."
+                placeholder={t("pos.searchProducts")}
                 value={search}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 className="pl-8"
@@ -963,7 +986,15 @@ function PosPage() {
                   <Card
                     key={product.id}
                     className="cursor-pointer transition-colors hover:bg-accent"
+                    role="button"
+                    tabIndex={0}
                     onClick={() => addToCart(product)}
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter" || e.key === " ") {
+                        e.preventDefault()
+                        addToCart(product)
+                      }
+                    }}
                   >
                     <CardContent className="flex flex-col items-start gap-1 p-3">
                       <span className="line-clamp-2 text-sm font-medium leading-tight">
@@ -978,7 +1009,7 @@ function PosPage() {
               })}
               {filteredProducts.length === 0 && (
                 <div className="col-span-full py-12 text-center text-sm text-muted-foreground">
-                  No products found
+                  {t("pos.noProductsFound")}
                 </div>
               )}
             </div>
@@ -990,7 +1021,7 @@ function PosPage() {
           {/* Cart header with park/retrieve */}
           <div className="flex h-10 shrink-0 items-center justify-between border-b px-4">
             <div className="flex items-center">
-              <span className="text-sm font-medium">Cart</span>
+              <span className="text-sm font-medium">{t("pos.cart")}</span>
               {cart.length > 0 && (
                 <Badge variant="secondary" className="ml-2">
                   {cart.reduce((sum, item) => sum + item.quantity, 0)}
@@ -1003,22 +1034,23 @@ function PosPage() {
                 size="sm"
                 className="h-7 px-2 text-xs"
                 disabled={cart.length === 0}
-                onClick={parkCart}
+                onClick={openParkDialog}
               >
-                Park
+                {t("pos.park")}
               </Button>
               <DropdownMenu>
                 <DropdownMenuTrigger
                   render={
                     <Button variant="ghost" size="sm" className="h-7 px-2 text-xs">
-                      Parked{parkedCarts.length > 0 ? ` (${parkedCarts.length})` : ""}
+                      {t("pos.parked")}
+                      {parkedCarts.length > 0 ? ` (${parkedCarts.length})` : ""}
                     </Button>
                   }
                 />
                 <DropdownMenuContent align="end" sideOffset={4}>
                   {parkedCarts.length === 0 && (
                     <div className="px-2 py-3 text-center text-xs text-muted-foreground">
-                      No parked carts
+                      {t("pos.noParkedCarts")}
                     </div>
                   )}
                   {parkedCarts.map((pc) => (
@@ -1037,11 +1069,11 @@ function PosPage() {
                             deleteParkedCart(pc.id)
                           }}
                         >
-                          Delete
+                          {t("common.delete")}
                         </button>
                       </div>
                       <span className="text-xs text-muted-foreground">
-                        {pc.itemCount} items &middot; {formatCurrency(pc.total)} &middot;{" "}
+                        {pc.itemCount} {t("pos.items")} &middot; {formatCurrency(pc.total)} &middot;{" "}
                         {new Date(pc.timestamp).toLocaleTimeString()}
                       </span>
                     </DropdownMenuItem>
@@ -1050,7 +1082,7 @@ function PosPage() {
                     <>
                       <DropdownMenuSeparator />
                       <div className="px-2 py-1 text-xs text-muted-foreground">
-                        Click to retrieve
+                        {t("pos.clickToRetrieve")}
                       </div>
                     </>
                   )}
@@ -1063,7 +1095,9 @@ function PosPage() {
           <ScrollArea className="flex-1">
             <div className="flex flex-col gap-1 p-2">
               {cart.length === 0 && (
-                <div className="py-12 text-center text-sm text-muted-foreground">Cart is empty</div>
+                <div className="py-12 text-center text-sm text-muted-foreground">
+                  {t("pos.cartIsEmpty")}
+                </div>
               )}
               {cart.map((item, index) => (
                 <button
@@ -1123,16 +1157,16 @@ function PosPage() {
           <div className="shrink-0 border-t">
             <div className="space-y-1 p-3">
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Subtotal</span>
+                <span className="text-muted-foreground">{t("common.subtotal")}</span>
                 <span className="tabular-nums">{formatCurrency(subtotal)}</span>
               </div>
               <div className="flex items-center justify-between text-sm">
-                <span className="text-muted-foreground">Tax</span>
+                <span className="text-muted-foreground">{t("common.tax")}</span>
                 <span className="tabular-nums">{formatCurrency(taxTotal)}</span>
               </div>
               <Separator />
               <div className="flex items-center justify-between text-base font-semibold">
-                <span>Total</span>
+                <span>{t("common.total")}</span>
                 <span className="tabular-nums">{formatCurrency(grandTotal)}</span>
               </div>
             </div>
@@ -1146,7 +1180,7 @@ function PosPage() {
                     onValueChange={(val) => setPaymentMethodId(val as string)}
                   >
                     <SelectTrigger className="mb-2 w-full">
-                      <SelectValue placeholder="Payment method" />
+                      <SelectValue placeholder={t("pos.paymentMethod")} />
                     </SelectTrigger>
                     <SelectContent>
                       {paymentMethods.map((pm) => (
@@ -1163,7 +1197,7 @@ function PosPage() {
                     disabled={paymentMethods.length < 2}
                     onClick={initSplitMode}
                   >
-                    Split Payment
+                    {t("pos.splitPayment")}
                   </Button>
                 </>
               ) : (
@@ -1185,13 +1219,13 @@ function PosPage() {
                 disabled={cart.length === 0 || placeOrder.isPending || (splitMode && !splitValid)}
                 onClick={() => {
                   if (splitMode && !splitValid) {
-                    toast.error("Split payment amounts must equal the total")
+                    toast.error(t("pos.splitAmountsMustEqual"))
                     return
                   }
                   placeOrder.mutate()
                 }}
               >
-                {placeOrder.isPending ? "Placing..." : "Place Order"}
+                {placeOrder.isPending ? t("pos.placing") : t("pos.placeOrder")}
               </Button>
             </div>
           </div>
@@ -1204,6 +1238,42 @@ function PosPage() {
         order={lastOrder}
         companyName={company?.name ?? "Company"}
       />
+
+      {/* Park Cart Label Sheet (replaces window.prompt) */}
+      <Sheet open={parkLabelOpen} onOpenChange={setParkLabelOpen}>
+        <SheetContent side="right" className="sm:max-w-sm">
+          <SheetHeader>
+            <SheetTitle>{t("pos.park")}</SheetTitle>
+          </SheetHeader>
+          <form
+            onSubmit={(e) => {
+              e.preventDefault()
+              confirmParkCart()
+            }}
+            className="flex flex-1 flex-col"
+          >
+            <SheetBody className="grid gap-4">
+              <div className="grid gap-2">
+                <Input
+                  autoFocus
+                  value={parkLabel}
+                  onChange={(e) => setParkLabel(e.target.value)}
+                  placeholder={t("pos.parkCartPlaceholder")}
+                  required
+                />
+              </div>
+            </SheetBody>
+            <SheetFooter>
+              <Button variant="outline" type="button" onClick={() => setParkLabelOpen(false)}>
+                {t("common.cancel")}
+              </Button>
+              <Button type="submit" disabled={!parkLabel.trim()}>
+                {t("pos.park")}
+              </Button>
+            </SheetFooter>
+          </form>
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }

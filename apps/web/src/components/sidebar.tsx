@@ -63,8 +63,7 @@ const navItems = [
 export function AppSidebar() {
   const { t } = useTranslation()
   const location = useRouterState({ select: (s) => s.location })
-  const { user, company, companies, setToken, setCompany, clearAuth, canViewModule } =
-    useAuthStore()
+  const { user, company, companies, setAuth, clearAuth, canViewModule } = useAuthStore()
   const client = useApi()
 
   const { data: unreadData } = useQuery({
@@ -76,7 +75,10 @@ export function AppSidebar() {
     refetchInterval: 30_000,
   })
 
-  const unreadCount = (unreadData as { count?: number })?.count ?? 0
+  const unreadCount =
+    unreadData && typeof unreadData === "object" && "count" in unreadData
+      ? (unreadData.count as number)
+      : 0
 
   const switchCompany = useMutation({
     mutationFn: async (companyId: string) => {
@@ -84,12 +86,18 @@ export function AppSidebar() {
         body: { company_id: companyId },
       })
       if (error || !data) throw new Error("Failed to switch company")
-      return data as { data: { access_token: string; refresh_token: string } }
+      return data as { data: { access_token: string } }
     },
     onSuccess: (res, companyId) => {
-      setToken(res.data.access_token)
       const switched = companies.find((c) => c.id === companyId)
-      if (switched) setCompany(switched)
+      if (switched && user) {
+        setAuth({
+          token: res.data.access_token,
+          user,
+          company: switched,
+          companies,
+        })
+      }
       window.location.reload()
     },
     onError: () => {
@@ -191,6 +199,7 @@ export function AppSidebar() {
           type="button"
           onClick={clearAuth}
           className="shrink-0 text-muted-foreground hover:text-foreground"
+          aria-label={t("nav.logout")}
         >
           <HugeiconsIcon icon={Logout01Icon} size={16} />
         </button>

@@ -2,6 +2,8 @@ import appCss from "@heyloaf/ui/globals.css?url"
 import { QueryClientProvider } from "@tanstack/react-query"
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
 import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router"
+import { useEffect } from "react"
+import { useTranslation } from "react-i18next"
 import { Toaster } from "sonner"
 import "@/lib/i18n"
 import { createQueryClient } from "@/lib/query"
@@ -45,6 +47,12 @@ function RootDocument({ children }: { children: React.ReactNode }) {
 }
 
 function RootComponent() {
+  const { i18n } = useTranslation()
+
+  useEffect(() => {
+    document.documentElement.lang = i18n.language
+  }, [i18n.language])
+
   return (
     <QueryClientProvider client={queryClient}>
       <Outlet />

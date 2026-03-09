@@ -4,9 +4,11 @@ import { Label } from "@heyloaf/ui/components/label"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { useEffect, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
+import { API_BASE_URL } from "@/lib/api"
 import { useAuthStore } from "@/lib/auth"
 
 export const Route = createFileRoute("/_authenticated/settings/company")({
@@ -43,12 +45,8 @@ const emptyForm: CompanyForm = {
   timezone: "",
 }
 
-const API_BASE_URL =
-  typeof window !== "undefined"
-    ? `${window.location.protocol}//${window.location.hostname}:8083`
-    : "http://localhost:8083"
-
 function CompanyPage() {
+  const { t } = useTranslation()
   const client = useApi()
   const queryClient = useQueryClient()
   const token = useAuthStore((s) => s.token)
@@ -105,9 +103,9 @@ function CompanyPage() {
       const json = await res.json()
       const url: string = json.data.url
       setForm((f) => ({ ...f, logo_url: url }))
-      toast.success("Logo uploaded")
+      toast.success(t("settings.company.logoUploaded"))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Upload failed")
+      toast.error(err instanceof Error ? err.message : t("settings.company.uploadFailed"))
     } finally {
       setUploadingLogo(false)
       if (logoInputRef.current) logoInputRef.current.value = ""
@@ -134,9 +132,9 @@ function CompanyPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["company"] })
-      toast.success("Company settings saved")
+      toast.success(t("settings.company.saved"))
     },
-    onError: () => toast.error("Failed to save company settings"),
+    onError: () => toast.error(t("settings.company.failedToSave")),
   })
 
   function handleSubmit(e: React.FormEvent) {
@@ -165,20 +163,26 @@ function CompanyPage() {
   if (isLoading) {
     return (
       <>
-        <PageHeader title="Company Settings" description="Manage your company profile" />
-        <p className="text-muted-foreground py-8 text-center text-sm">Loading...</p>
+        <PageHeader
+          title={t("settings.company.title")}
+          description={t("settings.company.description")}
+        />
+        <p className="text-muted-foreground py-8 text-center text-sm">{t("common.loading")}</p>
       </>
     )
   }
 
   return (
     <>
-      <PageHeader title="Company Settings" description="Manage your company profile" />
+      <PageHeader
+        title={t("settings.company.title")}
+        description={t("settings.company.description")}
+      />
 
       <form onSubmit={handleSubmit} className="mx-auto max-w-2xl space-y-6 p-6">
         {/* Logo Upload */}
         <div className="grid gap-2">
-          <Label>Company Logo</Label>
+          <Label>{t("settings.company.companyLogo")}</Label>
           <div className="flex items-center gap-4">
             <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted">
               {form.logo_url ? (
@@ -188,7 +192,9 @@ function CompanyPage() {
                   className="h-full w-full object-cover"
                 />
               ) : (
-                <span className="text-muted-foreground text-xs">No logo</span>
+                <span className="text-muted-foreground text-xs">
+                  {t("settings.company.noLogo")}
+                </span>
               )}
             </div>
             <div className="flex flex-col gap-1">
@@ -206,15 +212,15 @@ function CompanyPage() {
                 disabled={uploadingLogo}
                 onClick={() => logoInputRef.current?.click()}
               >
-                {uploadingLogo ? "Uploading..." : "Upload Logo"}
+                {uploadingLogo ? t("settings.company.uploading") : t("settings.company.uploadLogo")}
               </Button>
-              <p className="text-muted-foreground text-xs">JPEG, PNG, WebP, or SVG. Max 5MB.</p>
+              <p className="text-muted-foreground text-xs">{t("settings.company.logoHint")}</p>
             </div>
           </div>
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="name">Company Name</Label>
+          <Label htmlFor="name">{t("settings.company.companyName")}</Label>
           <Input
             id="name"
             value={form.name}
@@ -225,7 +231,7 @@ function CompanyPage() {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="grid gap-2">
-            <Label htmlFor="tax_number">Tax Number</Label>
+            <Label htmlFor="tax_number">{t("settings.company.taxNumber")}</Label>
             <Input
               id="tax_number"
               value={form.tax_number}
@@ -233,7 +239,7 @@ function CompanyPage() {
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="tax_office">Tax Office</Label>
+            <Label htmlFor="tax_office">{t("settings.company.taxOffice")}</Label>
             <Input
               id="tax_office"
               value={form.tax_office}
@@ -243,7 +249,7 @@ function CompanyPage() {
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="address">Address</Label>
+          <Label htmlFor="address">{t("settings.company.address")}</Label>
           <Input
             id="address"
             value={form.address}
@@ -253,7 +259,7 @@ function CompanyPage() {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="grid gap-2">
-            <Label htmlFor="phone">Phone</Label>
+            <Label htmlFor="phone">{t("settings.company.phone")}</Label>
             <Input
               id="phone"
               type="tel"
@@ -262,7 +268,7 @@ function CompanyPage() {
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="email">Email</Label>
+            <Label htmlFor="email">{t("settings.company.email")}</Label>
             <Input
               id="email"
               type="email"
@@ -273,7 +279,7 @@ function CompanyPage() {
         </div>
 
         <div className="grid gap-2">
-          <Label htmlFor="website">Website</Label>
+          <Label htmlFor="website">{t("settings.company.website")}</Label>
           <Input
             id="website"
             type="url"
@@ -285,7 +291,7 @@ function CompanyPage() {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="grid gap-2">
-            <Label htmlFor="default_currency">Default Currency</Label>
+            <Label htmlFor="default_currency">{t("settings.company.defaultCurrency")}</Label>
             <Input
               id="default_currency"
               value={form.default_currency}
@@ -294,7 +300,7 @@ function CompanyPage() {
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="default_tax_rate">Default Tax Rate</Label>
+            <Label htmlFor="default_tax_rate">{t("settings.company.defaultTaxRate")}</Label>
             <Input
               id="default_tax_rate"
               value={form.default_tax_rate}
@@ -306,7 +312,7 @@ function CompanyPage() {
 
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
           <div className="grid gap-2">
-            <Label htmlFor="default_language">Default Language</Label>
+            <Label htmlFor="default_language">{t("settings.company.defaultLanguage")}</Label>
             <Input
               id="default_language"
               value={form.default_language}
@@ -315,7 +321,7 @@ function CompanyPage() {
             />
           </div>
           <div className="grid gap-2">
-            <Label htmlFor="timezone">Timezone</Label>
+            <Label htmlFor="timezone">{t("settings.company.timezone")}</Label>
             <Input
               id="timezone"
               value={form.timezone}
@@ -327,7 +333,7 @@ function CompanyPage() {
 
         <div className="flex justify-end pt-4">
           <Button type="submit" disabled={updateMutation.isPending}>
-            {updateMutation.isPending ? "Saving..." : "Save Changes"}
+            {updateMutation.isPending ? t("common.saving") : t("common.saveChanges")}
           </Button>
         </div>
       </form>

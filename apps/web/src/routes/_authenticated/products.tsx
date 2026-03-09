@@ -27,16 +27,13 @@ import Search01Icon from "@hugeicons/core-free-icons/Search01Icon"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
+import { API_BASE_URL } from "@/lib/api"
 import { useAuthStore } from "@/lib/auth"
-
-const API_BASE_URL =
-  typeof window !== "undefined"
-    ? `${window.location.protocol}//${window.location.hostname}:8083`
-    : "http://localhost:8083"
 
 type Product = components["schemas"]["Product"]
 type Category = components["schemas"]["Category"]
@@ -44,22 +41,6 @@ type Category = components["schemas"]["Category"]
 export const Route = createFileRoute("/_authenticated/products")({
   component: ProductsPage,
 })
-
-const TYPE_OPTIONS = [
-  { value: "", label: "All Types" },
-  { value: "raw", label: "Raw" },
-  { value: "semi", label: "Semi" },
-  { value: "finished", label: "Finished" },
-  { value: "commercial", label: "Commercial" },
-  { value: "consumable", label: "Consumable" },
-]
-
-const STATUS_OPTIONS = [
-  { value: "", label: "All Statuses" },
-  { value: "draft", label: "Draft" },
-  { value: "inactive", label: "Inactive" },
-  { value: "active", label: "Active" },
-]
 
 const SALE_UNIT_TYPE_OPTIONS = [
   { value: "piece", label: "Piece" },
@@ -72,7 +53,308 @@ const PLU_TYPE_OPTIONS = [
   { value: "piece", label: "Piece" },
 ]
 
+// --- Shared form fields component ---
+interface ProductFormData {
+  name: string
+  code: string
+  barcode: string
+  category_id: string
+  unit_of_measure: string
+  tax_rate: string
+  stock_tracking: boolean
+  sale_unit_type: string
+  plu_type: string
+  plu_code: string
+  scale_enabled: boolean
+  min_stock_level: string
+}
+
+interface ProductFormFieldsProps {
+  form: ProductFormData
+  setForm: React.Dispatch<React.SetStateAction<ProductFormData>>
+  categories: Category[]
+  imageUrl: string
+  imageInputRef: React.RefObject<HTMLInputElement | null>
+  uploadingImage: boolean
+  onImageChange: (e: React.ChangeEvent<HTMLInputElement>) => void
+  onUploadClick: () => void
+  idPrefix: string
+  showStatus?: boolean
+  statusValue?: string
+  onStatusChange?: (val: string | null) => void
+  showProductType?: boolean
+  productTypeValue?: string
+  onProductTypeChange?: (val: string | null) => void
+  productTypeReadonly?: string
+  showStockStatus?: boolean
+  stockStatusValue?: string
+  t: (key: string) => string
+}
+
+function ProductFormFields({
+  form,
+  setForm,
+  categories,
+  imageUrl,
+  imageInputRef,
+  uploadingImage,
+  onImageChange,
+  onUploadClick,
+  idPrefix,
+  showStatus,
+  statusValue,
+  onStatusChange,
+  showProductType,
+  productTypeValue,
+  onProductTypeChange,
+  productTypeReadonly,
+  t,
+}: ProductFormFieldsProps) {
+  return (
+    <>
+      {/* Product Image */}
+      <div className="grid gap-2">
+        <Label>{t("products.productImage")}</Label>
+        <div className="flex items-center gap-3">
+          <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted">
+            {imageUrl ? (
+              <img
+                src={`${API_BASE_URL}${imageUrl}`}
+                alt={t("common.product")}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <span className="text-muted-foreground text-xs">{t("products.noImage")}</span>
+            )}
+          </div>
+          <div className="flex flex-col gap-1">
+            <input
+              ref={imageInputRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="hidden"
+              onChange={onImageChange}
+            />
+            <Button
+              type="button"
+              variant="outline"
+              size="sm"
+              disabled={uploadingImage}
+              onClick={onUploadClick}
+            >
+              {uploadingImage ? t("products.uploading") : t("products.uploadImage")}
+            </Button>
+          </div>
+        </div>
+      </div>
+
+      <div className="grid gap-2">
+        <Label htmlFor={`${idPrefix}-name`}>{t("common.name")} *</Label>
+        <Input
+          id={`${idPrefix}-name`}
+          required
+          value={form.name}
+          onChange={(e) => setForm((f) => ({ ...f, name: e.target.value }))}
+        />
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor={`${idPrefix}-code`}>{t("common.code")}</Label>
+        <Input
+          id={`${idPrefix}-code`}
+          value={form.code}
+          onChange={(e) => setForm((f) => ({ ...f, code: e.target.value }))}
+        />
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor={`${idPrefix}-barcode`}>{t("products.barcode")}</Label>
+        <Input
+          id={`${idPrefix}-barcode`}
+          value={form.barcode}
+          onChange={(e) => setForm((f) => ({ ...f, barcode: e.target.value }))}
+        />
+      </div>
+      <div className="grid gap-2">
+        <Label>{t("common.category")}</Label>
+        <Select
+          value={form.category_id}
+          onValueChange={(val) => setForm((f) => ({ ...f, category_id: val ?? "" }))}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue placeholder={t("products.selectCategory")} />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="">{t("common.none")}</SelectItem>
+            {categories.map((cat: Category) => (
+              <SelectItem key={cat.id} value={cat.id}>
+                {cat.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+
+      {showProductType && productTypeValue != null && onProductTypeChange && (
+        <div className="grid gap-2">
+          <Label>{t("products.productType")}</Label>
+          <Select value={productTypeValue} onValueChange={onProductTypeChange}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="raw">{t("products.raw")}</SelectItem>
+              <SelectItem value="semi">{t("products.semi")}</SelectItem>
+              <SelectItem value="finished">{t("products.finished")}</SelectItem>
+              <SelectItem value="commercial">{t("products.commercial")}</SelectItem>
+              <SelectItem value="consumable">{t("products.consumable")}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      {productTypeReadonly != null && (
+        <div className="grid gap-2">
+          <Label>{t("products.productType")}</Label>
+          <Input value={productTypeReadonly} disabled className="capitalize" />
+          <p className="text-xs text-muted-foreground">
+            {t("products.productTypeCannotBeChanged")}
+          </p>
+        </div>
+      )}
+
+      {showStatus && statusValue != null && onStatusChange && (
+        <div className="grid gap-2">
+          <Label>{t("common.status")}</Label>
+          <Select value={statusValue} onValueChange={onStatusChange}>
+            <SelectTrigger className="w-full">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="draft">{t("common.draft")}</SelectItem>
+              <SelectItem value="inactive">{t("common.inactive")}</SelectItem>
+              <SelectItem value="active">{t("common.active")}</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+      )}
+
+      <div className="grid gap-2">
+        <Label>{t("products.unitOfMeasure")}</Label>
+        <Select
+          value={form.unit_of_measure}
+          onValueChange={(val) => setForm((f) => ({ ...f, unit_of_measure: val ?? "" }))}
+        >
+          <SelectTrigger className="w-full">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="piece">{t("products.piece")}</SelectItem>
+            <SelectItem value="kg">{t("products.kg")}</SelectItem>
+            <SelectItem value="liter">{t("products.liter")}</SelectItem>
+            <SelectItem value="gram">{t("products.gram")}</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      <div className="grid gap-2">
+        <Label htmlFor={`${idPrefix}-tax-rate`}>{t("products.taxRate")}</Label>
+        <Input
+          id={`${idPrefix}-tax-rate`}
+          type="number"
+          step="0.01"
+          value={form.tax_rate}
+          onChange={(e) => setForm((f) => ({ ...f, tax_rate: e.target.value }))}
+        />
+      </div>
+      <div className="flex items-center gap-2">
+        <Checkbox
+          id={`${idPrefix}-stock-tracking`}
+          checked={form.stock_tracking}
+          onCheckedChange={(checked) =>
+            setForm((f) => ({
+              ...f,
+              stock_tracking: checked === true,
+            }))
+          }
+        />
+        <Label htmlFor={`${idPrefix}-stock-tracking`}>{t("products.stockTracking")}</Label>
+      </div>
+
+      {/* Sale Settings */}
+      <div className="border-t pt-4 mt-2">
+        <p className="text-sm font-medium mb-3">{t("products.saleSettings")}</p>
+        <div className="grid gap-4">
+          <div className="grid gap-2">
+            <Label>{t("products.saleUnitType")}</Label>
+            <AdvancedSelect
+              options={SALE_UNIT_TYPE_OPTIONS}
+              value={form.sale_unit_type}
+              onValueChange={(val) => setForm((f) => ({ ...f, sale_unit_type: val ?? "piece" }))}
+              searchable={false}
+              className="w-full"
+              aria-label={t("products.saleUnitType")}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label>{t("products.pluType")}</Label>
+            <AdvancedSelect
+              options={PLU_TYPE_OPTIONS}
+              value={form.plu_type}
+              onValueChange={(val) =>
+                setForm((f) => ({
+                  ...f,
+                  plu_type: val ?? "piece",
+                  ...(val === "piece" ? { scale_enabled: false } : {}),
+                }))
+              }
+              searchable={false}
+              className="w-full"
+              aria-label={t("products.pluType")}
+            />
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor={`${idPrefix}-plu-code`}>{t("products.pluCode")}</Label>
+            <Input
+              id={`${idPrefix}-plu-code`}
+              value={form.plu_code}
+              onChange={(e) => setForm((f) => ({ ...f, plu_code: e.target.value }))}
+            />
+          </div>
+          <div className="flex items-center gap-2">
+            <Checkbox
+              id={`${idPrefix}-scale-enabled`}
+              checked={form.scale_enabled}
+              disabled={form.plu_type === "piece"}
+              onCheckedChange={(checked) =>
+                setForm((f) => ({
+                  ...f,
+                  scale_enabled: checked === true,
+                }))
+              }
+            />
+            <Label htmlFor={`${idPrefix}-scale-enabled`}>{t("products.scaleEnabled")}</Label>
+            {form.plu_type === "piece" && (
+              <span className="text-xs text-muted-foreground">
+                {t("products.disabledForPiecePluType")}
+              </span>
+            )}
+          </div>
+          <div className="grid gap-2">
+            <Label htmlFor={`${idPrefix}-min-stock-level`}>{t("products.minStockLevel")}</Label>
+            <Input
+              id={`${idPrefix}-min-stock-level`}
+              type="number"
+              step="0.01"
+              value={form.min_stock_level}
+              onChange={(e) => setForm((f) => ({ ...f, min_stock_level: e.target.value }))}
+            />
+          </div>
+        </div>
+      </div>
+    </>
+  )
+}
+
 function ProductsPage() {
+  const { t } = useTranslation()
   const client = useApi()
   const queryClient = useQueryClient()
   const token = useAuthStore((s) => s.token)
@@ -80,6 +362,9 @@ function ProductsPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+
+  // Confirmation state for delete (replaces window.confirm)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
   const createImageInputRef = useRef<HTMLInputElement>(null)
   const editImageInputRef = useRef<HTMLInputElement>(null)
@@ -105,13 +390,13 @@ function ProductsPage() {
       })
       if (!res.ok) {
         const err = await res.json()
-        throw new Error(err?.error?.message ?? "Upload failed")
+        throw new Error(err?.error?.message ?? t("products.uploadFailed"))
       }
       const json = await res.json()
       setUrl(json.data.url)
-      toast.success("Image uploaded")
+      toast.success(t("products.imageUploaded"))
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Upload failed")
+      toast.error(err instanceof Error ? err.message : t("products.uploadFailed"))
     } finally {
       setUploading(false)
       if (inputRef.current) inputRef.current.value = ""
@@ -120,10 +405,17 @@ function ProductsPage() {
 
   // Search and filters
   const [searchQuery, setSearchQuery] = useState("")
-  const [typeFilter, setTypeFilter] = useState<string | undefined>("")
-  const [statusFilter, setStatusFilter] = useState<string | undefined>("")
+  const [typeFilter, setTypeFilter] = useState<string | undefined>("all")
+  const [statusFilter, setStatusFilter] = useState<string | undefined>("all")
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>(null)
   const [debouncedSearch, setDebouncedSearch] = useState("")
+
+  // Debounce cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
+    }
+  }, [])
 
   function handleSearchChange(value: string) {
     setSearchQuery(value)
@@ -132,6 +424,28 @@ function ProductsPage() {
       setDebouncedSearch(value)
     }, 300)
   }
+
+  const TYPE_OPTIONS = useMemo(
+    () => [
+      { value: "all", label: t("products.allTypes") },
+      { value: "raw", label: t("products.raw") },
+      { value: "semi", label: t("products.semi") },
+      { value: "finished", label: t("products.finished") },
+      { value: "commercial", label: t("products.commercial") },
+      { value: "consumable", label: t("products.consumable") },
+    ],
+    [t]
+  )
+
+  const STATUS_OPTIONS = useMemo(
+    () => [
+      { value: "all", label: t("products.allStatuses") },
+      { value: "draft", label: t("common.draft") },
+      { value: "inactive", label: t("common.inactive") },
+      { value: "active", label: t("common.active") },
+    ],
+    [t]
+  )
 
   // Create form state
   const [createForm, setCreateForm] = useState({
@@ -193,64 +507,71 @@ function ProductsPage() {
       if (q && !p.name?.toLowerCase().includes(q) && !p.code?.toLowerCase().includes(q)) {
         return false
       }
-      if (typeFilter && p.product_type !== typeFilter) return false
-      if (statusFilter && p.status !== statusFilter) return false
+      if (typeFilter && typeFilter !== "all" && p.product_type !== typeFilter) return false
+      if (statusFilter && statusFilter !== "all" && p.status !== statusFilter) return false
       return true
     })
   }, [products, debouncedSearch, typeFilter, statusFilter])
 
-  const columns = [
-    {
-      id: "image",
-      header: "",
-      cell: (row: Product) => (
-        <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded bg-muted">
-          {row.image_url ? (
-            <img
-              src={`${API_BASE_URL}${row.image_url}`}
-              alt={row.name}
-              className="h-full w-full object-cover"
-            />
-          ) : (
-            <span className="text-muted-foreground text-[10px]">--</span>
-          )}
-        </div>
-      ),
-    },
-    {
-      id: "code",
-      header: "Code",
-      cell: (row: Product) => <span className="text-muted-foreground">{row.code ?? "-"}</span>,
-    },
-    {
-      id: "name",
-      header: "Name",
-      cell: (row: Product) => <span className="font-medium">{row.name}</span>,
-    },
-    {
-      id: "category",
-      header: "Category",
-      cell: (row: Product) => (
-        <span className="text-muted-foreground">
-          {categories.find((c: Category) => c.id === row.category_id)?.name ?? "-"}
-        </span>
-      ),
-    },
-    {
-      id: "type",
-      header: "Type",
-      cell: (row: Product) => <span className="text-muted-foreground">{row.product_type}</span>,
-    },
-    {
-      id: "status",
-      header: "Status",
-      cell: (row: Product) => (
-        <Badge variant={row.status === "active" ? "default" : "secondary"}>
-          {row.status === "active" ? "Active" : row.status === "draft" ? "Draft" : "Inactive"}
-        </Badge>
-      ),
-    },
-  ]
+  const columns = useMemo(
+    () => [
+      {
+        id: "image",
+        header: "",
+        cell: (row: Product) => (
+          <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded bg-muted">
+            {row.image_url ? (
+              <img
+                src={`${API_BASE_URL}${row.image_url}`}
+                alt={row.name}
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              <span className="text-muted-foreground text-[10px]">--</span>
+            )}
+          </div>
+        ),
+      },
+      {
+        id: "code",
+        header: t("common.code"),
+        cell: (row: Product) => <span className="text-muted-foreground">{row.code ?? "-"}</span>,
+      },
+      {
+        id: "name",
+        header: t("common.name"),
+        cell: (row: Product) => <span className="font-medium">{row.name}</span>,
+      },
+      {
+        id: "category",
+        header: t("common.category"),
+        cell: (row: Product) => (
+          <span className="text-muted-foreground">
+            {categories.find((c: Category) => c.id === row.category_id)?.name ?? "-"}
+          </span>
+        ),
+      },
+      {
+        id: "type",
+        header: t("common.type"),
+        cell: (row: Product) => <span className="text-muted-foreground">{row.product_type}</span>,
+      },
+      {
+        id: "status",
+        header: t("common.status"),
+        cell: (row: Product) => (
+          <Badge variant={row.status === "active" ? "default" : "secondary"}>
+            {row.status === "active"
+              ? t("common.active")
+              : row.status === "draft"
+                ? t("common.draft")
+                : t("common.inactive")}
+          </Badge>
+        ),
+      },
+    ],
+    [categories, t]
+  )
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -277,13 +598,13 @@ function ProductsPage() {
         body,
       })
       if (error)
-        throw new Error((error as { message?: string }).message ?? "Failed to create product")
+        throw new Error((error as { message?: string }).message ?? t("products.uploadFailed"))
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] })
       setCreateOpen(false)
       resetCreateForm()
-      toast.success("Product created successfully")
+      toast.success(t("products.productCreated"))
     },
     onError: (err: Error) => {
       toast.error(err.message)
@@ -318,13 +639,13 @@ function ProductsPage() {
         body: buildUpdateBody(),
       })
       if (error)
-        throw new Error((error as { message?: string }).message ?? "Failed to update product")
+        throw new Error((error as { message?: string }).message ?? t("products.uploadFailed"))
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] })
       setEditOpen(false)
       setEditingProduct(null)
-      toast.success("Product updated successfully")
+      toast.success(t("products.productUpdated"))
     },
     onError: (err: Error) => {
       toast.error(err.message)
@@ -337,11 +658,11 @@ function ProductsPage() {
         params: { path: { id } },
       })
       if (error)
-        throw new Error((error as { message?: string }).message ?? "Failed to delete product")
+        throw new Error((error as { message?: string }).message ?? t("products.uploadFailed"))
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] })
-      toast.success("Product deleted successfully")
+      toast.success(t("products.productDeleted"))
     },
     onError: (err: Error) => {
       toast.error(err.message)
@@ -389,9 +710,10 @@ function ProductsPage() {
     setEditOpen(true)
   }
 
-  function handleDelete(id: string) {
-    if (window.confirm("Are you sure you want to delete this product?")) {
-      deleteMutation.mutate(id)
+  function confirmDelete() {
+    if (confirmDeleteId) {
+      deleteMutation.mutate(confirmDeleteId)
+      setConfirmDeleteId(null)
     }
   }
 
@@ -407,8 +729,8 @@ function ProductsPage() {
 
   return (
     <>
-      <PageHeader title="Products" description="Manage your product catalog">
-        <Button onClick={() => setCreateOpen(true)}>New Product</Button>
+      <PageHeader title={t("products.title")} description={t("products.description")}>
+        <Button onClick={() => setCreateOpen(true)}>{t("products.newProduct")}</Button>
       </PageHeader>
 
       <div className="space-y-4 p-6">
@@ -421,7 +743,7 @@ function ProductsPage() {
               className="text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2"
             />
             <Input
-              placeholder="Search products..."
+              placeholder={t("products.searchProducts")}
               className="pl-9"
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
@@ -431,19 +753,19 @@ function ProductsPage() {
             options={TYPE_OPTIONS}
             value={typeFilter}
             onValueChange={setTypeFilter}
-            placeholder="All Types"
+            placeholder={t("products.allTypes")}
             searchable={false}
             className="w-40"
-            aria-label="Filter by type"
+            aria-label={t("products.allTypes")}
           />
           <AdvancedSelect
             options={STATUS_OPTIONS}
             value={statusFilter}
             onValueChange={setStatusFilter}
-            placeholder="All Statuses"
+            placeholder={t("products.allStatuses")}
             searchable={false}
             className="w-40"
-            aria-label="Filter by status"
+            aria-label={t("products.allStatuses")}
           />
         </div>
 
@@ -453,258 +775,78 @@ function ProductsPage() {
           data={filtered}
           getRowId={(row) => row.id}
           isLoading={isLoading}
-          emptyMessage="No products found. Add your first product to get started."
+          emptyMessage={t("products.noProductsFound")}
           onRowClick={openEditSheet}
           rowActions={(row) => (
             <>
-              <DropdownMenuItem onClick={() => openEditSheet(row)}>Edit</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => openEditSheet(row)}>
+                {t("common.edit")}
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" onClick={() => handleDelete(row.id)}>
-                Delete
+              <DropdownMenuItem variant="destructive" onClick={() => setConfirmDeleteId(row.id)}>
+                {t("common.delete")}
               </DropdownMenuItem>
             </>
           )}
         />
       </div>
 
+      {/* Delete Confirmation */}
+      {confirmDeleteId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="mx-4 w-full max-w-sm rounded-lg bg-background p-6 shadow-lg">
+            <p className="mb-4 text-sm">{t("products.confirmDeleteProduct")}</p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setConfirmDeleteId(null)}>
+                {t("common.cancel")}
+              </Button>
+              <Button variant="destructive" size="sm" onClick={confirmDelete}>
+                {t("common.delete")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Create Product Sheet */}
       <Sheet open={createOpen} onOpenChange={setCreateOpen}>
         <SheetContent side="right" className="sm:max-w-md">
           <SheetHeader>
-            <SheetTitle>Create Product</SheetTitle>
+            <SheetTitle>{t("products.createProduct")}</SheetTitle>
           </SheetHeader>
           <form onSubmit={handleCreateSubmit} className="flex flex-col flex-1 overflow-hidden">
             <SheetBody className="grid gap-4">
-              {/* Product Image */}
-              <div className="grid gap-2">
-                <Label>Product Image</Label>
-                <div className="flex items-center gap-3">
-                  <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted">
-                    {createImageUrl ? (
-                      <img
-                        src={`${API_BASE_URL}${createImageUrl}`}
-                        alt="Product"
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-muted-foreground text-xs">No image</span>
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <input
-                      ref={createImageInputRef}
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp,image/svg+xml"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0]
-                        if (file)
-                          handleImageUpload(
-                            file,
-                            setCreateImageUrl,
-                            setUploadingCreateImage,
-                            createImageInputRef
-                          )
-                      }}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={uploadingCreateImage}
-                      onClick={() => createImageInputRef.current?.click()}
-                    >
-                      {uploadingCreateImage ? "Uploading..." : "Upload Image"}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="create-name">Name *</Label>
-                <Input
-                  id="create-name"
-                  required
-                  value={createForm.name}
-                  onChange={(e) => setCreateForm((f) => ({ ...f, name: e.target.value }))}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="create-code">Code</Label>
-                <Input
-                  id="create-code"
-                  value={createForm.code}
-                  onChange={(e) => setCreateForm((f) => ({ ...f, code: e.target.value }))}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="create-barcode">Barcode</Label>
-                <Input
-                  id="create-barcode"
-                  value={createForm.barcode}
-                  onChange={(e) => setCreateForm((f) => ({ ...f, barcode: e.target.value }))}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label>Category</Label>
-                <Select
-                  value={createForm.category_id}
-                  onValueChange={(val) => setCreateForm((f) => ({ ...f, category_id: val ?? "" }))}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">None</SelectItem>
-                    {categories.map((cat: Category) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <Label>Product Type</Label>
-                <Select
-                  value={createForm.product_type}
-                  onValueChange={(val) => setCreateForm((f) => ({ ...f, product_type: val ?? "" }))}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="raw">Raw</SelectItem>
-                    <SelectItem value="semi">Semi</SelectItem>
-                    <SelectItem value="finished">Finished</SelectItem>
-                    <SelectItem value="commercial">Commercial</SelectItem>
-                    <SelectItem value="consumable">Consumable</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <Label>Unit of Measure</Label>
-                <Select
-                  value={createForm.unit_of_measure}
-                  onValueChange={(val) =>
-                    setCreateForm((f) => ({ ...f, unit_of_measure: val ?? "" }))
-                  }
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="piece">Piece</SelectItem>
-                    <SelectItem value="kg">Kg</SelectItem>
-                    <SelectItem value="liter">Liter</SelectItem>
-                    <SelectItem value="gram">Gram</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="create-tax-rate">Tax Rate</Label>
-                <Input
-                  id="create-tax-rate"
-                  type="number"
-                  step="0.01"
-                  value={createForm.tax_rate}
-                  onChange={(e) => setCreateForm((f) => ({ ...f, tax_rate: e.target.value }))}
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id="create-stock-tracking"
-                  checked={createForm.stock_tracking}
-                  onCheckedChange={(checked) =>
-                    setCreateForm((f) => ({
-                      ...f,
-                      stock_tracking: checked === true,
-                    }))
-                  }
-                />
-                <Label htmlFor="create-stock-tracking">Stock Tracking</Label>
-              </div>
-
-              {/* Sale Settings */}
-              <div className="border-t pt-4 mt-2">
-                <p className="text-sm font-medium mb-3">Sale Settings</p>
-                <div className="grid gap-4">
-                  <div className="grid gap-2">
-                    <Label>Sale Unit Type</Label>
-                    <AdvancedSelect
-                      options={SALE_UNIT_TYPE_OPTIONS}
-                      value={createForm.sale_unit_type}
-                      onValueChange={(val) =>
-                        setCreateForm((f) => ({ ...f, sale_unit_type: val ?? "piece" }))
-                      }
-                      searchable={false}
-                      className="w-full"
-                      aria-label="Sale unit type"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>PLU Type</Label>
-                    <AdvancedSelect
-                      options={PLU_TYPE_OPTIONS}
-                      value={createForm.plu_type}
-                      onValueChange={(val) =>
-                        setCreateForm((f) => ({
-                          ...f,
-                          plu_type: val ?? "piece",
-                          ...(val === "piece" ? { scale_enabled: false } : {}),
-                        }))
-                      }
-                      searchable={false}
-                      className="w-full"
-                      aria-label="PLU type"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="create-plu-code">PLU Code</Label>
-                    <Input
-                      id="create-plu-code"
-                      value={createForm.plu_code}
-                      onChange={(e) => setCreateForm((f) => ({ ...f, plu_code: e.target.value }))}
-                    />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="create-scale-enabled"
-                      checked={createForm.scale_enabled}
-                      disabled={createForm.plu_type === "piece"}
-                      onCheckedChange={(checked) =>
-                        setCreateForm((f) => ({
-                          ...f,
-                          scale_enabled: checked === true,
-                        }))
-                      }
-                    />
-                    <Label htmlFor="create-scale-enabled">Scale Enabled</Label>
-                    {createForm.plu_type === "piece" && (
-                      <span className="text-xs text-muted-foreground">
-                        (disabled for piece PLU type)
-                      </span>
-                    )}
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="create-min-stock-level">Min Stock Level</Label>
-                    <Input
-                      id="create-min-stock-level"
-                      type="number"
-                      step="0.01"
-                      value={createForm.min_stock_level}
-                      onChange={(e) =>
-                        setCreateForm((f) => ({ ...f, min_stock_level: e.target.value }))
-                      }
-                    />
-                  </div>
-                </div>
-              </div>
+              <ProductFormFields
+                form={createForm}
+                setForm={setCreateForm as never}
+                categories={categories}
+                imageUrl={createImageUrl}
+                imageInputRef={createImageInputRef}
+                uploadingImage={uploadingCreateImage}
+                onImageChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file)
+                    handleImageUpload(
+                      file,
+                      setCreateImageUrl,
+                      setUploadingCreateImage,
+                      createImageInputRef
+                    )
+                }}
+                onUploadClick={() => createImageInputRef.current?.click()}
+                idPrefix="create"
+                showProductType
+                productTypeValue={createForm.product_type}
+                onProductTypeChange={(val) =>
+                  setCreateForm((f) => ({ ...f, product_type: val ?? "" }))
+                }
+                t={t}
+              />
             </SheetBody>
             <SheetFooter>
-              <SheetClose render={<Button variant="outline" />}>Cancel</SheetClose>
+              <SheetClose render={<Button variant="outline" />}>{t("common.cancel")}</SheetClose>
               <Button type="submit" disabled={createMutation.isPending}>
-                {createMutation.isPending ? "Creating..." : "Create"}
+                {createMutation.isPending ? t("common.creating") : t("common.create")}
               </Button>
             </SheetFooter>
           </form>
@@ -715,245 +857,40 @@ function ProductsPage() {
       <Sheet open={editOpen} onOpenChange={setEditOpen}>
         <SheetContent side="right" className="sm:max-w-md">
           <SheetHeader>
-            <SheetTitle>Edit Product</SheetTitle>
+            <SheetTitle>{t("products.editProduct")}</SheetTitle>
           </SheetHeader>
           <form onSubmit={handleEditSubmit} className="flex flex-col flex-1 overflow-hidden">
             <SheetBody className="grid gap-4">
-              {/* Product Image */}
-              <div className="grid gap-2">
-                <Label>Product Image</Label>
-                <div className="flex items-center gap-3">
-                  <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-lg border bg-muted">
-                    {editImageUrl ? (
-                      <img
-                        src={`${API_BASE_URL}${editImageUrl}`}
-                        alt="Product"
-                        className="h-full w-full object-cover"
-                      />
-                    ) : (
-                      <span className="text-muted-foreground text-xs">No image</span>
-                    )}
-                  </div>
-                  <div className="flex flex-col gap-1">
-                    <input
-                      ref={editImageInputRef}
-                      type="file"
-                      accept="image/jpeg,image/png,image/webp,image/svg+xml"
-                      className="hidden"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0]
-                        if (file)
-                          handleImageUpload(
-                            file,
-                            setEditImageUrl,
-                            setUploadingEditImage,
-                            editImageInputRef
-                          )
-                      }}
-                    />
-                    <Button
-                      type="button"
-                      variant="outline"
-                      size="sm"
-                      disabled={uploadingEditImage}
-                      onClick={() => editImageInputRef.current?.click()}
-                    >
-                      {uploadingEditImage ? "Uploading..." : "Upload Image"}
-                    </Button>
-                  </div>
-                </div>
-              </div>
-
-              <div className="grid gap-2">
-                <Label htmlFor="edit-name">Name *</Label>
-                <Input
-                  id="edit-name"
-                  required
-                  value={editForm.name}
-                  onChange={(e) => setEditForm((f) => ({ ...f, name: e.target.value }))}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="edit-code">Code</Label>
-                <Input
-                  id="edit-code"
-                  value={editForm.code}
-                  onChange={(e) => setEditForm((f) => ({ ...f, code: e.target.value }))}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="edit-barcode">Barcode</Label>
-                <Input
-                  id="edit-barcode"
-                  value={editForm.barcode}
-                  onChange={(e) => setEditForm((f) => ({ ...f, barcode: e.target.value }))}
-                />
-              </div>
-              <div className="grid gap-2">
-                <Label>Category</Label>
-                <Select
-                  value={editForm.category_id}
-                  onValueChange={(val) => setEditForm((f) => ({ ...f, category_id: val ?? "" }))}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select category" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="">None</SelectItem>
-                    {categories.map((cat: Category) => (
-                      <SelectItem key={cat.id} value={cat.id}>
-                        {cat.name}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <Label>Product Type</Label>
-                <Input value={editingProduct?.product_type ?? ""} disabled className="capitalize" />
-                <p className="text-xs text-muted-foreground">
-                  Product type cannot be changed after creation.
-                </p>
-              </div>
-              <div className="grid gap-2">
-                <Label>Status</Label>
-                <Select
-                  value={editForm.status}
-                  onValueChange={(val) => setEditForm((f) => ({ ...f, status: val ?? "" }))}
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="draft">Draft</SelectItem>
-                    <SelectItem value="inactive">Inactive</SelectItem>
-                    <SelectItem value="active">Active</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <Label>Unit of Measure</Label>
-                <Select
-                  value={editForm.unit_of_measure}
-                  onValueChange={(val) =>
-                    setEditForm((f) => ({ ...f, unit_of_measure: val ?? "" }))
-                  }
-                >
-                  <SelectTrigger className="w-full">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="piece">Piece</SelectItem>
-                    <SelectItem value="kg">Kg</SelectItem>
-                    <SelectItem value="liter">Liter</SelectItem>
-                    <SelectItem value="gram">Gram</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="grid gap-2">
-                <Label htmlFor="edit-tax-rate">Tax Rate</Label>
-                <Input
-                  id="edit-tax-rate"
-                  type="number"
-                  step="0.01"
-                  value={editForm.tax_rate}
-                  onChange={(e) => setEditForm((f) => ({ ...f, tax_rate: e.target.value }))}
-                />
-              </div>
-              <div className="flex items-center gap-2">
-                <Checkbox
-                  id="edit-stock-tracking"
-                  checked={editForm.stock_tracking}
-                  onCheckedChange={(checked) =>
-                    setEditForm((f) => ({
-                      ...f,
-                      stock_tracking: checked === true,
-                    }))
-                  }
-                />
-                <Label htmlFor="edit-stock-tracking">Stock Tracking</Label>
-              </div>
-
-              {/* Sale Settings */}
-              <div className="border-t pt-4 mt-2">
-                <p className="text-sm font-medium mb-3">Sale Settings</p>
-                <div className="grid gap-4">
-                  <div className="grid gap-2">
-                    <Label>Sale Unit Type</Label>
-                    <AdvancedSelect
-                      options={SALE_UNIT_TYPE_OPTIONS}
-                      value={editForm.sale_unit_type}
-                      onValueChange={(val) =>
-                        setEditForm((f) => ({ ...f, sale_unit_type: val ?? "piece" }))
-                      }
-                      searchable={false}
-                      className="w-full"
-                      aria-label="Sale unit type"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label>PLU Type</Label>
-                    <AdvancedSelect
-                      options={PLU_TYPE_OPTIONS}
-                      value={editForm.plu_type}
-                      onValueChange={(val) =>
-                        setEditForm((f) => ({
-                          ...f,
-                          plu_type: val ?? "piece",
-                          ...(val === "piece" ? { scale_enabled: false } : {}),
-                        }))
-                      }
-                      searchable={false}
-                      className="w-full"
-                      aria-label="PLU type"
-                    />
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="edit-plu-code">PLU Code</Label>
-                    <Input
-                      id="edit-plu-code"
-                      value={editForm.plu_code}
-                      onChange={(e) => setEditForm((f) => ({ ...f, plu_code: e.target.value }))}
-                    />
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Checkbox
-                      id="edit-scale-enabled"
-                      checked={editForm.scale_enabled}
-                      disabled={editForm.plu_type === "piece"}
-                      onCheckedChange={(checked) =>
-                        setEditForm((f) => ({
-                          ...f,
-                          scale_enabled: checked === true,
-                        }))
-                      }
-                    />
-                    <Label htmlFor="edit-scale-enabled">Scale Enabled</Label>
-                    {editForm.plu_type === "piece" && (
-                      <span className="text-xs text-muted-foreground">
-                        (disabled for piece PLU type)
-                      </span>
-                    )}
-                  </div>
-                  <div className="grid gap-2">
-                    <Label htmlFor="edit-min-stock-level">Min Stock Level</Label>
-                    <Input
-                      id="edit-min-stock-level"
-                      type="number"
-                      step="0.01"
-                      value={editForm.min_stock_level}
-                      onChange={(e) =>
-                        setEditForm((f) => ({ ...f, min_stock_level: e.target.value }))
-                      }
-                    />
-                  </div>
-                </div>
-              </div>
+              <ProductFormFields
+                form={editForm}
+                setForm={setEditForm as never}
+                categories={categories}
+                imageUrl={editImageUrl}
+                imageInputRef={editImageInputRef}
+                uploadingImage={uploadingEditImage}
+                onImageChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file)
+                    handleImageUpload(
+                      file,
+                      setEditImageUrl,
+                      setUploadingEditImage,
+                      editImageInputRef
+                    )
+                }}
+                onUploadClick={() => editImageInputRef.current?.click()}
+                idPrefix="edit"
+                showStatus
+                statusValue={editForm.status}
+                onStatusChange={(val) => setEditForm((f) => ({ ...f, status: val ?? "" }))}
+                productTypeReadonly={editingProduct?.product_type ?? ""}
+                t={t}
+              />
             </SheetBody>
             <SheetFooter>
-              <SheetClose render={<Button variant="outline" />}>Cancel</SheetClose>
+              <SheetClose render={<Button variant="outline" />}>{t("common.cancel")}</SheetClose>
               <Button type="submit" disabled={updateMutation.isPending}>
-                {updateMutation.isPending ? "Saving..." : "Save"}
+                {updateMutation.isPending ? t("common.saving") : t("common.save")}
               </Button>
             </SheetFooter>
           </form>

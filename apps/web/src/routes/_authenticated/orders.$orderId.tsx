@@ -22,6 +22,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useCallback, useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
@@ -57,6 +58,7 @@ interface ReturnSelection {
 }
 
 function OrderDetailPage() {
+  const { t } = useTranslation()
   const { orderId } = Route.useParams()
   const client = useApi()
   const queryClient = useQueryClient()
@@ -65,6 +67,7 @@ function OrderDetailPage() {
   const [returnOpen, setReturnOpen] = useState(false)
   const [returnReason, setReturnReason] = useState("")
   const [returnSelections, setReturnSelections] = useState<Record<string, ReturnSelection>>({})
+  const [confirmVoid, setConfirmVoid] = useState(false)
 
   const { data: orderData, isLoading } = useQuery({
     queryKey: ["orders", orderId],
@@ -108,10 +111,12 @@ function OrderDetailPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders", orderId] })
       queryClient.invalidateQueries({ queryKey: ["orders"] })
-      toast.success("Order voided")
+      setConfirmVoid(false)
+      toast.success(t("orders.orderVoided"))
     },
     onError: () => {
-      toast.error("Failed to void order")
+      setConfirmVoid(false)
+      toast.error(t("orders.failedToVoidOrder"))
     },
   })
 
@@ -133,18 +138,12 @@ function OrderDetailPage() {
       queryClient.invalidateQueries({ queryKey: ["orders"] })
       setReturnOpen(false)
       resetReturnForm()
-      toast.success("Order returned")
+      toast.success(t("orders.orderReturned"))
     },
     onError: () => {
-      toast.error("Failed to return order")
+      toast.error(t("orders.failedToReturnOrder"))
     },
   })
-
-  function handleVoid() {
-    if (window.confirm("Are you sure you want to void this order?")) {
-      voidMutation.mutate()
-    }
-  }
 
   function resetReturnForm() {
     setReturnReason("")
@@ -204,7 +203,9 @@ function OrderDetailPage() {
     })
   }, [returnSelections, returnReason, order])
 
-  const orderTitle = order?.order_number ? `Order #${order.order_number}` : "Order Detail"
+  const orderTitle = order?.order_number
+    ? `${t("orders.orderNumber")}${order.order_number}`
+    : t("orders.title")
 
   const canModify = order && order.status !== "voided" && order.status !== "returned"
 
@@ -212,24 +213,24 @@ function OrderDetailPage() {
     () => [
       {
         id: "product",
-        header: "Product",
+        header: t("common.product"),
         cell: (row: OrderItem) => <span className="font-medium">{row.product_name}</span>,
       },
       {
         id: "variant",
-        header: "Variant",
+        header: t("production.variant"),
         cell: (row: OrderItem) => (
           <span className="text-muted-foreground">{row.variant_name ?? "\u2014"}</span>
         ),
       },
       {
         id: "quantity",
-        header: "Quantity",
+        header: t("common.quantity"),
         cell: (row: OrderItem) => <span className="tabular-nums">{row.quantity}</span>,
       },
       {
         id: "unit_price",
-        header: <span className="text-right block">Unit Price</span>,
+        header: <span className="text-right block">{t("common.price")}</span>,
         cell: (row: OrderItem) => (
           <span className="tabular-nums">{formatCurrency(row.unit_price)}</span>
         ),
@@ -237,28 +238,28 @@ function OrderDetailPage() {
       },
       {
         id: "vat_rate",
-        header: "VAT Rate",
+        header: t("orders.vatPercent"),
         cell: (row: OrderItem) => (
           <span className="text-muted-foreground tabular-nums">{row.vat_rate}%</span>
         ),
       },
       {
         id: "line_total",
-        header: <span className="text-right block">Line Total</span>,
+        header: <span className="text-right block">{t("common.total")}</span>,
         cell: (row: OrderItem) => (
           <span className="tabular-nums font-medium">{formatCurrency(row.line_total)}</span>
         ),
         className: "text-right",
       },
     ],
-    []
+    [t]
   )
 
   if (isLoading) {
     return (
       <>
-        <PageHeader title="Loading..." />
-        <div className="p-6 text-muted-foreground">Loading order details...</div>
+        <PageHeader title={t("common.loading")} />
+        <div className="p-6 text-muted-foreground">{t("common.loading")}</div>
       </>
     )
   }
@@ -266,8 +267,8 @@ function OrderDetailPage() {
   if (!order) {
     return (
       <>
-        <PageHeader title="Order not found" />
-        <div className="p-6 text-muted-foreground">The requested order could not be found.</div>
+        <PageHeader title={t("orders.title")} />
+        <div className="p-6 text-muted-foreground">{t("common.noDataFound")}</div>
       </>
     )
   }
@@ -292,11 +293,11 @@ function OrderDetailPage() {
       <PageHeader title={orderTitle} description={`Created ${formatDate(order.created_at)}`}>
         <Button variant="outline" size="sm" onClick={() => navigate({ to: "/orders" })}>
           <HugeiconsIcon icon={ArrowLeft01Icon} size={16} className="mr-1" />
-          Back
+          {t("common.back")}
         </Button>
         <Button variant="outline" size="sm" onClick={handleReprintReceipt}>
           <HugeiconsIcon icon={PrinterIcon} size={16} className="mr-1" />
-          Reprint Receipt
+          {t("common.print")}
         </Button>
         {canModify && (
           <>
@@ -306,15 +307,15 @@ function OrderDetailPage() {
               onClick={openReturnSheet}
               disabled={returnMutation.isPending}
             >
-              Return Items
+              {t("orders.return")}
             </Button>
             <Button
               variant="destructive"
               size="sm"
-              onClick={handleVoid}
+              onClick={() => setConfirmVoid(true)}
               disabled={voidMutation.isPending}
             >
-              {voidMutation.isPending ? "Voiding..." : "Void Order"}
+              {t("orders.void")}
             </Button>
           </>
         )}
@@ -325,7 +326,7 @@ function OrderDetailPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground">Status</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">{t("common.status")}</CardTitle>
             </CardHeader>
             <CardContent>
               <Badge
@@ -339,7 +340,7 @@ function OrderDetailPage() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground">Date</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">{t("common.date")}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm font-medium">{formatDate(order.created_at)}</p>
@@ -347,7 +348,9 @@ function OrderDetailPage() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground">Payment Method</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">
+                {t("orders.paymentMethod")}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm font-medium">
@@ -374,23 +377,23 @@ function OrderDetailPage() {
           data={order.items}
           getRowId={(row) => row.id}
           isLoading={false}
-          emptyMessage="No items in this order."
+          emptyMessage={t("common.noDataFound")}
         />
 
         {/* Totals Section */}
         <div className="flex justify-end">
           <div className="w-64 rounded-md border p-4 space-y-2 text-sm">
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Subtotal</span>
+              <span className="text-muted-foreground">{t("common.subtotal")}</span>
               <span className="tabular-nums">{formatCurrency(order.subtotal)}</span>
             </div>
             <div className="flex justify-between">
-              <span className="text-muted-foreground">Tax</span>
+              <span className="text-muted-foreground">{t("common.tax")}</span>
               <span className="tabular-nums">{formatCurrency(order.tax_total)}</span>
             </div>
             <Separator />
             <div className="flex justify-between font-medium">
-              <span>Total</span>
+              <span>{t("common.total")}</span>
               <span className="tabular-nums">{formatCurrency(order.total)}</span>
             </div>
           </div>
@@ -399,23 +402,45 @@ function OrderDetailPage() {
         {/* Notes */}
         {order.notes && (
           <div className="rounded-md border p-4">
-            <p className="text-sm text-muted-foreground mb-1">Notes</p>
+            <p className="text-sm text-muted-foreground mb-1">{t("common.notes")}</p>
             <p className="text-sm">{order.notes}</p>
           </div>
         )}
       </div>
 
+      {/* Void Confirmation */}
+      {confirmVoid && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="rounded-lg border bg-background p-6 shadow-lg max-w-sm w-full mx-4">
+            <p className="text-sm mb-4">{t("orders.confirmVoid")}</p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setConfirmVoid(false)}>
+                {t("common.cancel")}
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => voidMutation.mutate()}
+                disabled={voidMutation.isPending}
+              >
+                {t("orders.void")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Return Items Sheet */}
       <Sheet open={returnOpen} onOpenChange={setReturnOpen}>
         <SheetContent side="right" className="sm:max-w-lg">
           <SheetHeader>
-            <SheetTitle>Return Items</SheetTitle>
+            <SheetTitle>{t("orders.return")}</SheetTitle>
           </SheetHeader>
           <form onSubmit={handleReturnSubmit} className="flex flex-col flex-1 overflow-hidden">
             <SheetBody>
               <div className="grid gap-4">
                 <div className="grid gap-2">
-                  <Label>Select items to return</Label>
+                  <Label>{t("orders.items")}</Label>
                   <div className="space-y-3">
                     {order.items.map((item) => {
                       const sel = returnSelections[item.id]
@@ -446,7 +471,7 @@ function OrderDetailPage() {
                           </div>
                           {sel?.selected && (
                             <div className="w-20">
-                              <Label className="text-xs">Qty</Label>
+                              <Label className="text-xs">{t("orders.qty")}</Label>
                               <Input
                                 type="number"
                                 min={1}
@@ -470,10 +495,11 @@ function OrderDetailPage() {
                   </div>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="return-reason">Reason (required)</Label>
+                  <Label htmlFor="return-reason">
+                    {t("common.notes")} ({t("common.required")})
+                  </Label>
                   <Textarea
                     id="return-reason"
-                    placeholder="Enter reason for return..."
                     value={returnReason}
                     onChange={(e) => setReturnReason(e.target.value)}
                     required
@@ -483,7 +509,7 @@ function OrderDetailPage() {
             </SheetBody>
             <SheetFooter>
               <Button type="submit" disabled={!hasValidReturnSelection || returnMutation.isPending}>
-                {returnMutation.isPending ? "Processing..." : "Submit Return"}
+                {returnMutation.isPending ? t("common.submitting") : t("orders.return")}
               </Button>
             </SheetFooter>
           </form>

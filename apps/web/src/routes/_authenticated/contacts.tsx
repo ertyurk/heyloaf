@@ -29,7 +29,8 @@ import Search01Icon from "@hugeicons/core-free-icons/Search01Icon"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { useCallback, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
@@ -65,15 +66,17 @@ function ContactFormFields({
   form,
   setForm,
   showStatus = false,
+  t,
 }: {
   form: typeof emptyForm
   setForm: React.Dispatch<React.SetStateAction<typeof emptyForm>>
   showStatus?: boolean
+  t: (key: string) => string
 }) {
   return (
     <div className="grid gap-3">
       <div className="grid gap-1.5">
-        <Label htmlFor="name">Name *</Label>
+        <Label htmlFor="name">{t("common.name")} *</Label>
         <Input
           id="name"
           value={form.name}
@@ -82,7 +85,7 @@ function ContactFormFields({
         />
       </div>
       <div className="grid gap-1.5">
-        <Label htmlFor="contact_type">Type</Label>
+        <Label htmlFor="contact_type">{t("common.type")}</Label>
         <Select
           value={form.contact_type}
           onValueChange={(val) => setForm((f) => ({ ...f, contact_type: val as string }))}
@@ -91,14 +94,14 @@ function ContactFormFields({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="customer">Customer</SelectItem>
-            <SelectItem value="supplier">Supplier</SelectItem>
-            <SelectItem value="both">Both</SelectItem>
+            <SelectItem value="customer">{t("contacts.customer")}</SelectItem>
+            <SelectItem value="supplier">{t("contacts.supplier")}</SelectItem>
+            <SelectItem value="both">{t("contacts.both")}</SelectItem>
           </SelectContent>
         </Select>
       </div>
       <div className="grid gap-1.5">
-        <Label htmlFor="contact_person">Contact Person</Label>
+        <Label htmlFor="contact_person">{t("contacts.contactPerson")}</Label>
         <Input
           id="contact_person"
           value={form.contact_person}
@@ -107,7 +110,7 @@ function ContactFormFields({
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="grid gap-1.5">
-          <Label htmlFor="phone">Phone</Label>
+          <Label htmlFor="phone">{t("common.phone")}</Label>
           <Input
             id="phone"
             value={form.phone}
@@ -115,7 +118,7 @@ function ContactFormFields({
           />
         </div>
         <div className="grid gap-1.5">
-          <Label htmlFor="email">Email</Label>
+          <Label htmlFor="email">{t("common.email")}</Label>
           <Input
             id="email"
             type="email"
@@ -125,7 +128,7 @@ function ContactFormFields({
         </div>
       </div>
       <div className="grid gap-1.5">
-        <Label htmlFor="address">Address</Label>
+        <Label htmlFor="address">{t("common.address")}</Label>
         <Textarea
           id="address"
           value={form.address}
@@ -134,7 +137,7 @@ function ContactFormFields({
       </div>
       <div className="grid grid-cols-2 gap-3">
         <div className="grid gap-1.5">
-          <Label htmlFor="tax_number">Tax Number</Label>
+          <Label htmlFor="tax_number">{t("contacts.taxNumber")}</Label>
           <Input
             id="tax_number"
             value={form.tax_number}
@@ -142,7 +145,7 @@ function ContactFormFields({
           />
         </div>
         <div className="grid gap-1.5">
-          <Label htmlFor="tax_office">Tax Office</Label>
+          <Label htmlFor="tax_office">{t("contacts.taxOffice")}</Label>
           <Input
             id="tax_office"
             value={form.tax_office}
@@ -151,7 +154,7 @@ function ContactFormFields({
         </div>
       </div>
       <div className="grid gap-1.5">
-        <Label htmlFor="credit_limit">Credit Limit</Label>
+        <Label htmlFor="credit_limit">{t("contacts.creditLimit")}</Label>
         <Input
           id="credit_limit"
           type="number"
@@ -160,7 +163,7 @@ function ContactFormFields({
         />
       </div>
       <div className="grid gap-1.5">
-        <Label htmlFor="notes">Notes</Label>
+        <Label htmlFor="notes">{t("common.notes")}</Label>
         <Textarea
           id="notes"
           value={form.notes}
@@ -169,7 +172,7 @@ function ContactFormFields({
       </div>
       {showStatus && (
         <div className="grid gap-1.5">
-          <Label htmlFor="status">Status</Label>
+          <Label htmlFor="status">{t("common.status")}</Label>
           <Select
             value={form.status}
             onValueChange={(val) => setForm((f) => ({ ...f, status: val as string }))}
@@ -178,8 +181,8 @@ function ContactFormFields({
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="inactive">Inactive</SelectItem>
+              <SelectItem value="active">{t("common.active")}</SelectItem>
+              <SelectItem value="inactive">{t("common.inactive")}</SelectItem>
             </SelectContent>
           </Select>
         </div>
@@ -202,19 +205,6 @@ function buildContactBody(form: typeof emptyForm) {
     ...(form.notes && { notes: form.notes }),
   }
 }
-
-const typeFilterOptions = [
-  { value: "all", label: "All Types" },
-  { value: "supplier", label: "Supplier" },
-  { value: "customer", label: "Customer" },
-  { value: "both", label: "Both" },
-]
-
-const statusFilterOptions = [
-  { value: "all", label: "All Statuses" },
-  { value: "active", label: "Active" },
-  { value: "inactive", label: "Inactive" },
-]
 
 function computeFinancialSummary(allContacts: Contact[]) {
   let totalReceivables = 0
@@ -242,12 +232,15 @@ function computeFinancialSummary(allContacts: Contact[]) {
   }
 }
 
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Contacts page has multiple filters, forms, and confirmation dialogs
 function ContactsPage() {
+  const { t } = useTranslation()
   const client = useApi()
   const queryClient = useQueryClient()
 
   const [sheetMode, setSheetMode] = useState<"create" | "edit" | null>(null)
   const [editingContact, setEditingContact] = useState<Contact | null>(null)
+  const [confirmDeleteContact, setConfirmDeleteContact] = useState<Contact | null>(null)
 
   const [paymentOpen, setPaymentOpen] = useState(false)
   const [paymentContact, setPaymentContact] = useState<Contact | null>(null)
@@ -266,6 +259,31 @@ function ContactsPage() {
   const [statusFilter, setStatusFilter] = useState("all")
   const searchTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
   const [debouncedSearch, setDebouncedSearch] = useState("")
+
+  useEffect(() => {
+    return () => {
+      clearTimeout(searchTimerRef.current)
+    }
+  }, [])
+
+  const typeFilterOptions = useMemo(
+    () => [
+      { value: "all", label: t("contacts.allTypes") },
+      { value: "supplier", label: t("contacts.supplier") },
+      { value: "customer", label: t("contacts.customer") },
+      { value: "both", label: t("contacts.both") },
+    ],
+    [t]
+  )
+
+  const statusFilterOptions = useMemo(
+    () => [
+      { value: "all", label: t("contacts.allStatuses") },
+      { value: "active", label: t("common.active") },
+      { value: "inactive", label: t("common.inactive") },
+    ],
+    [t]
+  )
 
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value
@@ -319,10 +337,10 @@ function ContactsPage() {
       queryClient.invalidateQueries({ queryKey: ["contacts"] })
       setSheetMode(null)
       setCreateForm(emptyForm)
-      toast.success("Contact created")
+      toast.success(t("contacts.contactCreated"))
     },
     onError: () => {
-      toast.error("Failed to create contact")
+      toast.error(t("contacts.failedToCreateContact"))
     },
   })
 
@@ -345,10 +363,10 @@ function ContactsPage() {
       queryClient.invalidateQueries({ queryKey: ["contacts"] })
       setSheetMode(null)
       setEditingContact(null)
-      toast.success("Contact updated")
+      toast.success(t("contacts.contactUpdated"))
     },
     onError: () => {
-      toast.error("Failed to update contact")
+      toast.error(t("contacts.failedToUpdateContact"))
     },
   })
 
@@ -362,10 +380,12 @@ function ContactsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["contacts"] })
-      toast.success("Contact deleted")
+      setConfirmDeleteContact(null)
+      toast.success(t("contacts.contactDeleted"))
     },
     onError: () => {
-      toast.error("Failed to delete contact")
+      setConfirmDeleteContact(null)
+      toast.error(t("contacts.failedToDeleteContact"))
     },
   })
 
@@ -375,7 +395,12 @@ function ContactsPage() {
       body,
     }: {
       contactId: string
-      body: { amount: number; payment_method: string; date: string; description?: string }
+      body: {
+        amount: number
+        payment_method: string
+        date: string
+        description?: string
+      }
     }) => {
       const { error } = await client.POST("/api/contacts/{id}/payment", {
         params: { path: { id: contactId } },
@@ -394,10 +419,10 @@ function ContactsPage() {
         date: new Date().toISOString().slice(0, 10),
         description: "",
       })
-      toast.success("Payment recorded")
+      toast.success(t("contacts.paymentRecorded"))
     },
     onError: () => {
-      toast.error("Failed to record payment")
+      toast.error(t("contacts.failedToRecordPayment"))
     },
   })
 
@@ -459,21 +484,16 @@ function ContactsPage() {
     })
   }
 
-  function handleDelete(contact: Contact) {
-    if (!window.confirm(`Delete "${contact.name}"?`)) return
-    deleteMutation.mutate(contact.id)
-  }
-
   const columns = useMemo(
     () => [
       {
         id: "name",
-        header: "Name",
+        header: t("common.name"),
         cell: (row: Contact) => <span className="font-medium">{row.name}</span>,
       },
       {
         id: "type",
-        header: "Type",
+        header: t("common.type"),
         cell: (row: Contact) => (
           <Badge
             variant="outline"
@@ -485,21 +505,21 @@ function ContactsPage() {
       },
       {
         id: "phone",
-        header: "Phone",
+        header: t("common.phone"),
         cell: (row: Contact) => (
           <span className="text-muted-foreground">{row.phone ?? "\u2014"}</span>
         ),
       },
       {
         id: "email",
-        header: "Email",
+        header: t("common.email"),
         cell: (row: Contact) => (
           <span className="text-muted-foreground">{row.email ?? "\u2014"}</span>
         ),
       },
       {
         id: "balance",
-        header: "Balance",
+        header: t("common.balance"),
         className: "text-right",
         cell: (row: Contact) => {
           const amount = row.balance ?? 0
@@ -514,25 +534,25 @@ function ContactsPage() {
       },
       {
         id: "status",
-        header: "Status",
+        header: t("common.status"),
         cell: (row: Contact) => <Badge variant="outline">{row.status}</Badge>,
       },
     ],
-    []
+    [t]
   )
 
   const isSheetOpen = sheetMode !== null
 
   return (
     <>
-      <PageHeader title="Contacts" description="Manage your contacts">
+      <PageHeader title={t("contacts.title")} description={t("contacts.description")}>
         <Button
           onClick={() => {
             setCreateForm(emptyForm)
             setSheetMode("create")
           }}
         >
-          New Contact
+          {t("contacts.newContact")}
         </Button>
       </PageHeader>
 
@@ -540,7 +560,7 @@ function ContactsPage() {
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">
           <Card>
             <CardContent className="p-4">
-              <p className="text-xs text-muted-foreground">Total Receivables</p>
+              <p className="text-xs text-muted-foreground">{t("contacts.totalReceivables")}</p>
               <p className="text-xl font-bold text-green-600">
                 {formatCurrency(financialSummary.totalReceivables)}
               </p>
@@ -548,7 +568,7 @@ function ContactsPage() {
           </Card>
           <Card>
             <CardContent className="p-4">
-              <p className="text-xs text-muted-foreground">Total Payables</p>
+              <p className="text-xs text-muted-foreground">{t("contacts.totalPayables")}</p>
               <p className="text-xl font-bold text-destructive">
                 {formatCurrency(financialSummary.totalPayables)}
               </p>
@@ -556,7 +576,7 @@ function ContactsPage() {
           </Card>
           <Card>
             <CardContent className="p-4">
-              <p className="text-xs text-muted-foreground">Net Cash Flow</p>
+              <p className="text-xs text-muted-foreground">{t("contacts.netCashFlow")}</p>
               <p
                 className={`text-xl font-bold ${financialSummary.netCashFlow >= 0 ? "text-green-600" : "text-destructive"}`}
               >
@@ -566,13 +586,14 @@ function ContactsPage() {
           </Card>
           <Card>
             <CardContent className="p-4">
-              <p className="text-xs text-muted-foreground">Contacts</p>
+              <p className="text-xs text-muted-foreground">{t("contacts.contacts")}</p>
               <p className="text-sm text-muted-foreground mt-1">
                 <span className="text-blue-600 font-medium">{financialSummary.customers}</span>{" "}
-                customers /{" "}
+                {t("contacts.customers")} /{" "}
                 <span className="text-orange-600 font-medium">{financialSummary.suppliers}</span>{" "}
-                suppliers /{" "}
-                <span className="text-purple-600 font-medium">{financialSummary.both}</span> both
+                {t("contacts.suppliers")} /{" "}
+                <span className="text-purple-600 font-medium">{financialSummary.both}</span>{" "}
+                {t("contacts.both").toLowerCase()}
               </p>
             </CardContent>
           </Card>
@@ -586,7 +607,7 @@ function ContactsPage() {
               className="text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2"
             />
             <Input
-              placeholder="Search by name or email..."
+              placeholder={t("contacts.searchByNameOrEmail")}
               value={search}
               onChange={handleSearchChange}
               className="pl-9"
@@ -597,7 +618,7 @@ function ContactsPage() {
             value={typeFilter}
             onValueChange={(val) => setTypeFilter(val ?? "all")}
             searchable={false}
-            placeholder="Type"
+            placeholder={t("common.type")}
             className="w-36"
           />
           <AdvancedSelect
@@ -605,7 +626,7 @@ function ContactsPage() {
             value={statusFilter}
             onValueChange={(val) => setStatusFilter(val ?? "all")}
             searchable={false}
-            placeholder="Status"
+            placeholder={t("common.status")}
             className="w-36"
           />
         </div>
@@ -615,22 +636,48 @@ function ContactsPage() {
           data={contacts}
           getRowId={(row) => row.id}
           isLoading={isLoading}
-          emptyMessage="No contacts found."
+          emptyMessage={t("contacts.noContactsFound")}
           onRowClick={openEdit}
           rowActions={(row) => (
             <>
-              <DropdownMenuItem onClick={() => openEdit(row)}>Edit</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => openEdit(row)}>{t("common.edit")}</DropdownMenuItem>
               <DropdownMenuItem onClick={() => openPaymentSheet(row)}>
-                Record Payment
+                {t("contacts.recordPayment")}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" onClick={() => handleDelete(row)}>
-                Delete
+              <DropdownMenuItem variant="destructive" onClick={() => setConfirmDeleteContact(row)}>
+                {t("common.delete")}
               </DropdownMenuItem>
             </>
           )}
         />
       </div>
+
+      {/* Delete Confirmation */}
+      {confirmDeleteContact && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="rounded-lg border bg-background p-6 shadow-lg max-w-sm w-full mx-4">
+            <p className="text-sm mb-4">
+              {t("contacts.confirmDelete", {
+                name: confirmDeleteContact.name,
+              })}
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setConfirmDeleteContact(null)}>
+                {t("common.cancel")}
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => deleteMutation.mutate(confirmDeleteContact.id)}
+                disabled={deleteMutation.isPending}
+              >
+                {t("common.delete")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Create / Edit Contact Sheet */}
       <Sheet
@@ -644,11 +691,15 @@ function ContactsPage() {
       >
         <SheetContent side="right" className="sm:max-w-md">
           <SheetHeader>
-            <SheetTitle>{sheetMode === "create" ? "New Contact" : "Edit Contact"}</SheetTitle>
+            <SheetTitle>
+              {sheetMode === "create" ? t("contacts.newContact") : t("contacts.editContact")}
+            </SheetTitle>
             <SheetDescription>
               {sheetMode === "create"
-                ? "Add a new contact to your list."
-                : `Editing ${editingContact?.name ?? "contact"}.`}
+                ? t("contacts.addNewContact")
+                : t("contacts.editingContact", {
+                    name: editingContact?.name ?? "contact",
+                  })}
             </SheetDescription>
           </SheetHeader>
           <form onSubmit={sheetMode === "create" ? handleCreate : handleEdit} className="contents">
@@ -657,22 +708,23 @@ function ContactsPage() {
                 form={sheetMode === "create" ? createForm : editForm}
                 setForm={sheetMode === "create" ? setCreateForm : setEditForm}
                 showStatus={sheetMode === "edit"}
+                t={t}
               />
             </SheetBody>
             <SheetFooter>
               <Button variant="outline" type="button" onClick={() => setSheetMode(null)}>
-                Cancel
+                {t("common.cancel")}
               </Button>
               {sheetMode === "create" ? (
                 <Button
                   type="submit"
                   disabled={createMutation.isPending || !createForm.name.trim()}
                 >
-                  {createMutation.isPending ? "Creating..." : "Create"}
+                  {createMutation.isPending ? t("common.creating") : t("common.create")}
                 </Button>
               ) : (
                 <Button type="submit" disabled={editMutation.isPending || !editForm.name.trim()}>
-                  {editMutation.isPending ? "Saving..." : "Save"}
+                  {editMutation.isPending ? t("common.saving") : t("common.save")}
                 </Button>
               )}
             </SheetFooter>
@@ -684,16 +736,18 @@ function ContactsPage() {
       <Sheet open={paymentOpen} onOpenChange={setPaymentOpen}>
         <SheetContent side="right" className="sm:max-w-md">
           <SheetHeader>
-            <SheetTitle>Record Payment</SheetTitle>
+            <SheetTitle>{t("contacts.recordPayment")}</SheetTitle>
             <SheetDescription>
-              Record a payment for {paymentContact?.name ?? "contact"}.
+              {t("contacts.recordPaymentFor", {
+                name: paymentContact?.name ?? "contact",
+              })}
             </SheetDescription>
           </SheetHeader>
           <form onSubmit={handlePaymentSubmit} className="contents">
             <SheetBody>
               <div className="grid gap-3">
                 <div className="grid gap-1.5">
-                  <Label htmlFor="payment-amount">Amount *</Label>
+                  <Label htmlFor="payment-amount">{t("contacts.paymentAmount")}</Label>
                   <Input
                     id="payment-amount"
                     type="number"
@@ -704,27 +758,30 @@ function ContactsPage() {
                   />
                 </div>
                 <div className="grid gap-1.5">
-                  <Label htmlFor="payment-method">Payment Method</Label>
+                  <Label htmlFor="payment-method">{t("pos.paymentMethod")}</Label>
                   <Select
                     value={paymentForm.payment_method}
                     onValueChange={(val) =>
-                      setPaymentForm((f) => ({ ...f, payment_method: val as string }))
+                      setPaymentForm((f) => ({
+                        ...f,
+                        payment_method: val as string,
+                      }))
                     }
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="cash">Cash</SelectItem>
-                      <SelectItem value="bank_transfer">Bank Transfer</SelectItem>
-                      <SelectItem value="credit_card">Credit Card</SelectItem>
-                      <SelectItem value="check">Check</SelectItem>
-                      <SelectItem value="other">Other</SelectItem>
+                      <SelectItem value="cash">{t("contacts.cash")}</SelectItem>
+                      <SelectItem value="bank_transfer">{t("contacts.bankTransfer")}</SelectItem>
+                      <SelectItem value="credit_card">{t("contacts.creditCard")}</SelectItem>
+                      <SelectItem value="check">{t("contacts.check")}</SelectItem>
+                      <SelectItem value="other">{t("contacts.other")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="grid gap-1.5">
-                  <Label htmlFor="payment-date">Date *</Label>
+                  <Label htmlFor="payment-date">{t("contacts.paymentDate")}</Label>
                   <Input
                     id="payment-date"
                     type="date"
@@ -734,19 +791,24 @@ function ContactsPage() {
                   />
                 </div>
                 <div className="grid gap-1.5">
-                  <Label htmlFor="payment-description">Description</Label>
+                  <Label htmlFor="payment-description">{t("common.description")}</Label>
                   <Textarea
                     id="payment-description"
                     value={paymentForm.description}
-                    onChange={(e) => setPaymentForm((f) => ({ ...f, description: e.target.value }))}
+                    onChange={(e) =>
+                      setPaymentForm((f) => ({
+                        ...f,
+                        description: e.target.value,
+                      }))
+                    }
                   />
                 </div>
               </div>
             </SheetBody>
             <SheetFooter>
-              <SheetClose render={<Button variant="outline" />}>Cancel</SheetClose>
+              <SheetClose render={<Button variant="outline" />}>{t("common.cancel")}</SheetClose>
               <Button type="submit" disabled={paymentMutation.isPending || !paymentForm.amount}>
-                {paymentMutation.isPending ? "Recording..." : "Record Payment"}
+                {paymentMutation.isPending ? t("contacts.recording") : t("contacts.recordPayment")}
               </Button>
             </SheetFooter>
           </form>

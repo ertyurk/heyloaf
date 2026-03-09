@@ -27,7 +27,8 @@ import Search01Icon from "@hugeicons/core-free-icons/Search01Icon"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
@@ -38,25 +39,27 @@ export const Route = createFileRoute("/_authenticated/categories")({
   component: CategoriesPage,
 })
 
-const POS_VISIBILITY_OPTIONS = [
-  { value: "", label: "All" },
-  { value: "visible", label: "Visible" },
-  { value: "hidden", label: "Hidden" },
-]
-
 function CategoriesPage() {
+  const { t } = useTranslation()
   const client = useApi()
   const queryClient = useQueryClient()
 
   const [createOpen, setCreateOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [editingCategory, setEditingCategory] = useState<Category | null>(null)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
   // Search and filters
   const [searchQuery, setSearchQuery] = useState("")
-  const [posFilter, setPosFilter] = useState<string | undefined>("")
+  const [posFilter, setPosFilter] = useState<string | undefined>("all")
   const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>(null)
   const [debouncedSearch, setDebouncedSearch] = useState("")
+
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
+    }
+  }, [])
 
   function handleSearchChange(value: string) {
     setSearchQuery(value)
@@ -65,6 +68,15 @@ function CategoriesPage() {
       setDebouncedSearch(value)
     }, 300)
   }
+
+  const POS_VISIBILITY_OPTIONS = useMemo(
+    () => [
+      { value: "all", label: t("common.all") },
+      { value: "visible", label: t("categories.visible") },
+      { value: "hidden", label: t("categories.hidden") },
+    ],
+    [t]
+  )
 
   // Create form state
   const [createForm, setCreateForm] = useState({
@@ -104,43 +116,46 @@ function CategoriesPage() {
     })
   }, [categories, debouncedSearch, posFilter])
 
-  const columns = [
-    {
-      id: "name",
-      header: "Name",
-      cell: (row: Category) => <span className="font-medium">{row.name}</span>,
-    },
-    {
-      id: "description",
-      header: "Description",
-      cell: (row: Category) => (
-        <span className="text-muted-foreground">{row.description ?? "-"}</span>
-      ),
-    },
-    {
-      id: "parent",
-      header: "Parent",
-      cell: (row: Category) => (
-        <span className="text-muted-foreground">
-          {row.parent_id ? (categories.find((c) => c.id === row.parent_id)?.name ?? "-") : "-"}
-        </span>
-      ),
-    },
-    {
-      id: "pos_visible",
-      header: "POS Visible",
-      cell: (row: Category) => (
-        <Badge variant={row.pos_visible ? "default" : "secondary"}>
-          {row.pos_visible ? "Visible" : "Hidden"}
-        </Badge>
-      ),
-    },
-    {
-      id: "display_order",
-      header: "Display Order",
-      cell: (row: Category) => <span className="text-muted-foreground">{row.display_order}</span>,
-    },
-  ]
+  const columns = useMemo(
+    () => [
+      {
+        id: "name",
+        header: t("common.name"),
+        cell: (row: Category) => <span className="font-medium">{row.name}</span>,
+      },
+      {
+        id: "description",
+        header: t("common.description"),
+        cell: (row: Category) => (
+          <span className="text-muted-foreground">{row.description ?? "-"}</span>
+        ),
+      },
+      {
+        id: "parent",
+        header: t("categories.parent"),
+        cell: (row: Category) => (
+          <span className="text-muted-foreground">
+            {row.parent_id ? (categories.find((c) => c.id === row.parent_id)?.name ?? "-") : "-"}
+          </span>
+        ),
+      },
+      {
+        id: "pos_visible",
+        header: t("categories.posVisible"),
+        cell: (row: Category) => (
+          <Badge variant={row.pos_visible ? "default" : "secondary"}>
+            {row.pos_visible ? t("categories.visible") : t("categories.hidden")}
+          </Badge>
+        ),
+      },
+      {
+        id: "display_order",
+        header: t("categories.displayOrder"),
+        cell: (row: Category) => <span className="text-muted-foreground">{row.display_order}</span>,
+      },
+    ],
+    [t, categories]
+  )
 
   const createMutation = useMutation({
     mutationFn: async () => {
@@ -159,7 +174,7 @@ function CategoriesPage() {
       queryClient.invalidateQueries({ queryKey: ["categories"] })
       setCreateOpen(false)
       resetCreateForm()
-      toast.success("Category created successfully")
+      toast.success(t("categories.categoryCreated"))
     },
     onError: (err: Error) => {
       toast.error(err.message)
@@ -187,7 +202,7 @@ function CategoriesPage() {
       queryClient.invalidateQueries({ queryKey: ["categories"] })
       setEditOpen(false)
       setEditingCategory(null)
-      toast.success("Category updated successfully")
+      toast.success(t("categories.categoryUpdated"))
     },
     onError: (err: Error) => {
       toast.error(err.message)
@@ -204,9 +219,11 @@ function CategoriesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["categories"] })
-      toast.success("Category deleted successfully")
+      setConfirmDeleteId(null)
+      toast.success(t("categories.categoryDeleted"))
     },
     onError: (err: Error) => {
+      setConfirmDeleteId(null)
       toast.error(err.message)
     },
   })
@@ -233,12 +250,6 @@ function CategoriesPage() {
     setEditOpen(true)
   }
 
-  function handleDelete(id: string) {
-    if (window.confirm("Are you sure you want to delete this category?")) {
-      deleteMutation.mutate(id)
-    }
-  }
-
   function handleCreateSubmit(e: React.FormEvent) {
     e.preventDefault()
     createMutation.mutate()
@@ -249,10 +260,16 @@ function CategoriesPage() {
     updateMutation.mutate()
   }
 
+  function confirmDelete() {
+    if (confirmDeleteId) {
+      deleteMutation.mutate(confirmDeleteId)
+    }
+  }
+
   return (
     <>
-      <PageHeader title="Categories" description="Organize your products into categories">
-        <Button onClick={() => setCreateOpen(true)}>New Category</Button>
+      <PageHeader title={t("categories.title")} description={t("categories.description")}>
+        <Button onClick={() => setCreateOpen(true)}>{t("categories.newCategory")}</Button>
       </PageHeader>
 
       <div className="space-y-4 p-6">
@@ -265,7 +282,7 @@ function CategoriesPage() {
               className="text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2"
             />
             <Input
-              placeholder="Search categories..."
+              placeholder={t("categories.searchCategories")}
               className="pl-9"
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
@@ -275,7 +292,7 @@ function CategoriesPage() {
             options={POS_VISIBILITY_OPTIONS}
             value={posFilter}
             onValueChange={setPosFilter}
-            placeholder="All"
+            placeholder={t("common.all")}
             searchable={false}
             className="w-40"
             aria-label="Filter by POS visibility"
@@ -288,14 +305,16 @@ function CategoriesPage() {
           data={filtered}
           getRowId={(row) => row.id}
           isLoading={isLoading}
-          emptyMessage="No categories found. Add your first category to get started."
+          emptyMessage={t("categories.noCategoriesFound")}
           onRowClick={openEditSheet}
           rowActions={(row) => (
             <>
-              <DropdownMenuItem onClick={() => openEditSheet(row)}>Edit</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => openEditSheet(row)}>
+                {t("common.edit")}
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" onClick={() => handleDelete(row.id)}>
-                Delete
+              <DropdownMenuItem variant="destructive" onClick={() => setConfirmDeleteId(row.id)}>
+                {t("common.delete")}
               </DropdownMenuItem>
             </>
           )}
@@ -306,12 +325,12 @@ function CategoriesPage() {
       <Sheet open={createOpen} onOpenChange={setCreateOpen}>
         <SheetContent side="right" className="sm:max-w-md">
           <SheetHeader>
-            <SheetTitle>Create Category</SheetTitle>
+            <SheetTitle>{t("categories.createCategory")}</SheetTitle>
           </SheetHeader>
           <form onSubmit={handleCreateSubmit} className="flex flex-col flex-1 overflow-hidden">
             <SheetBody className="grid gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="create-cat-name">Name *</Label>
+                <Label htmlFor="create-cat-name">{t("common.name")} *</Label>
                 <Input
                   id="create-cat-name"
                   required
@@ -320,7 +339,7 @@ function CategoriesPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="create-cat-description">Description</Label>
+                <Label htmlFor="create-cat-description">{t("common.description")}</Label>
                 <Input
                   id="create-cat-description"
                   value={createForm.description}
@@ -328,16 +347,16 @@ function CategoriesPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label>Parent Category</Label>
+                <Label>{t("categories.parentCategory")}</Label>
                 <Select
                   value={createForm.parent_id}
                   onValueChange={(val) => setCreateForm((f) => ({ ...f, parent_id: val ?? "" }))}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="None (Top Level)" />
+                    <SelectValue placeholder={t("categories.noneTopLevel")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None (Top Level)</SelectItem>
+                    <SelectItem value="">{t("categories.noneTopLevel")}</SelectItem>
                     {categories.map((cat: Category) => (
                       <SelectItem key={cat.id} value={cat.id}>
                         {cat.name}
@@ -347,7 +366,7 @@ function CategoriesPage() {
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="create-cat-display-order">Display Order</Label>
+                <Label htmlFor="create-cat-display-order">{t("categories.displayOrder")}</Label>
                 <Input
                   id="create-cat-display-order"
                   type="number"
@@ -371,29 +390,51 @@ function CategoriesPage() {
                     }))
                   }
                 />
-                <Label htmlFor="create-cat-pos-visible">POS Visible</Label>
+                <Label htmlFor="create-cat-pos-visible">{t("categories.posVisible")}</Label>
               </div>
             </SheetBody>
             <SheetFooter>
-              <SheetClose render={<Button variant="outline" />}>Cancel</SheetClose>
+              <SheetClose render={<Button variant="outline" />}>{t("common.cancel")}</SheetClose>
               <Button type="submit" disabled={createMutation.isPending}>
-                {createMutation.isPending ? "Creating..." : "Create"}
+                {createMutation.isPending ? t("common.creating") : t("common.create")}
               </Button>
             </SheetFooter>
           </form>
         </SheetContent>
       </Sheet>
 
+      {/* Delete Confirmation */}
+      {confirmDeleteId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="rounded-lg border bg-background p-6 shadow-lg max-w-sm w-full mx-4">
+            <p className="text-sm mb-4">{t("categories.confirmDeleteCategory")}</p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setConfirmDeleteId(null)}>
+                {t("common.cancel")}
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={confirmDelete}
+                disabled={deleteMutation.isPending}
+              >
+                {t("common.delete")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Edit Category Sheet */}
       <Sheet open={editOpen} onOpenChange={setEditOpen}>
         <SheetContent side="right" className="sm:max-w-md">
           <SheetHeader>
-            <SheetTitle>Edit Category</SheetTitle>
+            <SheetTitle>{t("categories.editCategory")}</SheetTitle>
           </SheetHeader>
           <form onSubmit={handleEditSubmit} className="flex flex-col flex-1 overflow-hidden">
             <SheetBody className="grid gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="edit-cat-name">Name *</Label>
+                <Label htmlFor="edit-cat-name">{t("common.name")} *</Label>
                 <Input
                   id="edit-cat-name"
                   required
@@ -402,7 +443,7 @@ function CategoriesPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="edit-cat-description">Description</Label>
+                <Label htmlFor="edit-cat-description">{t("common.description")}</Label>
                 <Input
                   id="edit-cat-description"
                   value={editForm.description}
@@ -410,16 +451,16 @@ function CategoriesPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label>Parent Category</Label>
+                <Label>{t("categories.parentCategory")}</Label>
                 <Select
                   value={editForm.parent_id}
                   onValueChange={(val) => setEditForm((f) => ({ ...f, parent_id: val ?? "" }))}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="None (Top Level)" />
+                    <SelectValue placeholder={t("categories.noneTopLevel")} />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="">None (Top Level)</SelectItem>
+                    <SelectItem value="">{t("categories.noneTopLevel")}</SelectItem>
                     {categories
                       .filter((cat: Category) => cat.id !== editingCategory?.id)
                       .map((cat: Category) => (
@@ -431,7 +472,7 @@ function CategoriesPage() {
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="edit-cat-display-order">Display Order</Label>
+                <Label htmlFor="edit-cat-display-order">{t("categories.displayOrder")}</Label>
                 <Input
                   id="edit-cat-display-order"
                   type="number"
@@ -455,13 +496,13 @@ function CategoriesPage() {
                     }))
                   }
                 />
-                <Label htmlFor="edit-cat-pos-visible">POS Visible</Label>
+                <Label htmlFor="edit-cat-pos-visible">{t("categories.posVisible")}</Label>
               </div>
             </SheetBody>
             <SheetFooter>
-              <SheetClose render={<Button variant="outline" />}>Cancel</SheetClose>
+              <SheetClose render={<Button variant="outline" />}>{t("common.cancel")}</SheetClose>
               <Button type="submit" disabled={updateMutation.isPending}>
-                {updateMutation.isPending ? "Saving..." : "Save"}
+                {updateMutation.isPending ? t("common.saving") : t("common.save")}
               </Button>
             </SheetFooter>
           </form>

@@ -26,6 +26,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
@@ -94,6 +95,7 @@ function exportToCsv(
 }
 
 function ContactDetailPage() {
+  const { t } = useTranslation()
   const { contactId } = Route.useParams()
   const client = useApi()
   const queryClient = useQueryClient()
@@ -149,15 +151,17 @@ function ContactDetailPage() {
       return res.data
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["contact-transactions", contactId] })
+      queryClient.invalidateQueries({
+        queryKey: ["contact-transactions", contactId],
+      })
       queryClient.invalidateQueries({ queryKey: ["contacts", contactId] })
       queryClient.invalidateQueries({ queryKey: ["contacts"] })
       setPaymentOpen(false)
       setPaymentForm(emptyPaymentForm)
-      toast.success("Payment recorded")
+      toast.success(t("contacts.paymentRecorded"))
     },
     onError: () => {
-      toast.error("Failed to record payment")
+      toast.error(t("contacts.failedToRecordPayment"))
     },
   })
 
@@ -178,14 +182,14 @@ function ContactDetailPage() {
     () => [
       {
         id: "date",
-        header: "Date",
+        header: t("common.date"),
         cell: (row: Transaction) => (
           <span className="text-muted-foreground">{formatDate(row.date)}</span>
         ),
       },
       {
         id: "type",
-        header: "Type",
+        header: t("common.type"),
         cell: (row: Transaction) => (
           <Badge
             className={typeBadgeClass[row.transaction_type] ?? "bg-muted text-muted-foreground"}
@@ -196,7 +200,7 @@ function ContactDetailPage() {
       },
       {
         id: "amount",
-        header: <span className="text-right block">Amount</span>,
+        header: <span className="text-right block">{t("common.amount")}</span>,
         cell: (row: Transaction) => {
           const isNegative = row.amount < 0
           return (
@@ -209,13 +213,13 @@ function ContactDetailPage() {
       },
       {
         id: "payment_method",
-        header: "Payment Method",
+        header: t("orders.paymentMethod"),
         cell: (row: Transaction) =>
           paymentMethods.find((pm) => pm.id === row.payment_method_id)?.name ?? "\u2014",
       },
       {
         id: "balance_after",
-        header: <span className="text-right block">Balance After</span>,
+        header: <span className="text-right block">{t("transactions.balanceAfter")}</span>,
         cell: (row: Transaction) => (
           <span className="tabular-nums">{formatCurrency(row.balance_after)}</span>
         ),
@@ -223,7 +227,7 @@ function ContactDetailPage() {
       },
       {
         id: "description",
-        header: "Description",
+        header: t("common.description"),
         cell: (row: Transaction) => (
           <span className="text-muted-foreground truncate max-w-[200px] block">
             {row.description ?? "\u2014"}
@@ -231,15 +235,18 @@ function ContactDetailPage() {
         ),
       },
     ],
-    [paymentMethods]
+    [paymentMethods, t]
   )
 
   return (
     <>
-      <PageHeader title={contact?.name ?? "Contact"} description="Account statement">
+      <PageHeader
+        title={contact?.name ?? t("common.contact")}
+        description={t("contacts.description")}
+      >
         <Button variant="outline" size="sm" onClick={() => navigate({ to: "/contacts" })}>
           <HugeiconsIcon icon={ArrowLeft01Icon} size={16} className="mr-1" />
-          Back
+          {t("common.back")}
         </Button>
         <Button
           variant="outline"
@@ -249,7 +256,7 @@ function ContactDetailPage() {
           }
           disabled={sortedTransactions.length === 0}
         >
-          Export Excel
+          {t("common.exportExcel")}
         </Button>
         <Button
           onClick={() => {
@@ -257,7 +264,7 @@ function ContactDetailPage() {
             setPaymentOpen(true)
           }}
         >
-          Record Payment
+          {t("contacts.recordPayment")}
         </Button>
       </PageHeader>
 
@@ -266,7 +273,7 @@ function ContactDetailPage() {
         <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground">Balance</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">{t("common.balance")}</CardTitle>
             </CardHeader>
             <CardContent>
               <p
@@ -284,7 +291,9 @@ function ContactDetailPage() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground">Credit Limit</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">
+                {t("contacts.creditLimit")}
+              </CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-2xl font-bold tabular-nums">
@@ -294,7 +303,7 @@ function ContactDetailPage() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground">Type</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">{t("common.type")}</CardTitle>
             </CardHeader>
             <CardContent>
               <Badge variant="outline" className="capitalize">
@@ -304,7 +313,7 @@ function ContactDetailPage() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground">Status</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">{t("common.status")}</CardTitle>
             </CardHeader>
             <CardContent>
               <Badge variant={contact?.status === "active" ? "default" : "secondary"}>
@@ -322,7 +331,7 @@ function ContactDetailPage() {
           data={sortedTransactions}
           getRowId={(row) => row.id}
           isLoading={isLoading}
-          emptyMessage="No transactions found for this contact."
+          emptyMessage={t("transactions.noTransactionsFound")}
         />
       </div>
 
@@ -330,12 +339,12 @@ function ContactDetailPage() {
       <Sheet open={paymentOpen} onOpenChange={setPaymentOpen}>
         <SheetContent side="right" className="sm:max-w-md">
           <SheetHeader>
-            <SheetTitle>Record Payment</SheetTitle>
+            <SheetTitle>{t("contacts.recordPayment")}</SheetTitle>
           </SheetHeader>
           <form onSubmit={handleRecordPayment} className="flex flex-1 flex-col">
             <SheetBody className="grid gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="payment-amount">Amount *</Label>
+                <Label htmlFor="payment-amount">{t("contacts.paymentAmount")}</Label>
                 <Input
                   id="payment-amount"
                   type="number"
@@ -347,7 +356,7 @@ function ContactDetailPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="payment-method">Payment Method</Label>
+                <Label htmlFor="payment-method">{t("pos.paymentMethod")}</Label>
                 <Select
                   value={paymentForm.payment_method_id}
                   onValueChange={(val) =>
@@ -358,7 +367,7 @@ function ContactDetailPage() {
                   }
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select payment method" />
+                    <SelectValue placeholder={t("orders.selectPaymentMethod")} />
                   </SelectTrigger>
                   <SelectContent>
                     {paymentMethods.map((pm) => (
@@ -370,7 +379,7 @@ function ContactDetailPage() {
                 </Select>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="payment-date">Date</Label>
+                <Label htmlFor="payment-date">{t("common.date")}</Label>
                 <Input
                   id="payment-date"
                   type="date"
@@ -379,23 +388,30 @@ function ContactDetailPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="payment-description">Description</Label>
+                <Label htmlFor="payment-description">{t("common.description")}</Label>
                 <Textarea
                   id="payment-description"
                   value={paymentForm.description}
-                  onChange={(e) => setPaymentForm((f) => ({ ...f, description: e.target.value }))}
+                  onChange={(e) =>
+                    setPaymentForm((f) => ({
+                      ...f,
+                      description: e.target.value,
+                    }))
+                  }
                 />
               </div>
             </SheetBody>
             <SheetFooter>
               <Button variant="outline" type="button" onClick={() => setPaymentOpen(false)}>
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button
                 type="submit"
                 disabled={!paymentForm.amount || recordPaymentMutation.isPending}
               >
-                {recordPaymentMutation.isPending ? "Recording..." : "Record Payment"}
+                {recordPaymentMutation.isPending
+                  ? t("contacts.recording")
+                  : t("contacts.recordPayment")}
               </Button>
             </SheetFooter>
           </form>

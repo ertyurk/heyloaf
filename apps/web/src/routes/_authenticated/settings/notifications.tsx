@@ -5,6 +5,7 @@ import { Label } from "@heyloaf/ui/components/label"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
@@ -24,6 +25,7 @@ const defaultForm: NotificationForm = {
 }
 
 function NotificationSettingsPage() {
+  const { t } = useTranslation()
   const client = useApi()
   const queryClient = useQueryClient()
 
@@ -83,9 +85,9 @@ function NotificationSettingsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["company"] })
-      toast.success("Notification settings saved")
+      toast.success(t("settings.notificationSettings.saved"))
     },
-    onError: () => toast.error("Failed to save notification settings"),
+    onError: () => toast.error(t("settings.notificationSettings.failedToSave")),
   })
 
   function handleSubmit(e: React.FormEvent) {
@@ -97,22 +99,25 @@ function NotificationSettingsPage() {
     return (
       <>
         <PageHeader
-          title="Notification Settings"
-          description="Configure alerts and notifications"
+          title={t("settings.notificationSettings.title")}
+          description={t("settings.notificationSettings.description")}
         />
-        <p className="text-muted-foreground py-8 text-center text-sm">Loading...</p>
+        <p className="text-muted-foreground py-8 text-center text-sm">{t("common.loading")}</p>
       </>
     )
   }
 
   return (
     <>
-      <PageHeader title="Notification Settings" description="Configure alerts and notifications" />
+      <PageHeader
+        title={t("settings.notificationSettings.title")}
+        description={t("settings.notificationSettings.description")}
+      />
 
       <div className="space-y-4 p-6">
         <Card className="mx-auto max-w-2xl">
           <CardHeader>
-            <CardTitle>Alerts</CardTitle>
+            <CardTitle>{t("settings.notificationSettings.alerts")}</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
@@ -125,9 +130,11 @@ function NotificationSettingsPage() {
                   }
                 />
                 <div className="grid gap-0.5">
-                  <Label htmlFor="low_stock_alerts">Low stock alerts</Label>
+                  <Label htmlFor="low_stock_alerts">
+                    {t("settings.notificationSettings.lowStockAlerts")}
+                  </Label>
                   <p className="text-muted-foreground text-xs">
-                    Get notified when product stock falls below the minimum level.
+                    {t("settings.notificationSettings.lowStockAlertsHint")}
                   </p>
                 </div>
               </div>
@@ -141,16 +148,18 @@ function NotificationSettingsPage() {
                   }
                 />
                 <div className="grid gap-0.5">
-                  <Label htmlFor="overdue_invoice_alerts">Overdue invoice alerts</Label>
+                  <Label htmlFor="overdue_invoice_alerts">
+                    {t("settings.notificationSettings.overdueInvoiceAlerts")}
+                  </Label>
                   <p className="text-muted-foreground text-xs">
-                    Get notified when invoices pass their due date.
+                    {t("settings.notificationSettings.overdueInvoiceAlertsHint")}
                   </p>
                 </div>
               </div>
 
               <div className="flex justify-end pt-4">
                 <Button type="submit" disabled={updateMutation.isPending}>
-                  {updateMutation.isPending ? "Saving..." : "Save Changes"}
+                  {updateMutation.isPending ? t("common.saving") : t("common.saveChanges")}
                 </Button>
               </div>
             </form>

@@ -21,6 +21,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
@@ -78,15 +79,16 @@ function PermissionsEditor({
   permissions: Permissions
   onChange: (perms: Permissions) => void
 }) {
+  const { t } = useTranslation()
   return (
     <div className="grid gap-2">
-      <Label>Module Permissions</Label>
+      <Label>{t("settings.users.modulePermissions")}</Label>
       <div className="rounded-md border">
         <table className="w-full text-sm">
           <thead>
             <tr className="border-b">
-              <th className="px-3 py-2 text-left font-medium">Module</th>
-              <th className="px-3 py-2 text-left font-medium">Level</th>
+              <th className="px-3 py-2 text-left font-medium">{t("settings.users.module")}</th>
+              <th className="px-3 py-2 text-left font-medium">{t("settings.users.level")}</th>
             </tr>
           </thead>
           <tbody>
@@ -120,6 +122,7 @@ function PermissionsEditor({
 }
 
 function UsersPage() {
+  const { t } = useTranslation()
   const client = useApi()
   const queryClient = useQueryClient()
 
@@ -149,10 +152,10 @@ function UsersPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] })
-      toast.success("User invited")
+      toast.success(t("settings.users.userInvited"))
       closeSheet()
     },
-    onError: () => toast.error("Failed to invite user"),
+    onError: () => toast.error(t("settings.users.failedToInvite")),
   })
 
   const updateRoleMutation = useMutation({
@@ -165,9 +168,9 @@ function UsersPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] })
-      toast.success("User role updated")
+      toast.success(t("settings.users.roleUpdated"))
     },
-    onError: () => toast.error("Failed to update role"),
+    onError: () => toast.error(t("settings.users.failedToUpdateRole")),
   })
 
   const updatePermsMutation = useMutation({
@@ -180,10 +183,10 @@ function UsersPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] })
-      toast.success("Permissions updated")
+      toast.success(t("settings.users.permissionsUpdated"))
       setPermSheetOpen(false)
     },
-    onError: () => toast.error("Failed to update permissions"),
+    onError: () => toast.error(t("settings.users.failedToUpdatePermissions")),
   })
 
   const deleteMutation = useMutation({
@@ -194,9 +197,9 @@ function UsersPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["users"] })
-      toast.success("User removed")
+      toast.success(t("settings.users.userRemoved"))
     },
-    onError: () => toast.error("Failed to remove user"),
+    onError: () => toast.error(t("settings.users.failedToRemove")),
   })
 
   function openCreate() {
@@ -232,8 +235,8 @@ function UsersPage() {
 
   return (
     <>
-      <PageHeader title="Users" description="Manage team members and permissions">
-        <Button onClick={openCreate}>Invite User</Button>
+      <PageHeader title={t("settings.users.title")} description={t("settings.users.description")}>
+        <Button onClick={openCreate}>{t("settings.users.inviteUser")}</Button>
       </PageHeader>
 
       <div className="space-y-4 p-6">
@@ -241,17 +244,17 @@ function UsersPage() {
           columns={[
             {
               id: "name",
-              header: "Name",
+              header: t("common.name"),
               cell: (row) => row.name,
             },
             {
               id: "email",
-              header: "Email",
+              header: t("common.email"),
               cell: (row) => row.email,
             },
             {
               id: "role",
-              header: "Role",
+              header: t("settings.users.role"),
               cell: (row) => (
                 <Select
                   value={row.role}
@@ -279,17 +282,17 @@ function UsersPage() {
           data={users}
           getRowId={(row) => row.user_id}
           isLoading={isLoading}
-          emptyMessage="No users found."
+          emptyMessage={t("settings.users.noUsersFound")}
           rowActions={(row) => (
             <>
               {row.role !== "admin" && (
                 <DropdownMenuItem onClick={() => openPermissions(row)}>
-                  Permissions
+                  {t("settings.users.permissions")}
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => deleteMutation.mutate(row.user_id)}>
-                Remove
+                {t("common.remove")}
               </DropdownMenuItem>
             </>
           )}
@@ -300,12 +303,12 @@ function UsersPage() {
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent side="right" className="sm:max-w-md">
           <SheetHeader>
-            <SheetTitle>Invite User</SheetTitle>
+            <SheetTitle>{t("settings.users.inviteUser")}</SheetTitle>
           </SheetHeader>
           <form onSubmit={handleSubmit} className="flex flex-1 flex-col">
             <SheetBody className="grid gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="name">{t("common.name")}</Label>
                 <Input
                   id="name"
                   value={form.name}
@@ -314,7 +317,7 @@ function UsersPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="email">Email</Label>
+                <Label htmlFor="email">{t("common.email")}</Label>
                 <Input
                   id="email"
                   type="email"
@@ -324,7 +327,7 @@ function UsersPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="password">Password</Label>
+                <Label htmlFor="password">{t("settings.users.password")}</Label>
                 <Input
                   id="password"
                   type="password"
@@ -333,10 +336,10 @@ function UsersPage() {
                   minLength={8}
                   required
                 />
-                <p className="text-muted-foreground text-xs">Minimum 8 characters</p>
+                <p className="text-muted-foreground text-xs">{t("settings.users.passwordHint")}</p>
               </div>
               <div className="grid gap-2">
-                <Label>Role</Label>
+                <Label>{t("settings.users.role")}</Label>
                 <Select
                   value={form.role}
                   onValueChange={(val) => setForm((f) => ({ ...f, role: val ?? "" }))}
@@ -356,7 +359,9 @@ function UsersPage() {
             </SheetBody>
             <SheetFooter>
               <Button type="submit" disabled={createMutation.isPending}>
-                {createMutation.isPending ? "Inviting..." : "Invite User"}
+                {createMutation.isPending
+                  ? t("settings.users.inviting")
+                  : t("settings.users.inviteUser")}
               </Button>
             </SheetFooter>
           </form>
@@ -367,7 +372,7 @@ function UsersPage() {
       <Sheet open={permSheetOpen} onOpenChange={setPermSheetOpen}>
         <SheetContent side="right" className="sm:max-w-md">
           <SheetHeader>
-            <SheetTitle>Permissions for {permUserName}</SheetTitle>
+            <SheetTitle>{t("settings.users.permissionsFor", { name: permUserName })}</SheetTitle>
           </SheetHeader>
           <form onSubmit={handlePermSubmit} className="flex flex-1 flex-col">
             <SheetBody className="grid gap-4">
@@ -375,7 +380,9 @@ function UsersPage() {
             </SheetBody>
             <SheetFooter>
               <Button type="submit" disabled={updatePermsMutation.isPending}>
-                {updatePermsMutation.isPending ? "Saving..." : "Save Permissions"}
+                {updatePermsMutation.isPending
+                  ? t("common.saving")
+                  : t("settings.users.savePermissions")}
               </Button>
             </SheetFooter>
           </form>

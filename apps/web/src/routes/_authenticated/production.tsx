@@ -22,7 +22,8 @@ import Search01Icon from "@hugeicons/core-free-icons/Search01Icon"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
@@ -31,7 +32,7 @@ export const Route = createFileRoute("/_authenticated/production")({
   component: ProductionPage,
 })
 
-// ── Material row for the record form ──
+// -- Material row for the record form --
 
 interface MaterialRow {
   id: string
@@ -43,13 +44,14 @@ function emptyMaterial(): MaterialRow {
   return { id: crypto.randomUUID(), product_id: "", quantity: 0 }
 }
 
-// ── Page ──
+// -- Page --
 
 function ProductionPage() {
+  const { t } = useTranslation()
   const client = useApi()
   const queryClient = useQueryClient()
 
-  // ── Products (used for selects & name lookups) ──
+  // -- Products (used for selects & name lookups) --
 
   const { data: productsData } = useQuery({
     queryKey: ["products"],
@@ -86,13 +88,13 @@ function ProductionPage() {
 
   return (
     <>
-      <PageHeader title="Production" description="Manage production records and sessions" />
+      <PageHeader title={t("production.title")} description={t("production.description")} />
 
       <Tabs defaultValue="records" className="flex flex-col">
         <div className="px-6 pt-4">
           <TabsList>
-            <TabsTrigger value="records">Records</TabsTrigger>
-            <TabsTrigger value="sessions">Sessions</TabsTrigger>
+            <TabsTrigger value="records">{t("production.records")}</TabsTrigger>
+            <TabsTrigger value="sessions">{t("production.sessions")}</TabsTrigger>
           </TabsList>
         </div>
 
@@ -114,9 +116,9 @@ function ProductionPage() {
   )
 }
 
-// ════════════════════════════════════════════════════════════════════
+// ================================================================
 // Records Tab
-// ════════════════════════════════════════════════════════════════════
+// ================================================================
 
 interface RecordsTabProps {
   client: ReturnType<typeof useApi>
@@ -133,6 +135,7 @@ function RecordsTab({
   outputProducts,
   ingredientProducts,
 }: RecordsTabProps) {
+  const { t } = useTranslation()
   const [search, setSearch] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(null)
@@ -142,6 +145,9 @@ function RecordsTab({
   const [createOpen, setCreateOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [editingId, setEditingId] = useState<string | null>(null)
+
+  // Confirmation state for delete (replaces window.confirm)
+  const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
   // Create form
   const [createForm, setCreateForm] = useState({
@@ -161,6 +167,13 @@ function RecordsTab({
     materials: [] as MaterialRow[],
   })
 
+  // Debounce cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (searchTimer.current) clearTimeout(searchTimer.current)
+    }
+  }, [])
+
   function handleSearchChange(value: string) {
     setSearch(value)
     if (searchTimer.current) clearTimeout(searchTimer.current)
@@ -179,7 +192,7 @@ function RecordsTab({
     })
   }
 
-  // ── Fetch records ──
+  // -- Fetch records --
 
   const { data: recordsData, isLoading } = useQuery({
     queryKey: ["production-records"],
@@ -218,7 +231,7 @@ function RecordsTab({
     )
   }, [records, debouncedSearch, dateFrom, dateTo, productName])
 
-  // ── Mutations ──
+  // -- Mutations --
 
   const createRecord = useMutation({
     mutationFn: async () => {
@@ -244,10 +257,10 @@ function RecordsTab({
       queryClient.invalidateQueries({ queryKey: ["production-records"] })
       setCreateOpen(false)
       resetCreateForm()
-      toast.success("Record created")
+      toast.success(t("production.recordCreated"))
     },
     onError: () => {
-      toast.error("Failed to create record")
+      toast.error(t("production.failedToCreateRecord"))
     },
   })
 
@@ -272,10 +285,10 @@ function RecordsTab({
       queryClient.invalidateQueries({ queryKey: ["production-records"] })
       setEditOpen(false)
       setEditingId(null)
-      toast.success("Record updated")
+      toast.success(t("production.recordUpdated"))
     },
     onError: () => {
-      toast.error("Failed to update record")
+      toast.error(t("production.failedToUpdateRecord"))
     },
   })
 
@@ -285,10 +298,10 @@ function RecordsTab({
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["production-records"] })
-      toast.success("Record deleted")
+      toast.success(t("production.recordDeleted"))
     },
     onError: () => {
-      toast.error("Failed to delete record")
+      toast.error(t("production.failedToDeleteRecord"))
     },
   })
 
@@ -309,13 +322,14 @@ function RecordsTab({
     setEditOpen(true)
   }
 
-  function handleDelete(id: string) {
-    if (window.confirm("Are you sure you want to delete this record?")) {
-      deleteRecord.mutate(id)
+  function confirmDelete() {
+    if (confirmDeleteId) {
+      deleteRecord.mutate(confirmDeleteId)
+      setConfirmDeleteId(null)
     }
   }
 
-  // ── Columns ──
+  // -- Columns --
 
   type ProductionRecord = (typeof records)[number]
 
@@ -323,31 +337,31 @@ function RecordsTab({
     () => [
       {
         id: "product",
-        header: "Product",
+        header: t("common.product"),
         cell: (row: ProductionRecord) => (
           <span className="font-medium">{productName(row.product_id)}</span>
         ),
       },
       {
         id: "variant",
-        header: "Variant",
+        header: t("production.variant"),
         cell: (row: ProductionRecord) => (
           <span className="text-muted-foreground">{row.variant_name ?? "\u2014"}</span>
         ),
       },
       {
         id: "quantity",
-        header: "Quantity",
+        header: t("common.quantity"),
         cell: (row: ProductionRecord) => <span className="tabular-nums">{row.quantity}</span>,
       },
       {
         id: "unit",
-        header: "Unit",
+        header: t("common.unit"),
         cell: (row: ProductionRecord) => <span className="text-muted-foreground">{row.unit}</span>,
       },
       {
         id: "date",
-        header: "Date",
+        header: t("common.date"),
         cell: (row: ProductionRecord) => (
           <span className="text-muted-foreground">
             {new Date(row.created_at).toLocaleDateString()}
@@ -356,7 +370,7 @@ function RecordsTab({
       },
       {
         id: "notes",
-        header: "Notes",
+        header: t("common.notes"),
         cell: (row: ProductionRecord) => (
           <span className="text-muted-foreground truncate max-w-[200px] block">
             {row.notes ?? "\u2014"}
@@ -364,7 +378,7 @@ function RecordsTab({
         ),
       },
     ],
-    [productName]
+    [productName, t]
   )
 
   return (
@@ -379,7 +393,7 @@ function RecordsTab({
                 className="text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2"
               />
               <Input
-                placeholder="Search by product name..."
+                placeholder={t("production.searchByProductName")}
                 value={search}
                 onChange={(e) => handleSearchChange(e.target.value)}
                 className="pl-8"
@@ -394,7 +408,7 @@ function RecordsTab({
               }}
             />
           </div>
-          <Button onClick={() => setCreateOpen(true)}>New Record</Button>
+          <Button onClick={() => setCreateOpen(true)}>{t("production.newRecord")}</Button>
         </div>
 
         <DataTable
@@ -402,25 +416,44 @@ function RecordsTab({
           data={filteredRecords}
           getRowId={(row) => row.id}
           isLoading={isLoading}
-          emptyMessage="No production records found."
+          emptyMessage={t("production.noRecordsFound")}
           rowActions={(row) => (
             <>
-              <DropdownMenuItem onClick={() => openEditSheet(row)}>Edit</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => openEditSheet(row)}>
+                {t("common.edit")}
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" onClick={() => handleDelete(row.id)}>
-                Delete
+              <DropdownMenuItem variant="destructive" onClick={() => setConfirmDeleteId(row.id)}>
+                {t("common.delete")}
               </DropdownMenuItem>
             </>
           )}
         />
       </div>
 
+      {/* Delete Confirmation */}
+      {confirmDeleteId && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="mx-4 w-full max-w-sm rounded-lg bg-background p-6 shadow-lg">
+            <p className="mb-4 text-sm">{t("production.confirmDeleteRecord")}</p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setConfirmDeleteId(null)}>
+                {t("common.cancel")}
+              </Button>
+              <Button variant="destructive" size="sm" onClick={confirmDelete}>
+                {t("common.delete")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Create Record Sheet */}
       <Sheet open={createOpen} onOpenChange={setCreateOpen}>
         <SheetContent side="right" className="sm:max-w-lg">
           <SheetHeader>
-            <SheetTitle>New Production Record</SheetTitle>
-            <SheetDescription>Log a new production output with materials used.</SheetDescription>
+            <SheetTitle>{t("production.newProductionRecord")}</SheetTitle>
+            <SheetDescription>{t("production.logNewProduction")}</SheetDescription>
           </SheetHeader>
           <form
             onSubmit={(e) => {
@@ -431,16 +464,16 @@ function RecordsTab({
           >
             <SheetBody className="grid gap-4">
               <div className="grid gap-2">
-                <Label>Product *</Label>
+                <Label>{t("common.product")} *</Label>
                 <AdvancedSelect
                   options={outputProducts}
                   value={createForm.product_id}
                   onValueChange={(v) => setCreateForm((f) => ({ ...f, product_id: v ?? "" }))}
-                  placeholder="Select product"
+                  placeholder={t("stock.selectProduct")}
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="rec-variant">Variant (optional)</Label>
+                <Label htmlFor="rec-variant">{t("production.variantOptional")}</Label>
                 <Input
                   id="rec-variant"
                   value={createForm.variant_name}
@@ -450,7 +483,7 @@ function RecordsTab({
               </div>
               <div className="grid grid-cols-3 gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="rec-qty">Quantity *</Label>
+                  <Label htmlFor="rec-qty">{t("common.quantity")} *</Label>
                   <Input
                     id="rec-qty"
                     type="number"
@@ -458,12 +491,15 @@ function RecordsTab({
                     required
                     value={createForm.quantity || ""}
                     onChange={(e) =>
-                      setCreateForm((f) => ({ ...f, quantity: Number(e.target.value) || 0 }))
+                      setCreateForm((f) => ({
+                        ...f,
+                        quantity: Number(e.target.value) || 0,
+                      }))
                     }
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="rec-unit">Unit</Label>
+                  <Label htmlFor="rec-unit">{t("common.unit")}</Label>
                   <Input
                     id="rec-unit"
                     value={createForm.unit}
@@ -472,7 +508,7 @@ function RecordsTab({
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="rec-batch">Batch Size</Label>
+                  <Label htmlFor="rec-batch">{t("production.batchSize")}</Label>
                   <Input
                     id="rec-batch"
                     type="number"
@@ -490,7 +526,7 @@ function RecordsTab({
 
               {/* Materials */}
               <div className="grid gap-2">
-                <Label>Materials</Label>
+                <Label>{t("production.materials")}</Label>
                 <div className="space-y-2">
                   {createForm.materials.map((mat, idx) => (
                     <div
@@ -498,7 +534,9 @@ function RecordsTab({
                       className="grid grid-cols-[1fr_5rem_2rem] items-end gap-2 rounded-md border p-2"
                     >
                       <div className="grid gap-1">
-                        <span className="text-xs text-muted-foreground">Ingredient</span>
+                        <span className="text-xs text-muted-foreground">
+                          {t("production.ingredient")}
+                        </span>
                         <AdvancedSelect
                           options={ingredientProducts}
                           value={mat.product_id}
@@ -509,12 +547,12 @@ function RecordsTab({
                               return { ...f, materials: mats }
                             })
                           }
-                          placeholder="Select"
+                          placeholder={t("common.search")}
                           size="sm"
                         />
                       </div>
                       <div className="grid gap-1">
-                        <span className="text-xs text-muted-foreground">Qty</span>
+                        <span className="text-xs text-muted-foreground">{t("orders.qty")}</span>
                         <Input
                           type="number"
                           min={0}
@@ -559,12 +597,12 @@ function RecordsTab({
                     }))
                   }
                 >
-                  Add Material
+                  {t("production.addMaterial")}
                 </Button>
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="rec-notes">Notes (optional)</Label>
+                <Label htmlFor="rec-notes">{t("production.notesOptional")}</Label>
                 <Textarea
                   id="rec-notes"
                   value={createForm.notes}
@@ -573,14 +611,14 @@ function RecordsTab({
               </div>
             </SheetBody>
             <SheetFooter>
-              <SheetClose render={<Button variant="outline" />}>Cancel</SheetClose>
+              <SheetClose render={<Button variant="outline" />}>{t("common.cancel")}</SheetClose>
               <Button
                 type="submit"
                 disabled={
                   !createForm.product_id || createForm.quantity <= 0 || createRecord.isPending
                 }
               >
-                {createRecord.isPending ? "Creating..." : "Create"}
+                {createRecord.isPending ? t("common.creating") : t("common.create")}
               </Button>
             </SheetFooter>
           </form>
@@ -591,7 +629,7 @@ function RecordsTab({
       <Sheet open={editOpen} onOpenChange={setEditOpen}>
         <SheetContent side="right" className="sm:max-w-lg">
           <SheetHeader>
-            <SheetTitle>Edit Production Record</SheetTitle>
+            <SheetTitle>{t("production.editProductionRecord")}</SheetTitle>
           </SheetHeader>
           <form
             onSubmit={(e) => {
@@ -602,7 +640,7 @@ function RecordsTab({
           >
             <SheetBody className="grid gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="edit-qty">Quantity</Label>
+                <Label htmlFor="edit-qty">{t("common.quantity")}</Label>
                 <Input
                   id="edit-qty"
                   type="number"
@@ -610,14 +648,17 @@ function RecordsTab({
                   required
                   value={editForm.quantity || ""}
                   onChange={(e) =>
-                    setEditForm((f) => ({ ...f, quantity: Number(e.target.value) || 0 }))
+                    setEditForm((f) => ({
+                      ...f,
+                      quantity: Number(e.target.value) || 0,
+                    }))
                   }
                 />
               </div>
 
               {/* Materials */}
               <div className="grid gap-2">
-                <Label>Materials</Label>
+                <Label>{t("production.materials")}</Label>
                 <div className="space-y-2">
                   {editForm.materials.map((mat, idx) => (
                     <div
@@ -625,7 +666,9 @@ function RecordsTab({
                       className="grid grid-cols-[1fr_5rem_2rem] items-end gap-2 rounded-md border p-2"
                     >
                       <div className="grid gap-1">
-                        <span className="text-xs text-muted-foreground">Ingredient</span>
+                        <span className="text-xs text-muted-foreground">
+                          {t("production.ingredient")}
+                        </span>
                         <AdvancedSelect
                           options={ingredientProducts}
                           value={mat.product_id}
@@ -636,12 +679,12 @@ function RecordsTab({
                               return { ...f, materials: mats }
                             })
                           }
-                          placeholder="Select"
+                          placeholder={t("common.search")}
                           size="sm"
                         />
                       </div>
                       <div className="grid gap-1">
-                        <span className="text-xs text-muted-foreground">Qty</span>
+                        <span className="text-xs text-muted-foreground">{t("orders.qty")}</span>
                         <Input
                           type="number"
                           min={0}
@@ -686,12 +729,12 @@ function RecordsTab({
                     }))
                   }
                 >
-                  Add Material
+                  {t("production.addMaterial")}
                 </Button>
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="edit-notes">Notes (optional)</Label>
+                <Label htmlFor="edit-notes">{t("production.notesOptional")}</Label>
                 <Textarea
                   id="edit-notes"
                   value={editForm.notes}
@@ -700,9 +743,9 @@ function RecordsTab({
               </div>
             </SheetBody>
             <SheetFooter>
-              <SheetClose render={<Button variant="outline" />}>Cancel</SheetClose>
+              <SheetClose render={<Button variant="outline" />}>{t("common.cancel")}</SheetClose>
               <Button type="submit" disabled={editForm.quantity <= 0 || updateRecord.isPending}>
-                {updateRecord.isPending ? "Saving..." : "Save"}
+                {updateRecord.isPending ? t("common.saving") : t("common.save")}
               </Button>
             </SheetFooter>
           </form>
@@ -712,9 +755,9 @@ function RecordsTab({
   )
 }
 
-// ════════════════════════════════════════════════════════════════════
+// ================================================================
 // Sessions Tab
-// ════════════════════════════════════════════════════════════════════
+// ================================================================
 
 interface SessionsTabProps {
   client: ReturnType<typeof useApi>
@@ -722,6 +765,7 @@ interface SessionsTabProps {
 }
 
 function SessionsTab({ client, queryClient }: SessionsTabProps) {
+  const { t } = useTranslation()
   const [search, setSearch] = useState("")
   const [createOpen, setCreateOpen] = useState(false)
   const [newSessionName, setNewSessionName] = useState("")
@@ -746,12 +790,12 @@ function SessionsTab({ client, queryClient }: SessionsTabProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["production-sessions"] })
-      toast.success("Session created")
+      toast.success(t("production.sessionCreated"))
       setCreateOpen(false)
       setNewSessionName("")
     },
     onError: () => {
-      toast.error("Failed to create session")
+      toast.error(t("production.failedToCreateSession"))
     },
   })
 
@@ -761,10 +805,10 @@ function SessionsTab({ client, queryClient }: SessionsTabProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["production-sessions"] })
-      toast.success("Session completed")
+      toast.success(t("production.sessionCompleted"))
     },
     onError: () => {
-      toast.error("Failed to complete session")
+      toast.error(t("production.failedToCompleteSession"))
     },
   })
 
@@ -774,10 +818,10 @@ function SessionsTab({ client, queryClient }: SessionsTabProps) {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["production-sessions"] })
-      toast.success("Session deleted")
+      toast.success(t("production.sessionDeleted"))
     },
     onError: () => {
-      toast.error("Failed to delete session")
+      toast.error(t("production.failedToDeleteSession"))
     },
   })
 
@@ -795,12 +839,12 @@ function SessionsTab({ client, queryClient }: SessionsTabProps) {
     () => [
       {
         id: "name",
-        header: "Session Name",
+        header: t("production.sessionName"),
         cell: (row: Session) => <span className="font-medium">{row.name}</span>,
       },
       {
         id: "status",
-        header: "Status",
+        header: t("common.status"),
         cell: (row: Session) => (
           <Badge
             variant={row.status === "completed" ? "default" : "secondary"}
@@ -818,7 +862,7 @@ function SessionsTab({ client, queryClient }: SessionsTabProps) {
       },
       {
         id: "items_count",
-        header: "Items Count",
+        header: t("production.itemsCount"),
         cell: (row: Session) => (
           <span className="text-muted-foreground">
             {((row as Record<string, unknown>).items_count as number) ?? "\u2014"}
@@ -827,7 +871,7 @@ function SessionsTab({ client, queryClient }: SessionsTabProps) {
       },
       {
         id: "started",
-        header: "Created At",
+        header: t("production.createdAt"),
         cell: (row: Session) => (
           <span className="text-muted-foreground">
             {new Date(row.created_at).toLocaleDateString()}
@@ -835,7 +879,7 @@ function SessionsTab({ client, queryClient }: SessionsTabProps) {
         ),
       },
     ],
-    []
+    [t]
   )
 
   return (
@@ -849,13 +893,13 @@ function SessionsTab({ client, queryClient }: SessionsTabProps) {
               className="text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2"
             />
             <Input
-              placeholder="Search by session name..."
+              placeholder={t("production.searchBySessionName")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
             />
           </div>
-          <Button onClick={() => setCreateOpen(true)}>New Session</Button>
+          <Button onClick={() => setCreateOpen(true)}>{t("production.newSession")}</Button>
         </div>
 
         <DataTable
@@ -863,17 +907,17 @@ function SessionsTab({ client, queryClient }: SessionsTabProps) {
           data={filteredSessions}
           getRowId={(row) => row.id}
           isLoading={isLoading}
-          emptyMessage="No production sessions found."
+          emptyMessage={t("production.noSessionsFound")}
           rowActions={(row) => (
             <>
               {row.status === "in_progress" && (
                 <DropdownMenuItem onClick={() => completeSession.mutate(row.id)}>
-                  Complete
+                  {t("production.complete")}
                 </DropdownMenuItem>
               )}
               <DropdownMenuSeparator />
               <DropdownMenuItem variant="destructive" onClick={() => deleteSession.mutate(row.id)}>
-                Delete
+                {t("common.delete")}
               </DropdownMenuItem>
             </>
           )}
@@ -883,10 +927,8 @@ function SessionsTab({ client, queryClient }: SessionsTabProps) {
       <Sheet open={createOpen} onOpenChange={setCreateOpen}>
         <SheetContent>
           <SheetHeader>
-            <SheetTitle>New Production Session</SheetTitle>
-            <SheetDescription>
-              Create a new production session to track your output.
-            </SheetDescription>
+            <SheetTitle>{t("production.newProductionSession")}</SheetTitle>
+            <SheetDescription>{t("production.createSessionDescription")}</SheetDescription>
           </SheetHeader>
           <form
             onSubmit={(e) => {
@@ -896,21 +938,21 @@ function SessionsTab({ client, queryClient }: SessionsTabProps) {
           >
             <SheetBody className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="session-name">Name (optional)</Label>
+                <Label htmlFor="session-name">{t("production.nameOptional")}</Label>
                 <Input
                   id="session-name"
                   value={newSessionName}
                   onChange={(e) => setNewSessionName(e.target.value)}
-                  placeholder="Session name"
+                  placeholder={t("production.sessionName")}
                 />
               </div>
             </SheetBody>
             <SheetFooter>
               <Button variant="outline" type="button" onClick={() => setCreateOpen(false)}>
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button type="submit" disabled={createSession.isPending}>
-                {createSession.isPending ? "Creating..." : "Create"}
+                {createSession.isPending ? t("common.creating") : t("common.create")}
               </Button>
             </SheetFooter>
           </form>

@@ -1,5 +1,6 @@
 import { create } from "zustand"
 import { persist } from "zustand/middleware"
+import { API_BASE_URL } from "./api"
 
 interface User {
   id: string
@@ -16,7 +17,6 @@ type Permissions = Record<string, string>
 
 interface AuthState {
   token: string | null
-  refreshToken: string | null
   user: User | null
   company: Company | null
   companies: Company[]
@@ -25,7 +25,6 @@ interface AuthState {
 
   setAuth: (data: {
     token: string
-    refreshToken: string
     user: User
     company: Company
     companies?: Company[]
@@ -44,7 +43,6 @@ export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => ({
       token: null,
-      refreshToken: null,
       user: null,
       company: null,
       companies: [],
@@ -54,7 +52,6 @@ export const useAuthStore = create<AuthState>()(
       setAuth: (data) =>
         set({
           token: data.token,
-          refreshToken: data.refreshToken,
           user: data.user,
           company: data.company,
           companies:
@@ -71,16 +68,24 @@ export const useAuthStore = create<AuthState>()(
 
       setCompany: (company) => set({ company }),
 
-      clearAuth: () =>
+      clearAuth: () => {
+        // Fire-and-forget logout to clear the httpOnly refresh cookie
+        fetch(`${API_BASE_URL}/auth/logout`, {
+          method: "POST",
+          credentials: "include",
+        }).catch(() => {
+          // Ignore errors — we're clearing local state regardless
+        })
+
         set({
           token: null,
-          refreshToken: null,
           user: null,
           company: null,
           companies: [],
           role: null,
           permissions: {},
-        }),
+        })
+      },
 
       isAuthenticated: () => get().token !== null,
 

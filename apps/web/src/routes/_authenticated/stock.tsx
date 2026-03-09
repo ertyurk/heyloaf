@@ -25,7 +25,8 @@ import Search01Icon from "@hugeicons/core-free-icons/Search01Icon"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { useCallback, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
@@ -47,24 +48,25 @@ function getStockStatus(item: StockItem) {
   return "ok"
 }
 
-function statusBadge(status: string) {
+function statusBadge(status: string, t: (key: string) => string) {
   switch (status) {
     case "ok":
-      return <Badge variant="default">OK</Badge>
+      return <Badge variant="default">{t("stock.ok")}</Badge>
     case "low":
       return (
         <Badge variant="secondary" className="text-orange-600">
-          Low
+          {t("stock.low")}
         </Badge>
       )
     case "out":
-      return <Badge variant="destructive">Out</Badge>
+      return <Badge variant="destructive">{t("stock.out")}</Badge>
     default:
       return <Badge variant="secondary">{status}</Badge>
   }
 }
 
 function StockPage() {
+  const { t } = useTranslation()
   const client = useApi()
   const queryClient = useQueryClient()
 
@@ -99,6 +101,12 @@ function StockPage() {
     searchTimerRef.current = setTimeout(() => {
       setDebouncedSearch(value)
     }, 300)
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      clearTimeout(searchTimerRef.current)
+    }
   }, [])
 
   const { data, isLoading } = useQuery({
@@ -157,10 +165,10 @@ function StockPage() {
       queryClient.invalidateQueries({ queryKey: ["stock"] })
       setMovementOpen(false)
       resetMovementForm()
-      toast.success("Stock movement recorded")
+      toast.success(t("stock.stockMovementRecorded"))
     },
     onError: () => {
-      toast.error("Failed to record stock movement")
+      toast.error(t("stock.failedToRecordMovement"))
     },
   })
 
@@ -179,10 +187,10 @@ function StockPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["stock"] })
       setLevelsOpen(false)
-      toast.success("Stock levels updated")
+      toast.success(t("stock.stockLevelsUpdated"))
     },
     onError: () => {
-      toast.error("Failed to update stock levels")
+      toast.error(t("stock.failedToUpdateLevels"))
     },
   })
 
@@ -197,7 +205,7 @@ function StockPage() {
           expected_quantity: s.quantity,
           actual_quantity: Number(countQuantities[s.product_id]),
         }))
-      if (items.length === 0) throw new Error("No items counted")
+      if (items.length === 0) throw new Error(t("stock.noItemsCounted"))
       // Create the stock count
       const { data: createData, error: createError } = await client.POST(
         "/api/stock/counts" as never,
@@ -216,10 +224,10 @@ function StockPage() {
       setCountOpen(false)
       setCountQuantities({})
       setCountNotes("")
-      toast.success("Stock count completed")
+      toast.success(t("stock.stockCountCompleted"))
     },
     onError: (err: Error) => {
-      toast.error(err.message || "Failed to submit stock count")
+      toast.error(err.message)
     },
   })
 
@@ -260,14 +268,14 @@ function StockPage() {
     () => [
       {
         id: "product",
-        header: "Product",
+        header: t("common.product"),
         cell: (row: (typeof allStocks)[number]) => (
           <span className="font-medium">{getProductName(row.product_id)}</span>
         ),
       },
       {
         id: "quantity",
-        header: "Quantity",
+        header: t("common.quantity"),
         cell: (row: (typeof allStocks)[number]) => {
           const isLow = row.min_level != null && row.quantity <= row.min_level
           return (
@@ -279,21 +287,21 @@ function StockPage() {
       },
       {
         id: "min_level",
-        header: "Min Level",
+        header: t("stock.minLevel"),
         cell: (row: (typeof allStocks)[number]) => (
           <span className="text-muted-foreground tabular-nums">{row.min_level ?? "\u2014"}</span>
         ),
       },
       {
         id: "max_level",
-        header: "Max Level",
+        header: t("stock.maxLevel"),
         cell: (row: (typeof allStocks)[number]) => (
           <span className="text-muted-foreground tabular-nums">{row.max_level ?? "\u2014"}</span>
         ),
       },
       {
         id: "reserved",
-        header: "Reserved",
+        header: t("stock.reserved"),
         cell: (row: (typeof allStocks)[number]) => (
           <span className="text-muted-foreground tabular-nums">
             {(row as Record<string, unknown>).reserved != null
@@ -304,7 +312,7 @@ function StockPage() {
       },
       {
         id: "location",
-        header: "Location",
+        header: t("stock.location"),
         cell: (row: (typeof allStocks)[number]) => (
           <span className="text-muted-foreground">
             {(row as Record<string, unknown>).location != null
@@ -315,7 +323,7 @@ function StockPage() {
       },
       {
         id: "last_movement",
-        header: "Last Movement",
+        header: t("stock.lastMovement"),
         cell: (row: (typeof allStocks)[number]) => {
           const val = (row as Record<string, unknown>).last_movement_at
           if (!val) return <span className="text-muted-foreground">{"\u2014"}</span>
@@ -325,18 +333,18 @@ function StockPage() {
       },
       {
         id: "status",
-        header: "Status",
-        cell: (row: (typeof allStocks)[number]) => statusBadge(getStockStatus(row)),
+        header: t("common.status"),
+        cell: (row: (typeof allStocks)[number]) => statusBadge(getStockStatus(row), t),
       },
     ],
-    [getProductName]
+    [getProductName, t]
   )
 
   return (
     <>
-      <PageHeader title="Stock" description="Inventory levels and movements">
+      <PageHeader title={t("stock.title")} description={t("stock.description")}>
         <Button variant="outline" onClick={openStockCountSheet}>
-          Start Stock Count
+          {t("stock.startStockCount")}
         </Button>
         <Button
           onClick={() => {
@@ -344,7 +352,7 @@ function StockPage() {
             setMovementOpen(true)
           }}
         >
-          Record Movement
+          {t("stock.recordMovement")}
         </Button>
       </PageHeader>
 
@@ -357,7 +365,7 @@ function StockPage() {
               className="text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2"
             />
             <Input
-              placeholder="Search by product name..."
+              placeholder={t("stock.searchByProductName")}
               value={search}
               onChange={handleSearchChange}
               className="pl-9"
@@ -370,13 +378,15 @@ function StockPage() {
           data={stocks}
           getRowId={(row) => row.product_id}
           isLoading={isLoading}
-          emptyMessage="No stock items found."
+          emptyMessage={t("stock.noStockItems")}
           rowActions={(row) => (
             <>
-              <DropdownMenuItem onClick={() => openAdjustSheet(row)}>Adjust Stock</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => openAdjustSheet(row)}>
+                {t("stock.adjustStock")}
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => openLevelsSheet(row)}>
-                Update Levels
+                {t("stock.updateLevels")}
               </DropdownMenuItem>
             </>
           )}
@@ -387,10 +397,8 @@ function StockPage() {
       <Sheet open={movementOpen} onOpenChange={setMovementOpen}>
         <SheetContent side="right" className="sm:max-w-md">
           <SheetHeader>
-            <SheetTitle>Record Stock Movement</SheetTitle>
-            <SheetDescription>
-              Record an incoming, outgoing, or adjustment movement.
-            </SheetDescription>
+            <SheetTitle>{t("stock.recordStockMovement")}</SheetTitle>
+            <SheetDescription>{t("stock.recordMovementDescription")}</SheetDescription>
           </SheetHeader>
           <form
             className="contents"
@@ -402,13 +410,13 @@ function StockPage() {
             <SheetBody>
               <div className="grid gap-4">
                 <div className="grid gap-1.5">
-                  <Label htmlFor="movement-product">Product</Label>
+                  <Label htmlFor="movement-product">{t("common.product")}</Label>
                   <Select
                     value={movementProductId}
                     onValueChange={(val) => setMovementProductId(val ?? "")}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select a product" />
+                      <SelectValue placeholder={t("stock.selectProduct")} />
                     </SelectTrigger>
                     <SelectContent>
                       {products.map((p) => (
@@ -420,7 +428,7 @@ function StockPage() {
                   </Select>
                 </div>
                 <div className="grid gap-1.5">
-                  <Label htmlFor="movement-type">Movement Type</Label>
+                  <Label htmlFor="movement-type">{t("stock.movementType")}</Label>
                   <Select
                     value={movementType}
                     onValueChange={(val) => setMovementType(val ?? "in")}
@@ -429,14 +437,14 @@ function StockPage() {
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="in">In</SelectItem>
-                      <SelectItem value="out">Out</SelectItem>
-                      <SelectItem value="adjustment">Adjustment</SelectItem>
+                      <SelectItem value="in">{t("stock.in")}</SelectItem>
+                      <SelectItem value="out">{t("stock.outMovement")}</SelectItem>
+                      <SelectItem value="adjustment">{t("stock.adjustment")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
                 <div className="grid gap-1.5">
-                  <Label htmlFor="movement-qty">Quantity</Label>
+                  <Label htmlFor="movement-qty">{t("common.quantity")}</Label>
                   <Input
                     id="movement-qty"
                     type="number"
@@ -447,7 +455,7 @@ function StockPage() {
                   />
                 </div>
                 <div className="grid gap-1.5">
-                  <Label htmlFor="movement-desc">Description (optional)</Label>
+                  <Label htmlFor="movement-desc">{t("stock.descriptionOptional")}</Label>
                   <Textarea
                     id="movement-desc"
                     value={movementDescription}
@@ -458,13 +466,13 @@ function StockPage() {
             </SheetBody>
             <SheetFooter>
               <Button variant="outline" type="button" onClick={() => setMovementOpen(false)}>
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button
                 type="submit"
                 disabled={!movementProductId || !movementQty || recordMovement.isPending}
               >
-                {recordMovement.isPending ? "Saving..." : "Record Movement"}
+                {recordMovement.isPending ? t("common.saving") : t("stock.recordMovement")}
               </Button>
             </SheetFooter>
           </form>
@@ -475,8 +483,10 @@ function StockPage() {
       <Sheet open={levelsOpen} onOpenChange={setLevelsOpen}>
         <SheetContent side="right" className="sm:max-w-md">
           <SheetHeader>
-            <SheetTitle>Update Levels</SheetTitle>
-            <SheetDescription>Set min/max levels for {levelsProductName}.</SheetDescription>
+            <SheetTitle>{t("stock.updateLevels")}</SheetTitle>
+            <SheetDescription>
+              {t("stock.setMinMaxLevels", { name: levelsProductName })}
+            </SheetDescription>
           </SheetHeader>
           <form
             className="contents"
@@ -488,7 +498,7 @@ function StockPage() {
             <SheetBody>
               <div className="grid gap-4">
                 <div className="grid gap-1.5">
-                  <Label htmlFor="levels-min">Min Level</Label>
+                  <Label htmlFor="levels-min">{t("stock.minLevel")}</Label>
                   <Input
                     id="levels-min"
                     type="number"
@@ -498,7 +508,7 @@ function StockPage() {
                   />
                 </div>
                 <div className="grid gap-1.5">
-                  <Label htmlFor="levels-max">Max Level</Label>
+                  <Label htmlFor="levels-max">{t("stock.maxLevel")}</Label>
                   <Input
                     id="levels-max"
                     type="number"
@@ -511,10 +521,10 @@ function StockPage() {
             </SheetBody>
             <SheetFooter>
               <Button variant="outline" type="button" onClick={() => setLevelsOpen(false)}>
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button type="submit" disabled={updateLevels.isPending}>
-                {updateLevels.isPending ? "Saving..." : "Update Levels"}
+                {updateLevels.isPending ? t("common.saving") : t("stock.updateLevels")}
               </Button>
             </SheetFooter>
           </form>
@@ -525,10 +535,8 @@ function StockPage() {
       <Sheet open={countOpen} onOpenChange={setCountOpen}>
         <SheetContent side="right" className="sm:max-w-lg">
           <SheetHeader>
-            <SheetTitle>Stock Count</SheetTitle>
-            <SheetDescription>
-              Count actual quantities for each product and compare with system records.
-            </SheetDescription>
+            <SheetTitle>{t("stock.stockCount")}</SheetTitle>
+            <SheetDescription>{t("stock.stockCountDescription")}</SheetDescription>
           </SheetHeader>
           <form
             className="contents"
@@ -540,20 +548,20 @@ function StockPage() {
             <SheetBody>
               <div className="grid gap-4">
                 <div className="grid gap-1.5">
-                  <Label htmlFor="count-notes">Notes (optional)</Label>
+                  <Label htmlFor="count-notes">{t("stock.notesOptional")}</Label>
                   <Textarea
                     id="count-notes"
                     value={countNotes}
                     onChange={(e) => setCountNotes(e.target.value)}
-                    placeholder="e.g. Weekly stock count"
+                    placeholder={t("stock.weeklyStockCount")}
                   />
                 </div>
                 <div className="grid gap-1">
                   <div className="grid grid-cols-[1fr_80px_80px_60px] gap-2 text-xs font-medium text-muted-foreground border-b pb-2">
-                    <span>Product</span>
-                    <span className="text-right">System</span>
-                    <span className="text-right">Actual</span>
-                    <span className="text-right">Diff</span>
+                    <span>{t("common.product")}</span>
+                    <span className="text-right">{t("stock.system")}</span>
+                    <span className="text-right">{t("stock.actual")}</span>
+                    <span className="text-right">{t("stock.diff")}</span>
                   </div>
                   {allStocks.map((item) => {
                     const actual = countQuantities[item.product_id] ?? ""
@@ -600,10 +608,10 @@ function StockPage() {
             </SheetBody>
             <SheetFooter>
               <Button variant="outline" type="button" onClick={() => setCountOpen(false)}>
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button type="submit" disabled={submitStockCount.isPending}>
-                {submitStockCount.isPending ? "Submitting..." : "Submit Count"}
+                {submitStockCount.isPending ? t("common.submitting") : t("stock.submitCount")}
               </Button>
             </SheetFooter>
           </form>

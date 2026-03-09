@@ -5,6 +5,7 @@ import { DataTable } from "@heyloaf/ui/components/data-table"
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useCallback, useMemo } from "react"
+import { useTranslation } from "react-i18next"
 import {
   CartesianGrid,
   Line,
@@ -30,6 +31,7 @@ const statusBadgeClass: Record<string, string> = {
 }
 
 function DashboardPage() {
+  const { t } = useTranslation()
   const client = useApi()
   const navigate = useNavigate()
 
@@ -42,9 +44,11 @@ function DashboardPage() {
   })
 
   const { data: ordersData } = useQuery({
-    queryKey: ["orders"],
+    queryKey: ["orders", "recent"],
     queryFn: async () => {
-      const res = await client.GET("/api/orders")
+      const res = await client.GET("/api/orders", {
+        params: { query: { page: 1, per_page: 5 } },
+      })
       return res.data
     },
   })
@@ -58,7 +62,7 @@ function DashboardPage() {
   })
 
   const stats = dashboardData?.data
-  const orders = ordersData?.data ?? []
+  const recentOrders = ordersData?.data ?? []
   const paymentMethods = paymentMethodsData?.data ?? []
 
   const salesByDate = useMemo(() => {
@@ -73,7 +77,7 @@ function DashboardPage() {
       totals.set(date, 0)
     }
 
-    for (const order of orders) {
+    for (const order of recentOrders) {
       if (order.status === "voided" || order.status === "returned") continue
       const date = new Date(order.created_at).toISOString().slice(0, 10)
       if (totals.has(date)) {
@@ -85,13 +89,7 @@ function DashboardPage() {
       date,
       total: totals.get(date) ?? 0,
     }))
-  }, [orders])
-
-  const recentOrders = useMemo(() => {
-    return [...orders]
-      .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
-      .slice(0, 5)
-  }, [orders])
+  }, [recentOrders])
 
   const getPaymentMethodName = useCallback(
     (id: string | null | undefined) => {
@@ -103,16 +101,28 @@ function DashboardPage() {
 
   type RecentOrder = (typeof recentOrders)[number]
 
+  const statusLabel = useCallback(
+    (status: string) => {
+      const key = `dashboard.${status}` as
+        | "dashboard.completed"
+        | "dashboard.pending"
+        | "dashboard.voided"
+        | "dashboard.returned"
+      return t(key)
+    },
+    [t]
+  )
+
   const recentOrderColumns = useMemo(
     () => [
       {
         id: "order_number",
-        header: "Order #",
+        header: t("dashboard.orderNumber"),
         cell: (row: RecentOrder) => <span className="font-medium">{row.order_number}</span>,
       },
       {
         id: "date",
-        header: "Date",
+        header: t("common.date"),
         cell: (row: RecentOrder) => (
           <span className="text-muted-foreground">
             {new Date(row.created_at).toLocaleDateString()}
@@ -121,7 +131,7 @@ function DashboardPage() {
       },
       {
         id: "total",
-        header: <span className="text-right block">Total</span>,
+        header: <span className="text-right block">{t("common.total")}</span>,
         cell: (row: RecentOrder) => (
           <span className="tabular-nums">{formatCurrency(row.total)}</span>
         ),
@@ -129,34 +139,34 @@ function DashboardPage() {
       },
       {
         id: "status",
-        header: "Status",
+        header: t("common.status"),
         cell: (row: RecentOrder) => (
           <Badge
             className={statusBadgeClass[row.status] ?? "bg-secondary text-secondary-foreground"}
           >
-            {row.status.charAt(0).toUpperCase() + row.status.slice(1)}
+            {statusLabel(row.status)}
           </Badge>
         ),
       },
       {
         id: "payment_method",
-        header: "Payment Method",
+        header: t("dashboard.paymentMethod"),
         cell: (row: RecentOrder) => getPaymentMethodName(row.payment_method_id),
       },
     ],
-    [getPaymentMethodName]
+    [getPaymentMethodName, t, statusLabel]
   )
 
   return (
     <>
-      <PageHeader title="Dashboard" description="Business overview" />
+      <PageHeader title={t("dashboard.title")} description={t("dashboard.description")} />
       <div className="space-y-6 p-6">
         {/* Stat cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Today's Sales
+                {t("dashboard.todaysSales")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -164,7 +174,7 @@ function DashboardPage() {
                 {formatCurrency(stats?.today_sales_total ?? 0)}
               </div>
               <p className="text-xs text-muted-foreground mt-1">
-                {stats?.today_sales_count ?? 0} orders
+                {stats?.today_sales_count ?? 0} {t("dashboard.orders")}
               </p>
             </CardContent>
           </Card>
@@ -172,7 +182,7 @@ function DashboardPage() {
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Low Stock Alerts
+                {t("dashboard.lowStockAlerts")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -181,49 +191,53 @@ function DashboardPage() {
               >
                 {(stats?.low_stock_count ?? 0).toLocaleString()}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">items below threshold</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {t("dashboard.itemsBelowThreshold")}
+              </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Outstanding Receivables
+                {t("dashboard.outstandingReceivables")}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 {formatCurrency(stats?.outstanding_receivables ?? 0)}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">outstanding invoices</p>
+              <p className="text-xs text-muted-foreground mt-1">
+                {t("dashboard.outstandingInvoices")}
+              </p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Outstanding Payables
+                {t("dashboard.outstandingPayables")}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 {formatCurrency(stats?.outstanding_payables ?? 0)}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">due to suppliers</p>
+              <p className="text-xs text-muted-foreground mt-1">{t("dashboard.dueToSuppliers")}</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Today's Production
+                {t("dashboard.todaysProduction")}
               </CardTitle>
             </CardHeader>
             <CardContent>
               <div className="text-2xl font-bold">
                 {(stats?.today_production_count ?? 0).toLocaleString()}
               </div>
-              <p className="text-xs text-muted-foreground mt-1">batches produced</p>
+              <p className="text-xs text-muted-foreground mt-1">{t("dashboard.batchesProduced")}</p>
             </CardContent>
           </Card>
         </div>
@@ -232,7 +246,7 @@ function DashboardPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Sales Trend (Last 7 Days)
+              {t("dashboard.salesTrend")}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -256,12 +270,14 @@ function DashboardPage() {
 
         {/* Recent Orders */}
         <div className="space-y-2">
-          <h2 className="text-sm font-medium text-muted-foreground">Recent Orders</h2>
+          <h2 className="text-sm font-medium text-muted-foreground">
+            {t("dashboard.recentOrders")}
+          </h2>
           <DataTable
             columns={recentOrderColumns}
             data={recentOrders}
             getRowId={(row) => row.id}
-            emptyMessage="No orders yet."
+            emptyMessage={t("dashboard.noOrdersYet")}
             onRowClick={() => navigate({ to: "/orders" })}
           />
         </div>
@@ -273,21 +289,21 @@ function DashboardPage() {
             className="h-16 text-sm"
             onClick={() => navigate({ to: "/pos" })}
           >
-            New Sale
+            {t("dashboard.newSale")}
           </Button>
           <Button
             variant="outline"
             className="h-16 text-sm"
             onClick={() => navigate({ to: "/invoices" })}
           >
-            New Invoice
+            {t("dashboard.newInvoice")}
           </Button>
           <Button
             variant="outline"
             className="h-16 text-sm"
             onClick={() => navigate({ to: "/production" })}
           >
-            New Production
+            {t("dashboard.newProduction")}
           </Button>
         </div>
       </div>

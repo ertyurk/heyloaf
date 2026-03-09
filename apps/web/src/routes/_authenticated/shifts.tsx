@@ -26,11 +26,11 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { useCallback, useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
-import { API_BASE_URL } from "@/lib/api"
-import { useAuthStore } from "@/lib/auth"
+import { formatCurrency } from "@/lib/format-currency"
 
 type Shift = components["schemas"]["Shift"]
 
@@ -67,12 +67,13 @@ function formatDateTime(iso: string | null | undefined) {
   return new Date(iso).toLocaleString()
 }
 
-function formatCurrency(val: number | null | undefined) {
+function formatCurrencyOrDash(val: number | null | undefined) {
   if (val == null) return "\u2014"
-  return val.toLocaleString(undefined, { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  return formatCurrency(val)
 }
 
 function ShiftsPage() {
+  const { t } = useTranslation()
   const client = useApi()
   const queryClient = useQueryClient()
 
@@ -102,18 +103,18 @@ function ShiftsPage() {
 
   const shifts = (shiftsData as { data?: Shift[] })?.data ?? []
 
-  const token = useAuthStore((s) => s.token)
-
   const { data: zReportData, isLoading: zReportLoading } = useQuery({
     queryKey: ["shifts", zReportShiftId, "z-report"],
     queryFn: async () => {
       if (!zReportShiftId) return null
-      const res = await fetch(`${API_BASE_URL}/api/shifts/${zReportShiftId}/z-report`, {
-        headers: { Authorization: `Bearer ${token}` },
-      })
-      if (!res.ok) throw new Error("Failed to fetch Z-report")
-      const json = (await res.json()) as { data: ZReport }
-      return json.data
+      const res = await client.GET(
+        "/api/shifts/{id}/z-report" as never,
+        {
+          params: { path: { id: zReportShiftId } },
+        } as never
+      )
+      const data = (res as { data?: { data?: ZReport } }).data
+      return data?.data ?? null
     },
     enabled: !!zReportShiftId,
   })
@@ -129,10 +130,10 @@ function ShiftsPage() {
       queryClient.invalidateQueries({ queryKey: ["shifts"] })
       setOpenSheetOpen(false)
       setOpeningBalance("")
-      toast.success("Shift opened successfully")
+      toast.success(t("shifts.shiftOpened"))
     },
     onError: () => {
-      toast.error("Failed to open shift")
+      toast.error(t("shifts.failedToOpenShift"))
     },
   })
 
@@ -150,13 +151,13 @@ function ShiftsPage() {
       queryClient.invalidateQueries({ queryKey: ["shifts"] })
       setCloseSheetOpen(false)
       setClosingBalance("")
-      toast.success("Shift closed successfully")
+      toast.success(t("shifts.shiftClosed"))
       if (shiftId) {
         setZReportShiftId(shiftId)
       }
     },
     onError: () => {
-      toast.error("Failed to close shift")
+      toast.error(t("shifts.failedToCloseShift"))
     },
   })
 
@@ -168,55 +169,55 @@ function ShiftsPage() {
     () => [
       {
         id: "id",
-        header: "Shift #",
+        header: t("shifts.shiftNumber"),
         cell: (row: Shift) => <span className="font-mono text-xs">{row.id.slice(0, 8)}</span>,
       },
       {
         id: "opened_at",
-        header: "Opened At",
+        header: t("shifts.openedAt"),
         cell: (row: Shift) => <span className="text-sm">{formatDateTime(row.opened_at)}</span>,
       },
       {
         id: "closed_at",
-        header: "Closed At",
+        header: t("shifts.closedAt"),
         cell: (row: Shift) => <span className="text-sm">{formatDateTime(row.closed_at)}</span>,
       },
       {
         id: "opening_balance",
-        header: "Opening Balance",
+        header: t("shifts.openingBalance"),
         cell: (row: Shift) => (
-          <span className="tabular-nums">{formatCurrency(row.opening_balance)}</span>
+          <span className="tabular-nums">{formatCurrencyOrDash(row.opening_balance)}</span>
         ),
       },
       {
         id: "closing_balance",
-        header: "Closing Balance",
+        header: t("shifts.closingBalance"),
         cell: (row: Shift) => (
-          <span className="tabular-nums">{formatCurrency(row.closing_balance)}</span>
+          <span className="tabular-nums">{formatCurrencyOrDash(row.closing_balance)}</span>
         ),
       },
       {
         id: "status",
-        header: "Status",
+        header: t("common.status"),
         cell: (row: Shift) => (
           <Badge variant={row.status === "open" ? "default" : "secondary"}>
-            {row.status === "open" ? "Open" : "Closed"}
+            {row.status === "open" ? t("shifts.open") : t("shifts.closed")}
           </Badge>
         ),
       },
     ],
-    []
+    [t]
   )
 
   return (
     <>
-      <PageHeader title="Shift Management" description="Manage cash register shifts">
+      <PageHeader title={t("shifts.title")} description={t("shifts.description")}>
         {currentShift ? (
           <Button variant="destructive" onClick={() => setCloseSheetOpen(true)}>
-            Close Shift
+            {t("shifts.closeShift")}
           </Button>
         ) : (
-          <Button onClick={() => setOpenSheetOpen(true)}>Open Shift</Button>
+          <Button onClick={() => setOpenSheetOpen(true)}>{t("shifts.openShift")}</Button>
         )}
       </PageHeader>
 
@@ -227,27 +228,32 @@ function ShiftsPage() {
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-green-800 dark:text-green-200">
-                  Shift is currently open
+                  {t("shifts.shiftCurrentlyOpen")}
                 </p>
                 <p className="mt-1 text-xs text-green-600 dark:text-green-400">
-                  Opened at {formatDateTime(currentShift.opened_at)} &middot; Opening balance:{" "}
-                  {formatCurrency(currentShift.opening_balance)}
+                  {t("shifts.openedAtInfo", { time: formatDateTime(currentShift.opened_at) })}{" "}
+                  &middot; {t("shifts.openingBalance")}:{" "}
+                  {formatCurrencyOrDash(currentShift.opening_balance)}
                   {currentShift.expected_balance != null && (
-                    <> &middot; Expected balance: {formatCurrency(currentShift.expected_balance)}</>
+                    <>
+                      {" "}
+                      &middot; {t("shifts.expectedBalance")}:{" "}
+                      {formatCurrencyOrDash(currentShift.expected_balance)}
+                    </>
                   )}
                 </p>
               </div>
               <Button variant="outline" size="sm" onClick={() => setCloseSheetOpen(true)}>
-                Close Shift
+                {t("shifts.closeShift")}
               </Button>
             </div>
           </div>
         ) : (
           <div className="rounded-lg border border-muted bg-muted/50 p-4">
             <div className="flex items-center justify-between">
-              <p className="text-sm text-muted-foreground">No shift is currently open.</p>
+              <p className="text-sm text-muted-foreground">{t("shifts.noShiftOpen")}</p>
               <Button size="sm" onClick={() => setOpenSheetOpen(true)}>
-                Open Shift
+                {t("shifts.openShift")}
               </Button>
             </div>
           </div>
@@ -259,7 +265,7 @@ function ShiftsPage() {
           data={shifts}
           getRowId={(row) => row.id}
           isLoading={shiftsLoading}
-          emptyMessage="No shifts found."
+          emptyMessage={t("shifts.noShiftsFound")}
           rowActions={(row) => {
             if (row.status !== "closed") return null
             return <DropdownMenuItem onClick={() => openZReport(row.id)}>Z-Report</DropdownMenuItem>
@@ -271,8 +277,8 @@ function ShiftsPage() {
       <Sheet open={openSheetOpen} onOpenChange={setOpenSheetOpen}>
         <SheetContent side="right" className="sm:max-w-md">
           <SheetHeader>
-            <SheetTitle>Open Shift</SheetTitle>
-            <SheetDescription>Start a new cash register shift.</SheetDescription>
+            <SheetTitle>{t("shifts.openShift")}</SheetTitle>
+            <SheetDescription>{t("shifts.startNewShift")}</SheetDescription>
           </SheetHeader>
           <form
             className="contents"
@@ -284,7 +290,7 @@ function ShiftsPage() {
             <SheetBody>
               <div className="grid gap-4">
                 <div className="grid gap-1.5">
-                  <Label htmlFor="opening-balance">Opening Balance</Label>
+                  <Label htmlFor="opening-balance">{t("shifts.openingBalance")}</Label>
                   <Input
                     id="opening-balance"
                     type="number"
@@ -300,10 +306,10 @@ function ShiftsPage() {
             </SheetBody>
             <SheetFooter>
               <Button variant="outline" type="button" onClick={() => setOpenSheetOpen(false)}>
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button type="submit" disabled={openShift.isPending}>
-                {openShift.isPending ? "Opening..." : "Open Shift"}
+                {openShift.isPending ? t("shifts.opening") : t("shifts.openShift")}
               </Button>
             </SheetFooter>
           </form>
@@ -314,10 +320,8 @@ function ShiftsPage() {
       <Sheet open={closeSheetOpen} onOpenChange={setCloseSheetOpen}>
         <SheetContent side="right" className="sm:max-w-md">
           <SheetHeader>
-            <SheetTitle>Close Shift</SheetTitle>
-            <SheetDescription>
-              Close the current shift and record the closing balance.
-            </SheetDescription>
+            <SheetTitle>{t("shifts.closeShift")}</SheetTitle>
+            <SheetDescription>{t("shifts.closeCurrentShift")}</SheetDescription>
           </SheetHeader>
           <form
             className="contents"
@@ -331,15 +335,15 @@ function ShiftsPage() {
                 {currentShift?.expected_balance != null && (
                   <div className="rounded-md bg-muted p-3">
                     <p className="text-sm text-muted-foreground">
-                      Expected balance:{" "}
+                      {t("shifts.expectedBalance")}:{" "}
                       <span className="font-medium text-foreground tabular-nums">
-                        {formatCurrency(currentShift.expected_balance)}
+                        {formatCurrencyOrDash(currentShift.expected_balance)}
                       </span>
                     </p>
                   </div>
                 )}
                 <div className="grid gap-1.5">
-                  <Label htmlFor="closing-balance">Closing Balance</Label>
+                  <Label htmlFor="closing-balance">{t("shifts.closingBalance")}</Label>
                   <Input
                     id="closing-balance"
                     type="number"
@@ -355,10 +359,10 @@ function ShiftsPage() {
             </SheetBody>
             <SheetFooter>
               <Button variant="outline" type="button" onClick={() => setCloseSheetOpen(false)}>
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button type="submit" disabled={closeShift.isPending}>
-                {closeShift.isPending ? "Closing..." : "Close Shift"}
+                {closeShift.isPending ? t("shifts.closing") : t("shifts.closeShift")}
               </Button>
             </SheetFooter>
           </form>
@@ -387,9 +391,9 @@ function ShiftsPage() {
           </SheetBody>
           <SheetFooter>
             <Button variant="outline" onClick={() => setZReportShiftId(null)}>
-              Close
+              {t("common.close")}
             </Button>
-            <Button onClick={() => window.print()}>Print</Button>
+            <Button onClick={() => window.print()}>{t("common.print")}</Button>
           </SheetFooter>
         </SheetContent>
       </Sheet>
@@ -416,7 +420,7 @@ function ZReportContent({ report }: { report: ZReport }) {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-3 gap-3">
-        <SummaryCard label="Total Sales" value={formatCurrency(report.total_sales)} />
+        <SummaryCard label="Total Sales" value={formatCurrencyOrDash(report.total_sales)} />
         <SummaryCard label="Total Orders" value={String(report.total_orders)} />
         <SummaryCard label="Items Sold" value={String(report.total_items_sold)} />
       </div>
@@ -443,7 +447,7 @@ function ZReportContent({ report }: { report: ZReport }) {
                   <TableCell className="text-sm">{pm.method_name}</TableCell>
                   <TableCell className="text-sm text-right tabular-nums">{pm.count}</TableCell>
                   <TableCell className="text-sm text-right tabular-nums">
-                    {formatCurrency(pm.total)}
+                    {formatCurrencyOrDash(pm.total)}
                   </TableCell>
                 </TableRow>
               ))}
@@ -460,17 +464,20 @@ function ZReportContent({ report }: { report: ZReport }) {
         <div className="space-y-1.5 rounded-md border p-3">
           <ReconciliationRow
             label="Opening Balance"
-            value={formatCurrency(report.opening_balance)}
+            value={formatCurrencyOrDash(report.opening_balance)}
           />
-          <ReconciliationRow label="Expected Cash" value={formatCurrency(report.expected_cash)} />
-          <ReconciliationRow label="Actual Cash" value={formatCurrency(report.actual_cash)} />
+          <ReconciliationRow
+            label="Expected Cash"
+            value={formatCurrencyOrDash(report.expected_cash)}
+          />
+          <ReconciliationRow label="Actual Cash" value={formatCurrencyOrDash(report.actual_cash)} />
           <Separator />
           <div className="flex items-center justify-between pt-1">
             <span className="text-sm font-medium">Discrepancy</span>
             <span
               className={`text-sm font-semibold tabular-nums ${discrepancyNegative ? "text-red-600 dark:text-red-400" : ""}`}
             >
-              {formatCurrency(report.discrepancy)}
+              {formatCurrencyOrDash(report.discrepancy)}
             </span>
           </div>
         </div>

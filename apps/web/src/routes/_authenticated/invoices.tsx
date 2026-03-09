@@ -27,8 +27,10 @@ import Search01Icon from "@hugeicons/core-free-icons/Search01Icon"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
+import { z } from "zod"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
 import { formatCurrency } from "@/lib/format-currency"
@@ -73,11 +75,9 @@ interface LineItem {
   line_total: number
 }
 
-let nextLineItemId = 1
-
 function emptyLineItem(): LineItem {
   return {
-    id: `li-${nextLineItemId++}`,
+    id: crypto.randomUUID(),
     description: "",
     quantity: 1,
     unit_price: 0,
@@ -90,6 +90,20 @@ function computeLineTotal(item: Pick<LineItem, "quantity" | "unit_price">) {
   return item.quantity * item.unit_price
 }
 
+const invoiceSchema = z.object({
+  contact_id: z.string().uuid("Contact is required").or(z.literal("")),
+  invoice_type: z.enum(["sales", "purchase"]),
+  items: z
+    .array(
+      z.object({
+        description: z.string().min(1, "Description is required"),
+        quantity: z.number().positive("Quantity must be positive"),
+        unit_price: z.number().min(0, "Price cannot be negative"),
+      })
+    )
+    .min(1, "At least one item required"),
+})
+
 const emptyInvoiceForm = {
   invoice_type: "sales" as string,
   contact_id: "",
@@ -100,22 +114,9 @@ const emptyInvoiceForm = {
   notes: "",
 }
 
-const statusOptions = [
-  { value: "__all__", label: "All Statuses" },
-  { value: "draft", label: "Draft" },
-  { value: "pending", label: "Pending" },
-  { value: "paid", label: "Paid" },
-  { value: "overdue", label: "Overdue" },
-  { value: "cancelled", label: "Cancelled" },
-]
-
-const typeOptions = [
-  { value: "__all__", label: "All Types" },
-  { value: "sales", label: "Sales" },
-  { value: "purchase", label: "Purchase" },
-]
-
+// biome-ignore lint/complexity/noExcessiveCognitiveComplexity: Invoices page has multiple filters, line items, forms, and confirmation dialogs
 function InvoicesPage() {
+  const { t } = useTranslation()
   const client = useApi()
   const queryClient = useQueryClient()
 
@@ -123,18 +124,46 @@ function InvoicesPage() {
   const [editingInvoice, setEditingInvoice] = useState<Invoice | null>(null)
   const [createForm, setCreateForm] = useState(emptyInvoiceForm)
   const [lineItems, setLineItems] = useState<LineItem[]>([emptyLineItem()])
+  const [confirmDeleteInvoice, setConfirmDeleteInvoice] = useState<Invoice | null>(null)
 
   const [search, setSearch] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(null)
-  const [statusFilter, setStatusFilter] = useState("__all__")
-  const [typeFilter, setTypeFilter] = useState("__all__")
+  const [statusFilter, setStatusFilter] = useState("all")
+  const [typeFilter, setTypeFilter] = useState("all")
+
+  useEffect(() => {
+    return () => {
+      if (searchTimer.current) clearTimeout(searchTimer.current)
+    }
+  }, [])
 
   function handleSearchChange(value: string) {
     setSearch(value)
     if (searchTimer.current) clearTimeout(searchTimer.current)
     searchTimer.current = setTimeout(() => setDebouncedSearch(value), 300)
   }
+
+  const statusOptions = useMemo(
+    () => [
+      { value: "all", label: t("invoices.allStatuses") },
+      { value: "draft", label: t("common.draft") },
+      { value: "pending", label: t("dashboard.pending") },
+      { value: "paid", label: t("invoices.paid") },
+      { value: "overdue", label: t("invoices.overdue") },
+      { value: "cancelled", label: t("invoices.cancelled") },
+    ],
+    [t]
+  )
+
+  const typeOptions = useMemo(
+    () => [
+      { value: "all", label: t("invoices.allTypes") },
+      { value: "sales", label: t("invoices.sales") },
+      { value: "purchase", label: t("invoices.purchase") },
+    ],
+    [t]
+  )
 
   const { data, isLoading } = useQuery({
     queryKey: ["invoices"],
@@ -172,10 +201,10 @@ function InvoicesPage() {
       const q = debouncedSearch.toLowerCase()
       result = result.filter((inv) => inv.invoice_number?.toLowerCase().includes(q))
     }
-    if (statusFilter !== "__all__") {
+    if (statusFilter !== "all") {
       result = result.filter((inv) => inv.status === statusFilter)
     }
-    if (typeFilter !== "__all__") {
+    if (typeFilter !== "all") {
       result = result.filter((inv) => inv.invoice_type === typeFilter)
     }
     return result
@@ -193,10 +222,10 @@ function InvoicesPage() {
       setSheetMode(null)
       setCreateForm(emptyInvoiceForm)
       setLineItems([emptyLineItem()])
-      toast.success("Invoice created")
+      toast.success(t("invoices.invoiceCreated"))
     },
     onError: () => {
-      toast.error("Failed to create invoice")
+      toast.error(t("invoices.failedToCreateInvoice"))
     },
   })
 
@@ -214,10 +243,10 @@ function InvoicesPage() {
       setEditingInvoice(null)
       setCreateForm(emptyInvoiceForm)
       setLineItems([emptyLineItem()])
-      toast.success("Invoice updated")
+      toast.success(t("invoices.invoiceUpdated"))
     },
     onError: () => {
-      toast.error("Failed to update invoice")
+      toast.error(t("invoices.failedToUpdateInvoice"))
     },
   })
 
@@ -230,10 +259,12 @@ function InvoicesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["invoices"] })
-      toast.success("Invoice deleted")
+      setConfirmDeleteInvoice(null)
+      toast.success(t("invoices.invoiceDeleted"))
     },
     onError: () => {
-      toast.error("Failed to delete invoice")
+      setConfirmDeleteInvoice(null)
+      toast.error(t("invoices.failedToDeleteInvoice"))
     },
   })
 
@@ -247,10 +278,10 @@ function InvoicesPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["invoices"] })
-      toast.success("Status updated")
+      toast.success(t("invoices.statusUpdated"))
     },
     onError: () => {
-      toast.error("Failed to update status")
+      toast.error(t("invoices.failedToUpdateStatus"))
     },
   })
 
@@ -335,13 +366,44 @@ function InvoicesPage() {
 
   function handleCreate(e: React.FormEvent) {
     e.preventDefault()
+    const validation = invoiceSchema.safeParse({
+      contact_id: createForm.contact_id,
+      invoice_type: createForm.invoice_type,
+      items: lineItems.map((li) => ({
+        description: li.description,
+        quantity: li.quantity,
+        unit_price: li.unit_price,
+      })),
+    })
+    if (!validation.success) {
+      const firstError = validation.error.errors[0]
+      toast.error(firstError?.message ?? "Validation error")
+      return
+    }
     createMutation.mutate(buildInvoiceBody())
   }
 
   function handleEdit(e: React.FormEvent) {
     e.preventDefault()
     if (!editingInvoice) return
-    updateMutation.mutate({ id: editingInvoice.id, body: buildInvoiceBody() })
+    const validation = invoiceSchema.safeParse({
+      contact_id: createForm.contact_id,
+      invoice_type: createForm.invoice_type,
+      items: lineItems.map((li) => ({
+        description: li.description,
+        quantity: li.quantity,
+        unit_price: li.unit_price,
+      })),
+    })
+    if (!validation.success) {
+      const firstError = validation.error.errors[0]
+      toast.error(firstError?.message ?? "Validation error")
+      return
+    }
+    updateMutation.mutate({
+      id: editingInvoice.id,
+      body: buildInvoiceBody(),
+    })
   }
 
   function openEditSheet(invoice: Invoice) {
@@ -362,7 +424,7 @@ function InvoicesPage() {
       vat_rate?: number
     }>
     const existingItems: LineItem[] = rawItems.map((item) => ({
-      id: `li-${nextLineItemId++}`,
+      id: crypto.randomUUID(),
       description: item.description ?? "",
       quantity: item.quantity ?? 1,
       unit_price: item.unit_price ?? 0,
@@ -373,11 +435,6 @@ function InvoicesPage() {
     setSheetMode("edit")
   }
 
-  function handleDelete(invoice: Invoice) {
-    if (!window.confirm(`Delete invoice "${invoice.invoice_number}"?`)) return
-    deleteMutation.mutate(invoice.id)
-  }
-
   function handleStatusChange(invoiceId: string, status: string) {
     statusMutation.mutate({ id: invoiceId, status })
   }
@@ -386,18 +443,18 @@ function InvoicesPage() {
     () => [
       {
         id: "invoice_number",
-        header: "Invoice #",
+        header: t("invoices.invoiceNumber"),
         cell: (row: Invoice) => <span className="font-medium">{row.invoice_number}</span>,
       },
       {
         id: "contact",
-        header: "Contact",
+        header: t("common.contact"),
         cell: (row: Invoice) =>
           contacts.find((c: Contact) => c.id === row.contact_id)?.name ?? "\u2014",
       },
       {
         id: "type",
-        header: "Type",
+        header: t("common.type"),
         cell: (row: Invoice) =>
           row.invoice_type
             ? row.invoice_type.charAt(0).toUpperCase() + row.invoice_type.slice(1)
@@ -405,21 +462,21 @@ function InvoicesPage() {
       },
       {
         id: "date",
-        header: "Date",
+        header: t("common.date"),
         cell: (row: Invoice) => (
           <span className="text-muted-foreground">{formatDate(row.date)}</span>
         ),
       },
       {
         id: "due_date",
-        header: "Due Date",
+        header: t("invoices.dueDate"),
         cell: (row: Invoice) => (
           <span className="text-muted-foreground">{formatDate(row.due_date ?? null)}</span>
         ),
       },
       {
         id: "total",
-        header: <span className="text-right block">Total</span>,
+        header: <span className="text-right block">{t("common.total")}</span>,
         cell: (row: Invoice) => (
           <span className="tabular-nums">{formatCurrency(row.grand_total)}</span>
         ),
@@ -427,7 +484,7 @@ function InvoicesPage() {
       },
       {
         id: "status",
-        header: "Status",
+        header: t("common.status"),
         cell: (row: Invoice) => (
           <Badge className={statusColor[row.status] ?? "bg-muted text-muted-foreground"}>
             {row.status.charAt(0).toUpperCase() + row.status.slice(1)}
@@ -435,7 +492,7 @@ function InvoicesPage() {
         ),
       },
     ],
-    [contacts]
+    [contacts, t]
   )
 
   const hasValidLineItems =
@@ -444,7 +501,7 @@ function InvoicesPage() {
 
   return (
     <>
-      <PageHeader title="Invoices" description="Manage sales and purchase invoices">
+      <PageHeader title={t("invoices.title")} description={t("invoices.description")}>
         <Button
           onClick={() => {
             setCreateForm(emptyInvoiceForm)
@@ -453,7 +510,7 @@ function InvoicesPage() {
             setSheetMode("create")
           }}
         >
-          New Invoice
+          {t("invoices.newInvoice")}
         </Button>
       </PageHeader>
 
@@ -466,7 +523,7 @@ function InvoicesPage() {
               className="text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2"
             />
             <Input
-              placeholder="Search invoices..."
+              placeholder={t("invoices.searchInvoices")}
               value={search}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="pl-8"
@@ -475,16 +532,16 @@ function InvoicesPage() {
           <AdvancedSelect
             options={statusOptions}
             value={statusFilter}
-            onValueChange={(v) => setStatusFilter(v ?? "__all__")}
-            placeholder="Status"
+            onValueChange={(v) => setStatusFilter(v ?? "all")}
+            placeholder={t("common.status")}
             searchable={false}
             className="w-40"
           />
           <AdvancedSelect
             options={typeOptions}
             value={typeFilter}
-            onValueChange={(v) => setTypeFilter(v ?? "__all__")}
-            placeholder="Type"
+            onValueChange={(v) => setTypeFilter(v ?? "all")}
+            placeholder={t("common.type")}
             searchable={false}
             className="w-36"
           />
@@ -495,11 +552,13 @@ function InvoicesPage() {
           data={filteredInvoices}
           getRowId={(row) => row.id}
           isLoading={isLoading}
-          emptyMessage="No invoices found."
+          emptyMessage={t("invoices.noInvoicesFound")}
           onRowClick={openEditSheet}
           rowActions={(row) => (
             <>
-              <DropdownMenuItem onClick={() => openEditSheet(row)}>Edit</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => openEditSheet(row)}>
+                {t("common.edit")}
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               {invoiceStatuses.map((s) => (
                 <DropdownMenuItem
@@ -507,17 +566,45 @@ function InvoicesPage() {
                   disabled={row.status === s}
                   onClick={() => handleStatusChange(row.id, s)}
                 >
-                  Mark as {s.charAt(0).toUpperCase() + s.slice(1)}
+                  {t("invoices.markAs", {
+                    status: s.charAt(0).toUpperCase() + s.slice(1),
+                  })}
                 </DropdownMenuItem>
               ))}
               <DropdownMenuSeparator />
-              <DropdownMenuItem variant="destructive" onClick={() => handleDelete(row)}>
-                Delete
+              <DropdownMenuItem variant="destructive" onClick={() => setConfirmDeleteInvoice(row)}>
+                {t("common.delete")}
               </DropdownMenuItem>
             </>
           )}
         />
       </div>
+
+      {/* Delete Confirmation */}
+      {confirmDeleteInvoice && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="rounded-lg border bg-background p-6 shadow-lg max-w-sm w-full mx-4">
+            <p className="text-sm mb-4">
+              {t("invoices.confirmDelete", {
+                number: confirmDeleteInvoice.invoice_number,
+              })}
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setConfirmDeleteInvoice(null)}>
+                {t("common.cancel")}
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={() => deleteMutation.mutate(confirmDeleteInvoice.id)}
+                disabled={deleteMutation.isPending}
+              >
+                {t("common.delete")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
 
       <Sheet
         open={sheetMode !== null}
@@ -530,7 +617,9 @@ function InvoicesPage() {
       >
         <SheetContent side="right" className="sm:max-w-lg">
           <SheetHeader>
-            <SheetTitle>{sheetMode === "edit" ? "Edit Invoice" : "Create Invoice"}</SheetTitle>
+            <SheetTitle>
+              {sheetMode === "edit" ? t("invoices.editInvoice") : t("invoices.createInvoice")}
+            </SheetTitle>
           </SheetHeader>
           <form
             onSubmit={sheetMode === "edit" ? handleEdit : handleCreate}
@@ -539,36 +628,42 @@ function InvoicesPage() {
             <SheetBody>
               <div className="grid gap-4">
                 <div className="grid gap-1.5">
-                  <Label htmlFor="invoice_type">Type</Label>
+                  <Label htmlFor="invoice_type">{t("common.type")}</Label>
                   <Select
                     value={createForm.invoice_type}
                     onValueChange={(val) =>
-                      setCreateForm((f) => ({ ...f, invoice_type: val as string }))
+                      setCreateForm((f) => ({
+                        ...f,
+                        invoice_type: val as string,
+                      }))
                     }
                   >
                     <SelectTrigger className="w-full">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="sales">Sales</SelectItem>
-                      <SelectItem value="purchase">Purchase</SelectItem>
+                      <SelectItem value="sales">{t("invoices.sales")}</SelectItem>
+                      <SelectItem value="purchase">{t("invoices.purchase")}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
 
                 <div className="grid gap-1.5">
-                  <Label htmlFor="contact_id">Contact</Label>
+                  <Label htmlFor="contact_id">{t("common.contact")}</Label>
                   <Select
                     value={createForm.contact_id}
                     onValueChange={(val) =>
-                      setCreateForm((f) => ({ ...f, contact_id: val as string }))
+                      setCreateForm((f) => ({
+                        ...f,
+                        contact_id: val as string,
+                      }))
                     }
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select contact (optional)" />
+                      <SelectValue placeholder={t("invoices.selectContactOptional")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="">None</SelectItem>
+                      <SelectItem value="">{t("common.none")}</SelectItem>
                       {contacts.map((c: Contact) => (
                         <SelectItem key={c.id} value={c.id}>
                           {c.name}
@@ -580,36 +675,48 @@ function InvoicesPage() {
 
                 {creditLimitWarning && (
                   <div className="rounded-md border border-yellow-300 bg-yellow-50 p-3 text-sm text-yellow-800">
-                    Warning: This invoice will push {creditLimitWarning.contactName}'s balance to{" "}
-                    {formatCurrency(creditLimitWarning.projectedBalance)}, exceeding their credit
-                    limit of {formatCurrency(creditLimitWarning.creditLimit)}.
+                    {t("invoices.creditLimitWarning", {
+                      name: creditLimitWarning.contactName,
+                      projected: formatCurrency(creditLimitWarning.projectedBalance),
+                      limit: formatCurrency(creditLimitWarning.creditLimit),
+                    })}
                   </div>
                 )}
 
                 <div className="grid grid-cols-2 gap-3">
                   <div className="grid gap-1.5">
-                    <Label htmlFor="date">Date *</Label>
+                    <Label htmlFor="date">{t("common.date")} *</Label>
                     <Input
                       id="date"
                       type="date"
                       value={createForm.date}
-                      onChange={(e) => setCreateForm((f) => ({ ...f, date: e.target.value }))}
+                      onChange={(e) =>
+                        setCreateForm((f) => ({
+                          ...f,
+                          date: e.target.value,
+                        }))
+                      }
                       required
                     />
                   </div>
                   <div className="grid gap-1.5">
-                    <Label htmlFor="due_date">Due Date</Label>
+                    <Label htmlFor="due_date">{t("invoices.dueDate")}</Label>
                     <Input
                       id="due_date"
                       type="date"
                       value={createForm.due_date}
-                      onChange={(e) => setCreateForm((f) => ({ ...f, due_date: e.target.value }))}
+                      onChange={(e) =>
+                        setCreateForm((f) => ({
+                          ...f,
+                          due_date: e.target.value,
+                        }))
+                      }
                     />
                   </div>
                 </div>
 
                 <div className="grid gap-1.5">
-                  <Label htmlFor="currency_code">Currency</Label>
+                  <Label htmlFor="currency_code">{t("invoices.currency")}</Label>
                   <Input
                     id="currency_code"
                     value={createForm.currency_code}
@@ -624,7 +731,7 @@ function InvoicesPage() {
 
                 {showExchangeRate && (
                   <div className="grid gap-1.5">
-                    <Label htmlFor="exchange_rate">Exchange Rate</Label>
+                    <Label htmlFor="exchange_rate">{t("invoices.exchangeRate")}</Label>
                     <Input
                       id="exchange_rate"
                       type="number"
@@ -639,23 +746,32 @@ function InvoicesPage() {
                       }
                     />
                     <p className="text-xs text-muted-foreground">
-                      1 {createForm.currency_code} = {createForm.exchange_rate} {defaultCurrency}
+                      {t("invoices.exchangeRateDescription", {
+                        from: createForm.currency_code,
+                        rate: createForm.exchange_rate,
+                        to: defaultCurrency,
+                      })}
                     </p>
                   </div>
                 )}
 
                 <div className="grid gap-1.5">
-                  <Label htmlFor="notes">Notes</Label>
+                  <Label htmlFor="notes">{t("common.notes")}</Label>
                   <Textarea
                     id="notes"
                     value={createForm.notes}
-                    onChange={(e) => setCreateForm((f) => ({ ...f, notes: e.target.value }))}
+                    onChange={(e) =>
+                      setCreateForm((f) => ({
+                        ...f,
+                        notes: e.target.value,
+                      }))
+                    }
                   />
                 </div>
 
                 {/* Line Items */}
                 <div className="grid gap-2">
-                  <Label>Line Items</Label>
+                  <Label>{t("invoices.lineItems")}</Label>
                   <div className="space-y-3">
                     {lineItems.map((item, index) => (
                       <div
@@ -663,16 +779,18 @@ function InvoicesPage() {
                         className="grid grid-cols-[1fr_4rem_5rem_4rem_3.5rem_2rem] items-end gap-2 rounded-md border p-2"
                       >
                         <div className="grid gap-1">
-                          <span className="text-xs text-muted-foreground">Description</span>
+                          <span className="text-xs text-muted-foreground">
+                            {t("common.description")}
+                          </span>
                           <Input
-                            placeholder="Item description"
+                            placeholder={t("invoices.itemDescription")}
                             value={item.description}
                             onChange={(e) => updateLineItem(index, "description", e.target.value)}
                             required
                           />
                         </div>
                         <div className="grid gap-1">
-                          <span className="text-xs text-muted-foreground">Qty</span>
+                          <span className="text-xs text-muted-foreground">{t("invoices.qty")}</span>
                           <Input
                             type="number"
                             min={1}
@@ -682,7 +800,7 @@ function InvoicesPage() {
                           />
                         </div>
                         <div className="grid gap-1">
-                          <span className="text-xs text-muted-foreground">Price</span>
+                          <span className="text-xs text-muted-foreground">{t("common.price")}</span>
                           <Input
                             type="number"
                             min={0}
@@ -693,7 +811,9 @@ function InvoicesPage() {
                           />
                         </div>
                         <div className="grid gap-1">
-                          <span className="text-xs text-muted-foreground">VAT %</span>
+                          <span className="text-xs text-muted-foreground">
+                            {t("invoices.vatPercent")}
+                          </span>
                           <Input
                             type="number"
                             min={0}
@@ -703,7 +823,7 @@ function InvoicesPage() {
                           />
                         </div>
                         <div className="grid gap-1">
-                          <span className="text-xs text-muted-foreground">Total</span>
+                          <span className="text-xs text-muted-foreground">{t("common.total")}</span>
                           <p className="flex h-8 items-center text-sm font-medium tabular-nums">
                             {formatCurrency(computeLineTotal(item))}
                           </p>
@@ -728,29 +848,29 @@ function InvoicesPage() {
                     size="sm"
                     onClick={() => setLineItems((prev) => [...prev, emptyLineItem()])}
                   >
-                    Add Item
+                    {t("common.addItem")}
                   </Button>
                 </div>
 
                 {/* Totals summary */}
                 <div className="rounded-md border p-3 space-y-1 text-sm">
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Subtotal</span>
+                    <span className="text-muted-foreground">{t("common.subtotal")}</span>
                     <span className="tabular-nums">{formatCurrency(subtotal)}</span>
                   </div>
                   <div className="flex justify-between">
-                    <span className="text-muted-foreground">Tax</span>
+                    <span className="text-muted-foreground">{t("common.tax")}</span>
                     <span className="tabular-nums">{formatCurrency(taxTotal)}</span>
                   </div>
                   <div className="flex justify-between font-medium border-t pt-1">
-                    <span>Total</span>
+                    <span>{t("common.total")}</span>
                     <span className="tabular-nums">{formatCurrency(grandTotal)}</span>
                   </div>
                 </div>
               </div>
             </SheetBody>
             <SheetFooter>
-              <SheetClose render={<Button variant="outline" />}>Cancel</SheetClose>
+              <SheetClose render={<Button variant="outline" />}>{t("common.cancel")}</SheetClose>
               <Button
                 type="submit"
                 disabled={
@@ -761,11 +881,11 @@ function InvoicesPage() {
               >
                 {sheetMode === "edit"
                   ? updateMutation.isPending
-                    ? "Saving..."
-                    : "Save Invoice"
+                    ? t("common.saving")
+                    : t("invoices.saveInvoice")
                   : createMutation.isPending
-                    ? "Creating..."
-                    : "Create Invoice"}
+                    ? t("common.creating")
+                    : t("invoices.createInvoice")}
               </Button>
             </SheetFooter>
           </form>

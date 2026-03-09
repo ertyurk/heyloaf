@@ -20,6 +20,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
@@ -46,6 +47,7 @@ const emptyForm: ItemForm = {
 }
 
 function PriceListItemsPage() {
+  const { t } = useTranslation()
   const { listId } = Route.useParams()
   const client = useApi()
   const queryClient = useQueryClient()
@@ -121,10 +123,14 @@ function PriceListItemsPage() {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["price-list-items", listId] })
       closeSheet()
-      toast.success(editingItem ? "Item updated" : "Item added")
+      toast.success(
+        editingItem ? t("settings.priceLists.itemUpdated") : t("settings.priceLists.itemAdded")
+      )
     },
     onError: () => {
-      toast.error(editingItem ? "Failed to update item" : "Failed to add item")
+      toast.error(
+        editingItem ? t("settings.priceLists.failedToUpdate") : t("settings.priceLists.failedToAdd")
+      )
     },
   })
 
@@ -136,10 +142,10 @@ function PriceListItemsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["price-list-items", listId] })
-      toast.success("Item deleted")
+      toast.success(t("settings.priceLists.itemDeleted"))
     },
     onError: () => {
-      toast.error("Failed to delete item")
+      toast.error(t("settings.priceLists.failedToDelete"))
     },
   })
 
@@ -177,7 +183,7 @@ function PriceListItemsPage() {
   }
 
   function handleDelete(item: PriceListItem) {
-    if (!window.confirm("Delete this price list item?")) return
+    if (!window.confirm(t("settings.priceLists.confirmDelete"))) return
     deleteMutation.mutate(item.id)
   }
 
@@ -185,7 +191,7 @@ function PriceListItemsPage() {
     () => [
       {
         id: "product",
-        header: "Product Name",
+        header: t("settings.priceLists.productName"),
         cell: (row: PriceListItem) => (
           <span className="font-medium">
             {productNameMap.get(row.product_id) ?? row.product_id.slice(0, 8)}
@@ -194,7 +200,7 @@ function PriceListItemsPage() {
       },
       {
         id: "price",
-        header: <span className="text-right block">Price</span>,
+        header: <span className="text-right block">{t("common.price")}</span>,
         cell: (row: PriceListItem) => (
           <span className="tabular-nums">{formatCurrency(row.price)}</span>
         ),
@@ -202,7 +208,7 @@ function PriceListItemsPage() {
       },
       {
         id: "vat_rate",
-        header: "VAT Rate",
+        header: t("settings.priceLists.vatRate"),
         cell: (row: PriceListItem) => (
           <span className="text-muted-foreground tabular-nums">
             {row.vat_rate != null ? `${row.vat_rate}%` : "\u2014"}
@@ -211,23 +217,23 @@ function PriceListItemsPage() {
       },
       {
         id: "active",
-        header: "Status",
+        header: t("common.status"),
         cell: (row: PriceListItem) =>
           row.is_active ? (
-            <Badge variant="default">Active</Badge>
+            <Badge variant="default">{t("common.active")}</Badge>
           ) : (
-            <Badge variant="secondary">Inactive</Badge>
+            <Badge variant="secondary">{t("common.inactive")}</Badge>
           ),
       },
     ],
-    [productNameMap]
+    [productNameMap, t]
   )
 
   return (
     <>
       <PageHeader
-        title={priceList?.name ?? "Price List Items"}
-        description="Manage prices for this price list"
+        title={priceList?.name ?? t("settings.priceLists.title")}
+        description={t("settings.priceLists.description")}
       >
         <Button
           variant="outline"
@@ -235,9 +241,9 @@ function PriceListItemsPage() {
           onClick={() => navigate({ to: "/settings/price-lists" })}
         >
           <HugeiconsIcon icon={ArrowLeft01Icon} size={16} className="mr-1" />
-          Back
+          {t("common.back")}
         </Button>
-        <Button onClick={openCreate}>Add Item</Button>
+        <Button onClick={openCreate}>{t("settings.priceLists.addItem")}</Button>
       </PageHeader>
 
       <div className="space-y-4 p-6">
@@ -246,14 +252,14 @@ function PriceListItemsPage() {
           data={items}
           getRowId={(row) => row.id}
           isLoading={isLoading}
-          emptyMessage="No items in this price list."
+          emptyMessage={t("settings.priceLists.noItems")}
           onRowClick={openEdit}
           rowActions={(row) => (
             <>
-              <DropdownMenuItem onClick={() => openEdit(row)}>Edit</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => openEdit(row)}>{t("common.edit")}</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem variant="destructive" onClick={() => handleDelete(row)}>
-                Delete
+                {t("common.delete")}
               </DropdownMenuItem>
             </>
           )}
@@ -263,23 +269,25 @@ function PriceListItemsPage() {
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent side="right" className="sm:max-w-md">
           <SheetHeader>
-            <SheetTitle>{editingItem ? "Edit Item" : "Add Item"}</SheetTitle>
+            <SheetTitle>
+              {editingItem ? t("settings.priceLists.editItem") : t("settings.priceLists.addItem")}
+            </SheetTitle>
           </SheetHeader>
           <form onSubmit={handleSubmit} className="flex flex-1 flex-col">
             <SheetBody className="grid gap-4">
               <div className="grid gap-2">
-                <Label>Product</Label>
+                <Label>{t("common.product")}</Label>
                 <AdvancedSelect
                   options={productOptions}
                   value={form.product_id}
                   onValueChange={(val) => setForm((f) => ({ ...f, product_id: val ?? "" }))}
-                  placeholder="Select product"
+                  placeholder={t("settings.priceLists.selectProduct")}
                   searchable
                   className="w-full"
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="price">Price</Label>
+                <Label htmlFor="price">{t("common.price")}</Label>
                 <Input
                   id="price"
                   type="number"
@@ -291,7 +299,7 @@ function PriceListItemsPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="vat_rate">VAT Rate (%)</Label>
+                <Label htmlFor="vat_rate">{t("settings.priceLists.vatRate")} (%)</Label>
                 <Input
                   id="vat_rate"
                   type="number"
@@ -309,12 +317,16 @@ function PriceListItemsPage() {
                     setForm((f) => ({ ...f, is_active: checked === true }))
                   }
                 />
-                <Label htmlFor="is_active">Active</Label>
+                <Label htmlFor="is_active">{t("common.active")}</Label>
               </div>
             </SheetBody>
             <SheetFooter>
               <Button type="submit" disabled={upsertMutation.isPending}>
-                {upsertMutation.isPending ? "Saving..." : editingItem ? "Update" : "Add Item"}
+                {upsertMutation.isPending
+                  ? t("common.saving")
+                  : editingItem
+                    ? t("settings.priceLists.update")
+                    : t("settings.priceLists.addItem")}
               </Button>
             </SheetFooter>
           </form>

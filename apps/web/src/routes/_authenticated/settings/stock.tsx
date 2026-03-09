@@ -5,6 +5,7 @@ import { Label } from "@heyloaf/ui/components/label"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { useEffect, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
@@ -26,6 +27,7 @@ const defaultForm: StockForm = {
 }
 
 function StockSettingsPage() {
+  const { t } = useTranslation()
   const client = useApi()
   const queryClient = useQueryClient()
 
@@ -89,9 +91,9 @@ function StockSettingsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["company"] })
-      toast.success("Stock settings saved")
+      toast.success(t("settings.stockSettings.saved"))
     },
-    onError: () => toast.error("Failed to save stock settings"),
+    onError: () => toast.error(t("settings.stockSettings.failedToSave")),
   })
 
   function handleSubmit(e: React.FormEvent) {
@@ -106,25 +108,33 @@ function StockSettingsPage() {
   if (isLoading) {
     return (
       <>
-        <PageHeader title="Stock Settings" description="Configure inventory tracking defaults" />
-        <p className="text-muted-foreground py-8 text-center text-sm">Loading...</p>
+        <PageHeader
+          title={t("settings.stockSettings.title")}
+          description={t("settings.stockSettings.description")}
+        />
+        <p className="text-muted-foreground py-8 text-center text-sm">{t("common.loading")}</p>
       </>
     )
   }
 
   return (
     <>
-      <PageHeader title="Stock Settings" description="Configure inventory tracking defaults" />
+      <PageHeader
+        title={t("settings.stockSettings.title")}
+        description={t("settings.stockSettings.description")}
+      />
 
       <div className="space-y-4 p-6">
         <Card className="mx-auto max-w-2xl">
           <CardHeader>
-            <CardTitle>Stock Defaults</CardTitle>
+            <CardTitle>{t("settings.stockSettings.stockDefaults")}</CardTitle>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-6">
               <div className="grid gap-2">
-                <Label htmlFor="default_min_stock_level">Default Minimum Stock Level</Label>
+                <Label htmlFor="default_min_stock_level">
+                  {t("settings.stockSettings.defaultMinStockLevel")}
+                </Label>
                 <Input
                   id="default_min_stock_level"
                   type="number"
@@ -135,13 +145,15 @@ function StockSettingsPage() {
                   placeholder="0"
                 />
                 <p className="text-muted-foreground text-xs">
-                  Alert threshold when stock falls below this quantity.
+                  {t("settings.stockSettings.defaultMinStockLevelHint")}
                 </p>
               </div>
 
               <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 <div className="grid gap-2">
-                  <Label htmlFor="stock_precision_kg">Stock Precision — KG</Label>
+                  <Label htmlFor="stock_precision_kg">
+                    {t("settings.stockSettings.stockPrecisionKg")}
+                  </Label>
                   <Input
                     id="stock_precision_kg"
                     type="number"
@@ -153,11 +165,13 @@ function StockSettingsPage() {
                     placeholder="3"
                   />
                   <p className="text-muted-foreground text-xs">
-                    Decimal places for weight-based items.
+                    {t("settings.stockSettings.stockPrecisionKgHint")}
                   </p>
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="stock_precision_pieces">Stock Precision — Pieces</Label>
+                  <Label htmlFor="stock_precision_pieces">
+                    {t("settings.stockSettings.stockPrecisionPieces")}
+                  </Label>
                   <Input
                     id="stock_precision_pieces"
                     type="number"
@@ -169,14 +183,14 @@ function StockSettingsPage() {
                     placeholder="0"
                   />
                   <p className="text-muted-foreground text-xs">
-                    Decimal places for piece-counted items.
+                    {t("settings.stockSettings.stockPrecisionPiecesHint")}
                   </p>
                 </div>
               </div>
 
               <div className="flex justify-end pt-4">
                 <Button type="submit" disabled={updateMutation.isPending}>
-                  {updateMutation.isPending ? "Saving..." : "Save Changes"}
+                  {updateMutation.isPending ? t("common.saving") : t("common.saveChanges")}
                 </Button>
               </div>
             </form>

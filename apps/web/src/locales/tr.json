@@ -139,7 +139,13 @@
     "confirmDeleteProduct": "Bu urunu silmek istediginizden emin misiniz?",
     "productCreated": "Urun basariyla olusturuldu",
     "productUpdated": "Urun basariyla guncellendi",
-    "productDeleted": "Urun basariyla silindi"
+    "productDeleted": "Urun basariyla silindi",
+    "productImage": "Urun Gorseli",
+    "noImage": "Gorsel yok",
+    "uploadImage": "Gorsel Yukle",
+    "uploading": "Yukleniyor...",
+    "imageUploaded": "Gorsel yuklendi",
+    "uploadFailed": "Yukleme basarisiz"
   },
   "categories": {
     "title": "Kategoriler",
@@ -259,7 +265,9 @@
     "payment": "Odeme",
     "splitAmountsMustEqual": "Bolunmus odeme tutarlari toplama esit olmalidir",
     "addedProduct": "Eklendi: {{name}}",
-    "productNotFoundForBarcode": "Barkod icin urun bulunamadi: {{barcode}}"
+    "productNotFoundForBarcode": "Barkod icin urun bulunamadi: {{barcode}}",
+    "parkCartLabel": "Bekleyen sepet etiketi",
+    "parkCartPlaceholder": "orn. Masa 5, Musteri adi"
   },
   "contacts": {
     "title": "Kisiler",
@@ -560,10 +568,6 @@
       "saved": "Genel ayarlar kaydedildi",
       "failedToSave": "Genel ayarlar kaydedilemedi"
     },
-    "company": {
-      "title": "Sirket Ayarlari",
-      "description": "Sirket profilinizi ve tercihlerinizi yonetin"
-    },
     "currencies": {
       "title": "Para Birimleri",
       "description": "Para birimlerini ve doviz kurlarini yapilandirin"
@@ -572,29 +576,126 @@
       "title": "Odeme Yontemleri",
       "description": "Kabul edilen odeme yontemlerini ayarlayin"
     },
-    "priceLists": {
-      "title": "Fiyat Listeleri",
-      "description": "Fiyatlandirma katmanlarini ve zamanlamalarini yonetin"
-    },
     "posTerminals": {
       "title": "POS Terminalleri",
       "description": "Satis noktasi terminallerini yapilandirin"
     },
+    "auditLogs": {
+      "title": "Denetim Kayitlari",
+      "description": "Sistem etkinlik gecmisini goruntuleyin",
+      "allEntities": "Tum Varliklar",
+      "allActions": "Tum Islemler",
+      "timestamp": "Zaman",
+      "user": "Kullanici",
+      "entityType": "Varlik Turu",
+      "entityId": "Varlik No",
+      "action": "Islem",
+      "changes": "Degisiklikler",
+      "fields": "{{count}} alan",
+      "detail": "Denetim Kaydi Detayi",
+      "noChanges": "Degisiklik verisi mevcut degil.",
+      "noLogsFound": "Denetim kaydi bulunamadi."
+    },
+    "company": {
+      "title": "Sirket Ayarlari",
+      "description": "Sirket profilinizi yonetin",
+      "companyLogo": "Sirket Logosu",
+      "noLogo": "Logo yok",
+      "uploadLogo": "Logo Yukle",
+      "uploading": "Yukleniyor...",
+      "logoHint": "JPEG, PNG, WebP veya SVG. Maks 5MB.",
+      "companyName": "Sirket Adi",
+      "taxNumber": "Vergi Numarasi",
+      "taxOffice": "Vergi Dairesi",
+      "address": "Adres",
+      "phone": "Telefon",
+      "email": "E-posta",
+      "website": "Web Sitesi",
+      "defaultCurrency": "Varsayilan Para Birimi",
+      "defaultTaxRate": "Varsayilan Vergi Orani",
+      "defaultLanguage": "Varsayilan Dil",
+      "timezone": "Saat Dilimi",
+      "saved": "Sirket ayarlari kaydedildi",
+      "failedToSave": "Sirket ayarlari kaydedilemedi",
+      "logoUploaded": "Logo yuklendi",
+      "uploadFailed": "Yukleme basarisiz"
+    },
     "stockSettings": {
       "title": "Stok Ayarlari",
-      "description": "Minimum stok seviyeleri ve hassasiyet varsayilanlari"
-    },
-    "users": {
-      "title": "Kullanicilar",
-      "description": "Takim uyelerini ve izinleri yonetin"
+      "description": "Envanter takibi varsayilanlarini yapilandirin",
+      "stockDefaults": "Stok Varsayilanlari",
+      "defaultMinStockLevel": "Varsayilan Minimum Stok Seviyesi",
+      "defaultMinStockLevelHint": "Stok bu miktarin altina dustugunde uyari esigi.",
+      "stockPrecisionKg": "Stok Hassasiyeti \u2014 KG",
+      "stockPrecisionKgHint": "Agirlik bazli kalemler icin ondalik basamak.",
+      "stockPrecisionPieces": "Stok Hassasiyeti \u2014 Adet",
+      "stockPrecisionPiecesHint": "Adet bazli kalemler icin ondalik basamak.",
+      "saved": "Stok ayarlari kaydedildi",
+      "failedToSave": "Stok ayarlari kaydedilemedi"
     },
     "notificationSettings": {
       "title": "Bildirim Ayarlari",
-      "description": "Dusuk stok ve gecikli fatura uyarilarini yapilandirin"
+      "description": "Uyari ve bildirimleri yapilandirin",
+      "alerts": "Uyarilar",
+      "lowStockAlerts": "Dusuk stok uyarilari",
+      "lowStockAlertsHint": "Urun stoku minimum seviyenin altina dustugunde bildirim alin.",
+      "overdueInvoiceAlerts": "Gecikli fatura uyarilari",
+      "overdueInvoiceAlertsHint": "Faturalar vade tarihini gectiginde bildirim alin.",
+      "saved": "Bildirim ayarlari kaydedildi",
+      "failedToSave": "Bildirim ayarlari kaydedilemedi"
     },
-    "auditLogs": {
-      "title": "Denetim Kayitlari",
-      "description": "Sistem etkinlik gecmisini goruntuleyin"
+    "users": {
+      "title": "Kullanicilar",
+      "description": "Takim uyelerini ve izinleri yonetin",
+      "inviteUser": "Kullanici Davet Et",
+      "inviting": "Davet ediliyor...",
+      "password": "Sifre",
+      "passwordHint": "En az 8 karakter",
+      "role": "Rol",
+      "admin": "Yonetici",
+      "manager": "Mudur",
+      "cashier": "Kasiyer",
+      "user": "Kullanici",
+      "modulePermissions": "Modul Izinleri",
+      "module": "Modul",
+      "level": "Seviye",
+      "permNone": "Yok",
+      "permViewer": "Goruntuleyici",
+      "permEditor": "Duzenleyici",
+      "permAdmin": "Yonetici",
+      "permissionsFor": "{{name}} icin izinler",
+      "savePermissions": "Izinleri Kaydet",
+      "noUsersFound": "Kullanici bulunamadi.",
+      "permissions": "Izinler",
+      "userInvited": "Kullanici davet edildi",
+      "failedToInvite": "Kullanici davet edilemedi",
+      "roleUpdated": "Kullanici rolu guncellendi",
+      "failedToUpdateRole": "Rol guncellenemedi",
+      "permissionsUpdated": "Izinler guncellendi",
+      "failedToUpdatePermissions": "Izinler guncellenemedi",
+      "userRemoved": "Kullanici kaldirildi",
+      "failedToRemove": "Kullanici kaldirilamadi"
+    },
+    "priceLists": {
+      "title": "Fiyat Listesi Kalemleri",
+      "description": "Bu fiyat listesinin fiyatlarini yonetin",
+      "addItem": "Kalem Ekle",
+      "editItem": "Kalem Duzenle",
+      "productName": "Urun Adi",
+      "vatRate": "KDV Orani",
+      "selectProduct": "Urun secin",
+      "confirmDelete": "Bu fiyat listesi kalemi silinsin mi?",
+      "itemAdded": "Kalem eklendi",
+      "itemUpdated": "Kalem guncellendi",
+      "failedToAdd": "Kalem eklenemedi",
+      "failedToUpdate": "Kalem guncellenemedi",
+      "itemDeleted": "Kalem silindi",
+      "failedToDelete": "Kalem silinemedi",
+      "noItems": "Bu fiyat listesinde kalem yok.",
+      "update": "Guncelle"
     }
+  },
+  "nav": {
+    "logout": "Cikis Yap"
   }
 }

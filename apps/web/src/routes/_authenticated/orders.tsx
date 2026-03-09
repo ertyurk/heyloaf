@@ -26,7 +26,8 @@ import Search01Icon from "@hugeicons/core-free-icons/Search01Icon"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
@@ -44,11 +45,9 @@ interface OrderItem {
   line_total: number
 }
 
-let nextItemId = 1
-
 function emptyItem(): OrderItem {
   return {
-    id: `item-${nextItemId++}`,
+    id: crypto.randomUUID(),
     product_name: "",
     quantity: 1,
     unit_price: 0,
@@ -61,14 +60,6 @@ function computeLineTotal(item: Pick<OrderItem, "quantity" | "unit_price">): num
   return item.quantity * item.unit_price
 }
 
-const statusOptions = [
-  { value: "__all__", label: "All Statuses" },
-  { value: "completed", label: "Completed" },
-  { value: "pending", label: "Pending" },
-  { value: "voided", label: "Voided" },
-  { value: "returned", label: "Returned" },
-]
-
 const statusBadgeClass: Record<string, string> = {
   completed: "bg-green-100 text-green-800",
   pending: "bg-secondary text-secondary-foreground",
@@ -77,6 +68,7 @@ const statusBadgeClass: Record<string, string> = {
 }
 
 function OrdersPage() {
+  const { t } = useTranslation()
   const client = useApi()
   const queryClient = useQueryClient()
 
@@ -84,13 +76,34 @@ function OrdersPage() {
   const [paymentMethodId, setPaymentMethodId] = useState<string>("")
   const [notes, setNotes] = useState("")
   const [items, setItems] = useState<OrderItem[]>([emptyItem()])
+  const [confirmAction, setConfirmAction] = useState<{
+    type: "void" | "return"
+    orderId: string
+  } | null>(null)
 
   const [search, setSearch] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(null)
-  const [statusFilter, setStatusFilter] = useState("__all__")
+  const [statusFilter, setStatusFilter] = useState("all")
   const [dateFrom, setDateFrom] = useState("")
   const [dateTo, setDateTo] = useState("")
+
+  useEffect(() => {
+    return () => {
+      if (searchTimer.current) clearTimeout(searchTimer.current)
+    }
+  }, [])
+
+  const statusOptions = useMemo(
+    () => [
+      { value: "all", label: t("orders.allStatuses") },
+      { value: "completed", label: t("orders.completed") },
+      { value: "pending", label: t("orders.pending") },
+      { value: "voided", label: t("orders.voided") },
+      { value: "returned", label: t("orders.returned") },
+    ],
+    [t]
+  )
 
   function handleSearchChange(value: string) {
     setSearch(value)
@@ -123,7 +136,7 @@ function OrdersPage() {
       const q = debouncedSearch.toLowerCase()
       result = result.filter((order) => order.order_number?.toLowerCase().includes(q))
     }
-    if (statusFilter !== "__all__") {
+    if (statusFilter !== "all") {
       result = result.filter((order) => order.status === statusFilter)
     }
     if (dateFrom) {
@@ -158,10 +171,10 @@ function OrdersPage() {
       queryClient.invalidateQueries({ queryKey: ["orders"] })
       setCreateOpen(false)
       resetCreateForm()
-      toast.success("Order created")
+      toast.success(t("orders.orderCreated"))
     },
     onError: () => {
-      toast.error("Failed to create order")
+      toast.error(t("orders.failedToCreateOrder"))
     },
   })
 
@@ -171,10 +184,12 @@ function OrdersPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders"] })
-      toast.success("Order voided")
+      setConfirmAction(null)
+      toast.success(t("orders.orderVoided"))
     },
     onError: () => {
-      toast.error("Failed to void order")
+      setConfirmAction(null)
+      toast.error(t("orders.failedToVoidOrder"))
     },
   })
 
@@ -184,10 +199,12 @@ function OrdersPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["orders"] })
-      toast.success("Order returned")
+      setConfirmAction(null)
+      toast.success(t("orders.orderReturned"))
     },
     onError: () => {
-      toast.error("Failed to return order")
+      setConfirmAction(null)
+      toast.error(t("orders.failedToReturnOrder"))
     },
   })
 
@@ -220,15 +237,12 @@ function OrdersPage() {
     setItems((prev) => prev.filter((_, i) => i !== index))
   }
 
-  function handleVoid(orderId: string) {
-    if (window.confirm("Are you sure you want to void this order?")) {
-      voidOrder.mutate(orderId)
-    }
-  }
-
-  function handleReturn(orderId: string) {
-    if (window.confirm("Are you sure you want to return this order?")) {
-      returnOrder.mutate(orderId)
+  function executeConfirmAction() {
+    if (!confirmAction) return
+    if (confirmAction.type === "void") {
+      voidOrder.mutate(confirmAction.orderId)
+    } else {
+      returnOrder.mutate(confirmAction.orderId)
     }
   }
 
@@ -240,14 +254,14 @@ function OrdersPage() {
     () => [
       {
         id: "order_number",
-        header: "Order #",
+        header: t("orders.orderNumber"),
         cell: (row: (typeof orders)[number]) => (
           <span className="font-medium">{row.order_number}</span>
         ),
       },
       {
         id: "date",
-        header: "Date",
+        header: t("common.date"),
         cell: (row: (typeof orders)[number]) => (
           <span className="text-muted-foreground">
             {new Date(row.created_at).toLocaleDateString()}
@@ -256,7 +270,7 @@ function OrdersPage() {
       },
       {
         id: "total",
-        header: <span className="text-right block">Total</span>,
+        header: <span className="text-right block">{t("common.total")}</span>,
         cell: (row: (typeof orders)[number]) => (
           <span className="tabular-nums">{row.total.toFixed(2)}</span>
         ),
@@ -264,7 +278,7 @@ function OrdersPage() {
       },
       {
         id: "status",
-        header: "Status",
+        header: t("common.status"),
         cell: (row: (typeof orders)[number]) => (
           <Badge
             className={statusBadgeClass[row.status] ?? "bg-secondary text-secondary-foreground"}
@@ -275,24 +289,24 @@ function OrdersPage() {
       },
       {
         id: "payment",
-        header: "Payment Method",
+        header: t("orders.paymentMethod"),
         cell: (row: (typeof orders)[number]) =>
           paymentMethods.find((pm) => pm.id === row.payment_method_id)?.name ?? "\u2014",
       },
     ],
-    [paymentMethods]
+    [paymentMethods, t]
   )
 
   return (
     <>
-      <PageHeader title="Orders" description="Manage point-of-sale orders">
+      <PageHeader title={t("orders.title")} description={t("orders.description")}>
         <Button
           onClick={() => {
             resetCreateForm()
             setCreateOpen(true)
           }}
         >
-          New Order
+          {t("orders.newOrder")}
         </Button>
       </PageHeader>
 
@@ -305,7 +319,7 @@ function OrdersPage() {
               className="text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2"
             />
             <Input
-              placeholder="Search orders..."
+              placeholder={t("orders.searchOrders")}
               value={search}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="pl-8"
@@ -314,8 +328,8 @@ function OrdersPage() {
           <AdvancedSelect
             options={statusOptions}
             value={statusFilter}
-            onValueChange={(v) => setStatusFilter(v ?? "__all__")}
-            placeholder="Status"
+            onValueChange={(v) => setStatusFilter(v ?? "all")}
+            placeholder={t("common.status")}
             searchable={false}
             className="w-40"
           />
@@ -334,23 +348,65 @@ function OrdersPage() {
           data={filteredOrders}
           getRowId={(row) => row.id}
           isLoading={isLoading}
-          emptyMessage="No orders found."
+          emptyMessage={t("orders.noOrdersFound")}
           rowActions={(row) => {
             if (row.status === "voided" || row.status === "returned") return null
             return (
               <>
-                <DropdownMenuItem onClick={() => handleVoid(row.id)}>Void</DropdownMenuItem>
-                <DropdownMenuItem onClick={() => handleReturn(row.id)}>Return</DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() =>
+                    setConfirmAction({
+                      type: "void",
+                      orderId: row.id,
+                    })
+                  }
+                >
+                  {t("orders.void")}
+                </DropdownMenuItem>
+                <DropdownMenuItem
+                  onClick={() =>
+                    setConfirmAction({
+                      type: "return",
+                      orderId: row.id,
+                    })
+                  }
+                >
+                  {t("orders.return")}
+                </DropdownMenuItem>
               </>
             )
           }}
         />
       </div>
 
+      {/* Void/Return Confirmation */}
+      {confirmAction && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
+          <div className="rounded-lg border bg-background p-6 shadow-lg max-w-sm w-full mx-4">
+            <p className="text-sm mb-4">
+              {confirmAction.type === "void" ? t("orders.confirmVoid") : t("orders.confirmReturn")}
+            </p>
+            <div className="flex justify-end gap-2">
+              <Button variant="outline" size="sm" onClick={() => setConfirmAction(null)}>
+                {t("common.cancel")}
+              </Button>
+              <Button
+                variant="destructive"
+                size="sm"
+                onClick={executeConfirmAction}
+                disabled={voidOrder.isPending || returnOrder.isPending}
+              >
+                {t("common.confirm")}
+              </Button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <Sheet open={createOpen} onOpenChange={setCreateOpen}>
         <SheetContent side="right" className="sm:max-w-lg">
           <SheetHeader>
-            <SheetTitle>New Order</SheetTitle>
+            <SheetTitle>{t("orders.newOrder")}</SheetTitle>
           </SheetHeader>
           <form
             onSubmit={(e) => {
@@ -362,13 +418,13 @@ function OrdersPage() {
             <SheetBody>
               <div className="grid gap-4">
                 <div className="grid gap-2">
-                  <Label htmlFor="order-payment">Payment Method</Label>
+                  <Label htmlFor="order-payment">{t("orders.paymentMethod")}</Label>
                   <Select
                     value={paymentMethodId}
                     onValueChange={(val) => setPaymentMethodId(val as string)}
                   >
                     <SelectTrigger className="w-full">
-                      <SelectValue placeholder="Select payment method" />
+                      <SelectValue placeholder={t("orders.selectPaymentMethod")} />
                     </SelectTrigger>
                     <SelectContent>
                       {paymentMethods.map((pm) => (
@@ -381,7 +437,7 @@ function OrdersPage() {
                 </div>
 
                 <div className="grid gap-2">
-                  <Label htmlFor="order-notes">Notes (optional)</Label>
+                  <Label htmlFor="order-notes">{t("orders.notesOptional")}</Label>
                   <Textarea
                     id="order-notes"
                     value={notes}
@@ -391,7 +447,7 @@ function OrdersPage() {
 
                 {/* Items */}
                 <div className="grid gap-2">
-                  <Label>Items</Label>
+                  <Label>{t("orders.items")}</Label>
                   <div className="space-y-3">
                     {items.map((item, index) => (
                       <div
@@ -399,16 +455,18 @@ function OrdersPage() {
                         className="grid grid-cols-[1fr_4rem_5rem_4rem_3rem_2rem] items-end gap-2 rounded-md border p-2"
                       >
                         <div className="grid gap-1">
-                          <span className="text-xs text-muted-foreground">Product</span>
+                          <span className="text-xs text-muted-foreground">
+                            {t("common.product")}
+                          </span>
                           <Input
-                            placeholder="Product name"
+                            placeholder={t("orders.productName")}
                             value={item.product_name}
                             onChange={(e) => updateItem(index, "product_name", e.target.value)}
                             required
                           />
                         </div>
                         <div className="grid gap-1">
-                          <span className="text-xs text-muted-foreground">Qty</span>
+                          <span className="text-xs text-muted-foreground">{t("orders.qty")}</span>
                           <Input
                             type="number"
                             min={1}
@@ -418,7 +476,7 @@ function OrdersPage() {
                           />
                         </div>
                         <div className="grid gap-1">
-                          <span className="text-xs text-muted-foreground">Price</span>
+                          <span className="text-xs text-muted-foreground">{t("common.price")}</span>
                           <Input
                             type="number"
                             min={0}
@@ -429,7 +487,9 @@ function OrdersPage() {
                           />
                         </div>
                         <div className="grid gap-1">
-                          <span className="text-xs text-muted-foreground">VAT %</span>
+                          <span className="text-xs text-muted-foreground">
+                            {t("orders.vatPercent")}
+                          </span>
                           <Input
                             type="number"
                             min={0}
@@ -439,7 +499,7 @@ function OrdersPage() {
                           />
                         </div>
                         <div className="grid gap-1">
-                          <span className="text-xs text-muted-foreground">Total</span>
+                          <span className="text-xs text-muted-foreground">{t("common.total")}</span>
                           <p className="flex h-8 items-center text-sm font-medium tabular-nums">
                             {computeLineTotal(item).toFixed(2)}
                           </p>
@@ -464,14 +524,14 @@ function OrdersPage() {
                     size="sm"
                     onClick={() => setItems((prev) => [...prev, emptyItem()])}
                   >
-                    Add Item
+                    {t("common.addItem")}
                   </Button>
                 </div>
               </div>
             </SheetBody>
             <SheetFooter>
               <Button type="submit" disabled={!hasValidItems || createOrder.isPending}>
-                {createOrder.isPending ? "Creating..." : "Create Order"}
+                {createOrder.isPending ? t("common.creating") : t("orders.createOrder")}
               </Button>
             </SheetFooter>
           </form>

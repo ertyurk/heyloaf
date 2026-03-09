@@ -9,6 +9,7 @@ import { useQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { endOfDay, startOfDay, subDays } from "date-fns"
 import { useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 import {
   Bar,
   BarChart,
@@ -52,6 +53,7 @@ function exportToExcel(data: Record<string, unknown>[], filename: string) {
 }
 
 function ExportButton({ data, filename }: { data: Record<string, unknown>[]; filename: string }) {
+  const { t } = useTranslation()
   return (
     <Button
       variant="outline"
@@ -59,7 +61,7 @@ function ExportButton({ data, filename }: { data: Record<string, unknown>[]; fil
       disabled={data.length === 0}
       onClick={() => exportToExcel(data, filename)}
     >
-      Export Excel
+      {t("common.exportExcel")}
     </Button>
   )
 }
@@ -140,6 +142,7 @@ interface ProductionRecord {
 // ── Page ──
 
 function ReportsPage() {
+  const { t } = useTranslation()
   const client = useApi()
 
   const defaultFrom = startOfDay(subDays(new Date(), 29)).toISOString()
@@ -147,6 +150,7 @@ function ReportsPage() {
 
   const [dateFrom, setDateFrom] = useState(defaultFrom)
   const [dateTo, setDateTo] = useState(defaultTo)
+  const [activeTab, setActiveTab] = useState("sales")
 
   const handleDateChange = (from: string, to: string) => {
     if (from && to) {
@@ -158,7 +162,7 @@ function ReportsPage() {
     }
   }
 
-  // ── Data fetching ──
+  // ── Data fetching (conditional on active tab) ──
 
   const { data: ordersData } = useQuery({
     queryKey: ["orders"],
@@ -166,6 +170,7 @@ function ReportsPage() {
       const res = await client.GET("/api/orders")
       return res.data
     },
+    enabled: activeTab === "sales",
   })
 
   const { data: stockData } = useQuery({
@@ -174,6 +179,7 @@ function ReportsPage() {
       const res = await client.GET("/api/stock")
       return res.data
     },
+    enabled: activeTab === "stock",
   })
 
   const { data: productsData } = useQuery({
@@ -182,6 +188,7 @@ function ReportsPage() {
       const res = await client.GET("/api/products")
       return res.data
     },
+    enabled: activeTab === "sales" || activeTab === "stock",
   })
 
   const { data: categoriesData } = useQuery({
@@ -190,6 +197,7 @@ function ReportsPage() {
       const { data } = await client.GET("/api/categories")
       return data
     },
+    enabled: activeTab === "sales",
   })
 
   const { data: paymentMethodsData } = useQuery({
@@ -198,6 +206,7 @@ function ReportsPage() {
       const res = await client.GET("/api/payment-methods")
       return res.data
     },
+    enabled: activeTab === "sales",
   })
 
   const { data: dashboardData } = useQuery({
@@ -206,6 +215,7 @@ function ReportsPage() {
       const { data } = await client.GET("/api/dashboard")
       return data
     },
+    enabled: activeTab === "stock",
   })
 
   const { data: invoicesData } = useQuery({
@@ -214,6 +224,7 @@ function ReportsPage() {
       const res = await client.GET("/api/invoices")
       return res.data
     },
+    enabled: activeTab === "financial",
   })
 
   const { data: contactsData } = useQuery({
@@ -222,6 +233,7 @@ function ReportsPage() {
       const res = await client.GET("/api/contacts")
       return res.data
     },
+    enabled: activeTab === "financial",
   })
 
   const { data: movementsData } = useQuery({
@@ -230,6 +242,7 @@ function ReportsPage() {
       const res = await client.GET("/api/stock/movements")
       return res.data
     },
+    enabled: activeTab === "stock",
   })
 
   const { data: productionData } = useQuery({
@@ -238,6 +251,7 @@ function ReportsPage() {
       const res = await client.GET("/api/production/records" as never)
       return (res as { data?: { data?: ProductionRecord[] } }).data
     },
+    enabled: activeTab === "production",
   })
 
   // ── Raw data ──
@@ -323,19 +337,19 @@ function ReportsPage() {
 
   return (
     <>
-      <PageHeader title="Reports" description="Sales, stock, financial and production analytics" />
+      <PageHeader title={t("reports.title")} description={t("reports.description")} />
       <div className="space-y-4 p-6">
         {/* Date Range Filter */}
         <div className="flex items-center gap-4">
           <DateRangeFilter from={dateFrom} to={dateTo} onChange={handleDateChange} />
         </div>
 
-        <Tabs defaultValue="sales" className="flex flex-col">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col">
           <TabsList>
-            <TabsTrigger value="sales">Sales</TabsTrigger>
-            <TabsTrigger value="stock">Stock</TabsTrigger>
-            <TabsTrigger value="financial">Financial</TabsTrigger>
-            <TabsTrigger value="production">Production</TabsTrigger>
+            <TabsTrigger value="sales">{t("reports.sales")}</TabsTrigger>
+            <TabsTrigger value="stock">{t("reports.stock")}</TabsTrigger>
+            <TabsTrigger value="financial">{t("reports.financial")}</TabsTrigger>
+            <TabsTrigger value="production">{t("reports.production")}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="sales">
@@ -407,6 +421,7 @@ function SalesTab({
   categoryNameMap: Map<string, string>
   paymentMethodNameMap: Map<string, string>
 }) {
+  const { t } = useTranslation()
   // Sales Summary
   const salesSummary = useMemo(() => {
     const totalRevenue = filteredOrders.reduce((sum, o) => sum + o.total, 0)
@@ -451,28 +466,28 @@ function SalesTab({
     () => [
       {
         id: "name",
-        header: "Product Name",
+        header: t("reports.productName"),
         cell: (row: (typeof topProducts)[number]) => (
           <span className="font-medium">{row.name}</span>
         ),
       },
       {
         id: "quantity",
-        header: "Quantity Sold",
+        header: t("reports.quantitySold"),
         cell: (row: (typeof topProducts)[number]) => (
           <span className="tabular-nums">{row.quantity}</span>
         ),
       },
       {
         id: "revenue",
-        header: <span className="text-right block">Revenue</span>,
+        header: <span className="text-right block">{t("reports.revenue")}</span>,
         cell: (row: (typeof topProducts)[number]) => (
           <span className="tabular-nums">{formatCurrency(row.revenue)}</span>
         ),
         className: "text-right",
       },
     ],
-    []
+    [t]
   )
 
   // Sales by payment method (pie chart)
@@ -509,28 +524,28 @@ function SalesTab({
     () => [
       {
         id: "category",
-        header: "Category",
+        header: t("common.category"),
         cell: (row: (typeof salesByCategory)[number]) => (
           <span className="font-medium">{row.category}</span>
         ),
       },
       {
         id: "quantity",
-        header: "Items Sold",
+        header: t("reports.itemsSold"),
         cell: (row: (typeof salesByCategory)[number]) => (
           <span className="tabular-nums">{row.quantity}</span>
         ),
       },
       {
         id: "revenue",
-        header: <span className="text-right block">Revenue</span>,
+        header: <span className="text-right block">{t("reports.revenue")}</span>,
         cell: (row: (typeof salesByCategory)[number]) => (
           <span className="tabular-nums">{formatCurrency(row.revenue)}</span>
         ),
         className: "text-right",
       },
     ],
-    []
+    [t]
   )
 
   return (
@@ -538,7 +553,7 @@ function SalesTab({
       {/* Sales Summary */}
       <div className="space-y-4">
         <SectionHeader
-          title="Sales Summary"
+          title={t("reports.salesSummary")}
           exportData={salesByDay as Record<string, unknown>[]}
           exportFilename="sales-by-day"
         />
@@ -607,7 +622,7 @@ function SalesTab({
       {/* Top Products */}
       <div className="space-y-4">
         <SectionHeader
-          title="Top Products"
+          title={t("reports.topProducts")}
           exportData={topProducts as Record<string, unknown>[]}
           exportFilename="top-products"
         />
@@ -615,14 +630,14 @@ function SalesTab({
           columns={topProductColumns}
           data={topProducts}
           getRowId={(row) => row.name}
-          emptyMessage="No product data for the selected period."
+          emptyMessage={t("reports.noProductData")}
         />
       </div>
 
       {/* Sales by Category */}
       <div className="space-y-4">
         <SectionHeader
-          title="Sales by Category"
+          title={t("reports.salesByCategory")}
           exportData={salesByCategory as Record<string, unknown>[]}
           exportFilename="sales-by-category"
         />
@@ -630,7 +645,7 @@ function SalesTab({
           <CardContent className="pt-4">
             {salesByCategory.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-12">
-                No category data for the selected period.
+                {t("reports.noCategoryData")}
               </p>
             ) : (
               <ResponsiveContainer width="100%" height={300}>
@@ -653,14 +668,14 @@ function SalesTab({
           columns={salesByCategoryColumns}
           data={salesByCategory}
           getRowId={(row) => row.category}
-          emptyMessage="No category data for the selected period."
+          emptyMessage={t("reports.noCategoryData")}
         />
       </div>
 
       {/* Sales by Payment Method */}
       <div className="space-y-4">
         <SectionHeader
-          title="Sales by Payment Method"
+          title={t("reports.salesByPaymentMethod")}
           exportData={salesByPaymentMethod as Record<string, unknown>[]}
           exportFilename="sales-by-payment-method"
         />
@@ -717,6 +732,7 @@ function StockTab({
   dashboard: { low_stock_count?: number } | undefined
   filteredMovements: StockMovement[]
 }) {
+  const { t } = useTranslation()
   // Stock summary cards
   const stockSummary = useMemo(() => {
     const totalProducts = stocks.length
@@ -740,14 +756,14 @@ function StockTab({
     () => [
       {
         id: "product",
-        header: "Product",
+        header: t("common.product"),
         cell: (row: (typeof lowStockItems)[number]) => (
           <span className="font-medium">{row.productName}</span>
         ),
       },
       {
         id: "quantity",
-        header: "Current Qty",
+        header: t("reports.currentQty"),
         cell: (row: (typeof lowStockItems)[number]) => {
           const isOut = row.quantity === 0
           return (
@@ -759,14 +775,14 @@ function StockTab({
       },
       {
         id: "min_level",
-        header: "Min Level",
+        header: t("stock.minLevel"),
         cell: (row: (typeof lowStockItems)[number]) => (
           <span className="tabular-nums text-muted-foreground">{row.min_level ?? "\u2014"}</span>
         ),
       },
       {
         id: "deficit",
-        header: "Deficit",
+        header: t("reports.deficit"),
         cell: (row: (typeof lowStockItems)[number]) => (
           <Badge variant="destructive" className="tabular-nums">
             -{row.deficit}
@@ -774,7 +790,7 @@ function StockTab({
         ),
       },
     ],
-    []
+    [t]
   )
 
   // Stock valuation
@@ -805,21 +821,21 @@ function StockTab({
     () => [
       {
         id: "product",
-        header: "Product",
+        header: t("common.product"),
         cell: (row: (typeof stockValuation)[number]) => (
           <span className="font-medium">{row.product}</span>
         ),
       },
       {
         id: "quantity",
-        header: "Quantity",
+        header: t("common.quantity"),
         cell: (row: (typeof stockValuation)[number]) => (
           <span className="tabular-nums">{row.quantity}</span>
         ),
       },
       {
         id: "lastPurchasePrice",
-        header: "Last Purchase Price",
+        header: t("reports.lastPurchasePrice"),
         cell: (row: (typeof stockValuation)[number]) => (
           <span className="tabular-nums text-muted-foreground">
             {row.lastPurchasePrice > 0 ? formatCurrency(row.lastPurchasePrice) : "\u2014"}
@@ -828,7 +844,7 @@ function StockTab({
       },
       {
         id: "value",
-        header: <span className="text-right block">Value</span>,
+        header: <span className="text-right block">{t("reports.value")}</span>,
         cell: (row: (typeof stockValuation)[number]) => (
           <span className="tabular-nums">
             {row.value > 0 ? formatCurrency(row.value) : "\u2014"}
@@ -837,7 +853,7 @@ function StockTab({
         className: "text-right",
       },
     ],
-    []
+    [t]
   )
 
   // Stock movement summary by period
@@ -868,35 +884,35 @@ function StockTab({
     () => [
       {
         id: "date",
-        header: "Date",
+        header: t("common.date"),
         cell: (row: (typeof movementSummary)[number]) => (
           <span className="font-medium">{row.date}</span>
         ),
       },
       {
         id: "in_qty",
-        header: "In Qty",
+        header: t("reports.inQty"),
         cell: (row: (typeof movementSummary)[number]) => (
           <span className="tabular-nums text-green-600">+{row.in_qty}</span>
         ),
       },
       {
         id: "out_qty",
-        header: "Out Qty",
+        header: t("reports.outQty"),
         cell: (row: (typeof movementSummary)[number]) => (
           <span className="tabular-nums text-red-600">-{row.out_qty}</span>
         ),
       },
       {
         id: "in_value",
-        header: "In Value",
+        header: t("reports.inValue"),
         cell: (row: (typeof movementSummary)[number]) => (
           <span className="tabular-nums text-muted-foreground">{formatCurrency(row.in_value)}</span>
         ),
       },
       {
         id: "out_value",
-        header: <span className="text-right block">Out Value</span>,
+        header: <span className="text-right block">{t("reports.outValue")}</span>,
         cell: (row: (typeof movementSummary)[number]) => (
           <span className="tabular-nums text-muted-foreground">
             {formatCurrency(row.out_value)}
@@ -905,7 +921,7 @@ function StockTab({
         className: "text-right",
       },
     ],
-    []
+    [t]
   )
 
   return (
@@ -913,7 +929,7 @@ function StockTab({
       {/* Stock Summary */}
       <div className="space-y-4">
         <SectionHeader
-          title="Stock Summary"
+          title={t("reports.stockSummary")}
           exportData={
             lowStockItems.map((i) => ({
               Product: i.productName,
@@ -974,14 +990,14 @@ function StockTab({
           columns={lowStockColumns}
           data={lowStockItems}
           getRowId={(row) => row.product_id}
-          emptyMessage="No low stock items."
+          emptyMessage={t("reports.noLowStockItems")}
         />
       </div>
 
       {/* Stock Valuation */}
       <div className="space-y-4">
         <SectionHeader
-          title="Stock Valuation"
+          title={t("reports.stockValuation")}
           exportData={
             stockValuation.map((s) => ({
               Product: s.product,
@@ -1007,14 +1023,14 @@ function StockTab({
           columns={stockValuationColumns}
           data={stockValuation}
           getRowId={(row) => row.product}
-          emptyMessage="No stock data available."
+          emptyMessage={t("reports.noStockDataAvailable")}
         />
       </div>
 
       {/* Stock Movement Summary */}
       <div className="space-y-4">
         <SectionHeader
-          title="Stock Movement Summary"
+          title={t("reports.stockMovementSummary")}
           exportData={movementSummary as Record<string, unknown>[]}
           exportFilename="stock-movements-summary"
         />
@@ -1022,7 +1038,7 @@ function StockTab({
           columns={movementSummaryColumns}
           data={movementSummary}
           getRowId={(row) => row.date}
-          emptyMessage="No stock movements for the selected period."
+          emptyMessage={t("reports.noStockMovements")}
         />
       </div>
     </div>
@@ -1040,6 +1056,7 @@ function FinancialTab({
   filteredInvoices: Invoice[]
   contacts: Contact[]
 }) {
+  const { t } = useTranslation()
   // Revenue vs Expenses
   const revenueVsExpenses = useMemo(() => {
     let salesTotal = 0
@@ -1092,26 +1109,26 @@ function FinancialTab({
     () => [
       {
         id: "period",
-        header: "Period",
+        header: t("reports.period"),
         cell: (row: (typeof aging)[number]) => <span className="font-medium">{row.period}</span>,
       },
       {
         id: "receivable",
-        header: "Receivable",
+        header: t("reports.receivable"),
         cell: (row: (typeof aging)[number]) => (
           <span className="tabular-nums text-green-600">{formatCurrency(row.receivable)}</span>
         ),
       },
       {
         id: "payable",
-        header: <span className="text-right block">Payable</span>,
+        header: <span className="text-right block">{t("reports.payable")}</span>,
         cell: (row: (typeof aging)[number]) => (
           <span className="tabular-nums text-red-600">{formatCurrency(row.payable)}</span>
         ),
         className: "text-right",
       },
     ],
-    []
+    [t]
   )
 
   // Contact balance summary (top debtors/creditors)
@@ -1131,14 +1148,14 @@ function FinancialTab({
     () => [
       {
         id: "name",
-        header: "Contact",
+        header: t("common.contact"),
         cell: (row: (typeof contactBalances)[number]) => (
           <span className="font-medium">{row.name}</span>
         ),
       },
       {
         id: "type",
-        header: "Type",
+        header: t("common.type"),
         cell: (row: (typeof contactBalances)[number]) => (
           <Badge variant="outline" className="capitalize">
             {row.type}
@@ -1147,7 +1164,7 @@ function FinancialTab({
       },
       {
         id: "balance",
-        header: <span className="text-right block">Balance</span>,
+        header: <span className="text-right block">{t("common.balance")}</span>,
         cell: (row: (typeof contactBalances)[number]) => (
           <span className={`tabular-nums ${row.balance > 0 ? "text-green-600" : "text-red-600"}`}>
             {formatCurrency(row.balance)}
@@ -1156,7 +1173,7 @@ function FinancialTab({
         className: "text-right",
       },
     ],
-    []
+    [t]
   )
 
   // Invoices by month chart
@@ -1182,7 +1199,7 @@ function FinancialTab({
       {/* Revenue vs Expenses */}
       <div className="space-y-4">
         <SectionHeader
-          title="Revenue vs Expenses"
+          title={t("reports.revenueVsExpenses")}
           exportData={[
             {
               "Sales Revenue": revenueVsExpenses.salesTotal,
@@ -1270,7 +1287,7 @@ function FinancialTab({
       {/* Outstanding Receivables/Payables Aging */}
       <div className="space-y-4">
         <SectionHeader
-          title="Outstanding Aging"
+          title={t("reports.outstandingAging")}
           exportData={aging as Record<string, unknown>[]}
           exportFilename="outstanding-aging"
         />
@@ -1278,14 +1295,14 @@ function FinancialTab({
           columns={agingColumns}
           data={aging}
           getRowId={(row) => row.period}
-          emptyMessage="No outstanding invoices."
+          emptyMessage={t("reports.noOutstandingInvoices")}
         />
       </div>
 
       {/* Contact Balance Summary */}
       <div className="space-y-4">
         <SectionHeader
-          title="Contact Balance Summary"
+          title={t("reports.contactBalanceSummary")}
           exportData={contactBalances as Record<string, unknown>[]}
           exportFilename="contact-balances"
         />
@@ -1293,7 +1310,7 @@ function FinancialTab({
           columns={contactBalanceColumns}
           data={contactBalances}
           getRowId={(row) => row.name}
-          emptyMessage="No contacts with outstanding balances."
+          emptyMessage={t("reports.noContactsWithBalance")}
         />
       </div>
     </div>
@@ -1311,6 +1328,7 @@ function ProductionTab({
   filteredProduction: ProductionRecord[]
   productNameMap: Map<string, string>
 }) {
+  const { t } = useTranslation()
   // Production volume by product
   const productionByProduct = useMemo(() => {
     const map = new Map<string, { product: string; quantity: number; batches: number }>()
@@ -1328,28 +1346,28 @@ function ProductionTab({
     () => [
       {
         id: "product",
-        header: "Product",
+        header: t("common.product"),
         cell: (row: (typeof productionByProduct)[number]) => (
           <span className="font-medium">{row.product}</span>
         ),
       },
       {
         id: "batches",
-        header: "Batches",
+        header: t("reports.batches"),
         cell: (row: (typeof productionByProduct)[number]) => (
           <span className="tabular-nums">{row.batches}</span>
         ),
       },
       {
         id: "quantity",
-        header: <span className="text-right block">Total Quantity</span>,
+        header: <span className="text-right block">{t("reports.totalQuantity")}</span>,
         cell: (row: (typeof productionByProduct)[number]) => (
           <span className="tabular-nums">{row.quantity}</span>
         ),
         className: "text-right",
       },
     ],
-    []
+    [t]
   )
 
   // Material consumption summary
@@ -1379,28 +1397,28 @@ function ProductionTab({
     () => [
       {
         id: "material",
-        header: "Material",
+        header: t("reports.material"),
         cell: (row: (typeof materialConsumption)[number]) => (
           <span className="font-medium">{row.material}</span>
         ),
       },
       {
         id: "usedInBatches",
-        header: "Used in Batches",
+        header: t("reports.usedInBatches"),
         cell: (row: (typeof materialConsumption)[number]) => (
           <span className="tabular-nums">{row.usedInBatches}</span>
         ),
       },
       {
         id: "totalQuantity",
-        header: <span className="text-right block">Total Consumed</span>,
+        header: <span className="text-right block">{t("reports.totalConsumed")}</span>,
         cell: (row: (typeof materialConsumption)[number]) => (
           <span className="tabular-nums">{row.totalQuantity}</span>
         ),
         className: "text-right",
       },
     ],
-    []
+    [t]
   )
 
   // Production volume chart
@@ -1427,7 +1445,7 @@ function ProductionTab({
     <div className="space-y-6 pt-4">
       {/* Production Summary Cards */}
       <div className="space-y-4">
-        <SectionHeader title="Production Summary" />
+        <SectionHeader title={t("reports.productionSummary")} />
         <div className="grid gap-4 md:grid-cols-3">
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
@@ -1497,7 +1515,7 @@ function ProductionTab({
       {/* Production Volume by Product */}
       <div className="space-y-4">
         <SectionHeader
-          title="Production Volume by Product"
+          title={t("reports.productionVolumeByProduct")}
           exportData={productionByProduct as Record<string, unknown>[]}
           exportFilename="production-by-product"
         />
@@ -1505,14 +1523,14 @@ function ProductionTab({
           columns={productionByProductColumns}
           data={productionByProduct}
           getRowId={(row) => row.product}
-          emptyMessage="No production data for the selected period."
+          emptyMessage={t("reports.noProductionData")}
         />
       </div>
 
       {/* Material Consumption Summary */}
       <div className="space-y-4">
         <SectionHeader
-          title="Material Consumption Summary"
+          title={t("reports.materialConsumptionSummary")}
           exportData={materialConsumption as Record<string, unknown>[]}
           exportFilename="material-consumption"
         />
@@ -1520,7 +1538,7 @@ function ProductionTab({
           columns={materialConsumptionColumns}
           data={materialConsumption}
           getRowId={(row) => row.material}
-          emptyMessage="No material consumption data for the selected period."
+          emptyMessage={t("reports.noMaterialConsumption")}
         />
       </div>
     </div>

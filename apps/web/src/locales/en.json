@@ -139,7 +139,13 @@
     "confirmDeleteProduct": "Are you sure you want to delete this product?",
     "productCreated": "Product created successfully",
     "productUpdated": "Product updated successfully",
-    "productDeleted": "Product deleted successfully"
+    "productDeleted": "Product deleted successfully",
+    "productImage": "Product Image",
+    "noImage": "No image",
+    "uploadImage": "Upload Image",
+    "uploading": "Uploading...",
+    "imageUploaded": "Image uploaded",
+    "uploadFailed": "Upload failed"
   },
   "categories": {
     "title": "Categories",
@@ -259,7 +265,9 @@
     "payment": "Payment",
     "splitAmountsMustEqual": "Split payment amounts must equal the total",
     "addedProduct": "Added: {{name}}",
-    "productNotFoundForBarcode": "Product not found for barcode: {{barcode}}"
+    "productNotFoundForBarcode": "Product not found for barcode: {{barcode}}",
+    "parkCartLabel": "Label for parked cart",
+    "parkCartPlaceholder": "e.g. Table 5, Customer name"
   },
   "contacts": {
     "title": "Contacts",
@@ -560,10 +568,6 @@
       "saved": "General settings saved",
       "failedToSave": "Failed to save general settings"
     },
-    "company": {
-      "title": "Company Settings",
-      "description": "Manage your company profile and preferences"
-    },
     "currencies": {
       "title": "Currencies",
       "description": "Configure currencies and exchange rates"
@@ -572,29 +576,126 @@
       "title": "Payment Methods",
       "description": "Set up accepted payment methods"
     },
-    "priceLists": {
-      "title": "Price Lists",
-      "description": "Manage pricing tiers and schedules"
-    },
     "posTerminals": {
       "title": "POS Terminals",
       "description": "Configure point-of-sale terminals"
     },
+    "auditLogs": {
+      "title": "Audit Logs",
+      "description": "View system activity history",
+      "allEntities": "All Entities",
+      "allActions": "All Actions",
+      "timestamp": "Timestamp",
+      "user": "User",
+      "entityType": "Entity Type",
+      "entityId": "Entity ID",
+      "action": "Action",
+      "changes": "Changes",
+      "fields": "{{count}} field(s)",
+      "detail": "Audit Log Detail",
+      "noChanges": "No change data available.",
+      "noLogsFound": "No audit logs found."
+    },
+    "company": {
+      "title": "Company Settings",
+      "description": "Manage your company profile",
+      "companyLogo": "Company Logo",
+      "noLogo": "No logo",
+      "uploadLogo": "Upload Logo",
+      "uploading": "Uploading...",
+      "logoHint": "JPEG, PNG, WebP, or SVG. Max 5MB.",
+      "companyName": "Company Name",
+      "taxNumber": "Tax Number",
+      "taxOffice": "Tax Office",
+      "address": "Address",
+      "phone": "Phone",
+      "email": "Email",
+      "website": "Website",
+      "defaultCurrency": "Default Currency",
+      "defaultTaxRate": "Default Tax Rate",
+      "defaultLanguage": "Default Language",
+      "timezone": "Timezone",
+      "saved": "Company settings saved",
+      "failedToSave": "Failed to save company settings",
+      "logoUploaded": "Logo uploaded",
+      "uploadFailed": "Upload failed"
+    },
     "stockSettings": {
       "title": "Stock Settings",
-      "description": "Minimum stock levels and precision defaults"
-    },
-    "users": {
-      "title": "Users",
-      "description": "Manage team members and permissions"
+      "description": "Configure inventory tracking defaults",
+      "stockDefaults": "Stock Defaults",
+      "defaultMinStockLevel": "Default Minimum Stock Level",
+      "defaultMinStockLevelHint": "Alert threshold when stock falls below this quantity.",
+      "stockPrecisionKg": "Stock Precision \u2014 KG",
+      "stockPrecisionKgHint": "Decimal places for weight-based items.",
+      "stockPrecisionPieces": "Stock Precision \u2014 Pieces",
+      "stockPrecisionPiecesHint": "Decimal places for piece-counted items.",
+      "saved": "Stock settings saved",
+      "failedToSave": "Failed to save stock settings"
     },
     "notificationSettings": {
       "title": "Notification Settings",
-      "description": "Configure low stock and overdue invoice alerts"
+      "description": "Configure alerts and notifications",
+      "alerts": "Alerts",
+      "lowStockAlerts": "Low stock alerts",
+      "lowStockAlertsHint": "Get notified when product stock falls below the minimum level.",
+      "overdueInvoiceAlerts": "Overdue invoice alerts",
+      "overdueInvoiceAlertsHint": "Get notified when invoices pass their due date.",
+      "saved": "Notification settings saved",
+      "failedToSave": "Failed to save notification settings"
     },
-    "auditLogs": {
-      "title": "Audit Logs",
-      "description": "View system activity history"
+    "users": {
+      "title": "Users",
+      "description": "Manage team members and permissions",
+      "inviteUser": "Invite User",
+      "inviting": "Inviting...",
+      "password": "Password",
+      "passwordHint": "Minimum 8 characters",
+      "role": "Role",
+      "admin": "Admin",
+      "manager": "Manager",
+      "cashier": "Cashier",
+      "user": "User",
+      "modulePermissions": "Module Permissions",
+      "module": "Module",
+      "level": "Level",
+      "permNone": "None",
+      "permViewer": "Viewer",
+      "permEditor": "Editor",
+      "permAdmin": "Admin",
+      "permissionsFor": "Permissions for {{name}}",
+      "savePermissions": "Save Permissions",
+      "noUsersFound": "No users found.",
+      "permissions": "Permissions",
+      "userInvited": "User invited",
+      "failedToInvite": "Failed to invite user",
+      "roleUpdated": "User role updated",
+      "failedToUpdateRole": "Failed to update role",
+      "permissionsUpdated": "Permissions updated",
+      "failedToUpdatePermissions": "Failed to update permissions",
+      "userRemoved": "User removed",
+      "failedToRemove": "Failed to remove user"
+    },
+    "priceLists": {
+      "title": "Price List Items",
+      "description": "Manage prices for this price list",
+      "addItem": "Add Item",
+      "editItem": "Edit Item",
+      "productName": "Product Name",
+      "vatRate": "VAT Rate",
+      "selectProduct": "Select product",
+      "confirmDelete": "Delete this price list item?",
+      "itemAdded": "Item added",
+      "itemUpdated": "Item updated",
+      "failedToAdd": "Failed to add item",
+      "failedToUpdate": "Failed to update item",
+      "itemDeleted": "Item deleted",
+      "failedToDelete": "Failed to delete item",
+      "noItems": "No items in this price list.",
+      "update": "Update"
     }
+  },
+  "nav": {
+    "logout": "Log out"
   }
 }

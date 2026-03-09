@@ -2,12 +2,18 @@ import { Button } from "@heyloaf/ui/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@heyloaf/ui/components/card"
 import { Input } from "@heyloaf/ui/components/input"
 import { Label } from "@heyloaf/ui/components/label"
-import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router"
 import { type FormEvent, useState } from "react"
 import { getApiClient } from "@/lib/api"
 import { useAuthStore } from "@/lib/auth"
 
 export const Route = createFileRoute("/login")({
+  beforeLoad: () => {
+    const { isAuthenticated } = useAuthStore.getState()
+    if (isAuthenticated()) {
+      throw redirect({ to: "/dashboard" })
+    }
+  },
   component: LoginPage,
 })
 
@@ -38,7 +44,6 @@ function LoginPage() {
       const loginData = data as {
         data: {
           access_token: string
-          refresh_token: string
           user: { id: string; name: string; email: string }
           company: { id: string; name: string }
           role?: string | null
@@ -48,7 +53,6 @@ function LoginPage() {
 
       setAuth({
         token: loginData.data.access_token,
-        refreshToken: loginData.data.refresh_token,
         user: loginData.data.user,
         company: loginData.data.company,
         role: loginData.data.role,

@@ -24,7 +24,8 @@ import Search01Icon from "@hugeicons/core-free-icons/Search01Icon"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { useCallback, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
@@ -63,6 +64,19 @@ interface RecipeData {
   notes?: string
 }
 
+interface DragHandlers {
+  onDragStart: (e: React.DragEvent, variantKey: string, index: number) => void
+  onDragOver: (e: React.DragEvent, variantKey: string, index: number) => void
+  onDrop: (e: React.DragEvent, variantKey: string, targetIndex: number) => void
+  onDragEnd: () => void
+  onListDrop: (e: React.DragEvent, variantKey: string) => void
+  onListDragOver: (e: React.DragEvent, variantKey: string) => void
+  onListDragLeave: (e: React.DragEvent) => void
+  dragIndex: { variantKey: string; index: number } | null
+  dropTarget: { variantKey: string; index: number } | null
+  poolDragOver: string | null
+}
+
 interface VariantBodyProps {
   variant: RecipeVariant
   materialOptions: { value: string; label: string }[]
@@ -80,16 +94,7 @@ interface VariantBodyProps {
     value: string | number
   ) => void
   removeVariant: (key: string) => void
-  handleVariantDragStart: (e: React.DragEvent, variantKey: string, index: number) => void
-  handleVariantDragOver: (e: React.DragEvent, variantKey: string, index: number) => void
-  handleVariantDrop: (e: React.DragEvent, variantKey: string, targetIndex: number) => void
-  handleVariantDragEnd: () => void
-  handleVariantListDrop: (e: React.DragEvent, variantKey: string) => void
-  handleVariantListDragOver: (e: React.DragEvent, variantKey: string) => void
-  handleVariantListDragLeave: (e: React.DragEvent) => void
-  variantDragIndex: { variantKey: string; index: number } | null
-  variantDropTarget: { variantKey: string; index: number } | null
-  variantPoolDragOver: string | null
+  drag: DragHandlers
 }
 
 function VariantBody({
@@ -100,30 +105,22 @@ function VariantBody({
   removeVariantOverride,
   updateVariantOverride,
   removeVariant,
-  handleVariantDragStart,
-  handleVariantDragOver,
-  handleVariantDrop,
-  handleVariantDragEnd,
-  handleVariantListDrop,
-  handleVariantListDragOver,
-  handleVariantListDragLeave,
-  variantDragIndex,
-  variantDropTarget,
-  variantPoolDragOver,
+  drag,
 }: VariantBodyProps) {
+  const { t } = useTranslation()
   return (
     <div className="border-t p-3 space-y-3">
       <div className="grid gap-2">
-        <Label className="text-xs">Variant Name</Label>
+        <Label className="text-xs">{t("recipes.variantName")}</Label>
         <Input
           value={variant.name}
           onChange={(e) => updateVariant(variant.key, "name", e.target.value)}
-          placeholder='e.g., "Chocolate", "Gluten-Free"'
+          placeholder={t("recipes.variantNamePlaceholder")}
         />
       </div>
 
       <div className="grid gap-2">
-        <Label className="text-xs">Price Modifier</Label>
+        <Label className="text-xs">{t("recipes.priceModifier")}</Label>
         <Input
           type="number"
           step="0.01"
@@ -131,17 +128,15 @@ function VariantBody({
           onChange={(e) => updateVariant(variant.key, "price_modifier", Number(e.target.value))}
           placeholder="0.00"
         />
-        <p className="text-xs text-muted-foreground">
-          Positive to add, negative to subtract from base price
-        </p>
+        <p className="text-xs text-muted-foreground">{t("recipes.priceModifierDescription")}</p>
       </div>
 
       <div className="grid gap-2">
-        <Label className="text-xs">Production Notes</Label>
+        <Label className="text-xs">{t("recipes.productionNotes")}</Label>
         <Textarea
           value={variant.notes}
           onChange={(e) => updateVariant(variant.key, "notes", e.target.value)}
-          placeholder="Notes specific to this variant..."
+          placeholder={t("recipes.notesPlaceholder")}
           rows={2}
         />
       </div>
@@ -149,7 +144,7 @@ function VariantBody({
       {/* Material overrides */}
       <div className="grid gap-2">
         <div className="flex items-center justify-between">
-          <Label className="text-xs">Material Overrides</Label>
+          <Label className="text-xs">{t("recipes.materialOverrides")}</Label>
           <Button
             type="button"
             variant="outline"
@@ -157,28 +152,26 @@ function VariantBody({
             className="h-7 text-xs"
             onClick={() => addVariantOverride(variant.key)}
           >
-            Add Override
+            {t("recipes.addOverride")}
           </Button>
         </div>
 
         <div
           role="listbox"
           aria-label={`${variant.name || "Variant"} material overrides`}
-          onDrop={(e) => handleVariantListDrop(e, variant.key)}
-          onDragOver={(e) => handleVariantListDragOver(e, variant.key)}
-          onDragLeave={handleVariantListDragLeave}
+          onDrop={(e) => drag.onListDrop(e, variant.key)}
+          onDragOver={(e) => drag.onListDragOver(e, variant.key)}
+          onDragLeave={drag.onListDragLeave}
           className={cn(
             "min-h-[40px] rounded-md transition-colors",
-            variantPoolDragOver === variant.key &&
+            drag.poolDragOver === variant.key &&
               variant.material_overrides.length === 0 &&
               "border-2 border-dashed border-primary/50 bg-primary/5"
           )}
         >
           {variant.material_overrides.length === 0 && (
             <p className="text-xs text-muted-foreground py-2 text-center">
-              {variantPoolDragOver === variant.key
-                ? "Drop material here"
-                : "No overrides. Add materials or drag from the pool."}
+              {drag.poolDragOver === variant.key ? "Drop material here" : t("recipes.noOverrides")}
             </p>
           )}
 
@@ -186,10 +179,10 @@ function VariantBody({
             {variant.material_overrides.map((ovr, ovrIdx) => (
               <div key={ovr.key}>
                 {/* Drop indicator line */}
-                {variantDropTarget?.variantKey === variant.key &&
-                  variantDropTarget.index === ovrIdx &&
-                  variantDragIndex !== null &&
-                  variantDragIndex.index !== ovrIdx && (
+                {drag.dropTarget?.variantKey === variant.key &&
+                  drag.dropTarget.index === ovrIdx &&
+                  drag.dragIndex !== null &&
+                  drag.dragIndex.index !== ovrIdx && (
                     <div className="h-0.5 bg-primary rounded-full mx-2 my-0.5 transition-all" />
                   )}
                 <div
@@ -197,14 +190,14 @@ function VariantBody({
                   tabIndex={0}
                   aria-selected={false}
                   draggable
-                  onDragStart={(e) => handleVariantDragStart(e, variant.key, ovrIdx)}
-                  onDragOver={(e) => handleVariantDragOver(e, variant.key, ovrIdx)}
-                  onDrop={(e) => handleVariantDrop(e, variant.key, ovrIdx)}
-                  onDragEnd={handleVariantDragEnd}
+                  onDragStart={(e) => drag.onDragStart(e, variant.key, ovrIdx)}
+                  onDragOver={(e) => drag.onDragOver(e, variant.key, ovrIdx)}
+                  onDrop={(e) => drag.onDrop(e, variant.key, ovrIdx)}
+                  onDragEnd={drag.onDragEnd}
                   className={cn(
                     "rounded-md border border-dashed p-2 space-y-2 transition-all",
-                    variantDragIndex?.variantKey === variant.key &&
-                      variantDragIndex.index === ovrIdx &&
+                    drag.dragIndex?.variantKey === variant.key &&
+                      drag.dragIndex.index === ovrIdx &&
                       "opacity-40 scale-[0.98]"
                   )}
                 >
@@ -213,7 +206,9 @@ function VariantBody({
                       <div className="cursor-grab active:cursor-grabbing text-muted-foreground hover:text-foreground transition-colors">
                         <HugeiconsIcon icon={DragDropVerticalIcon} size={14} />
                       </div>
-                      <span className="text-xs text-muted-foreground">Override {ovrIdx + 1}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {t("recipes.overrideNumber", { number: ovrIdx + 1 })}
+                      </span>
                     </div>
                     <Button
                       type="button"
@@ -222,7 +217,7 @@ function VariantBody({
                       className="h-5 px-1.5 text-xs text-destructive"
                       onClick={() => removeVariantOverride(variant.key, ovr.key)}
                     >
-                      Remove
+                      {t("common.remove")}
                     </Button>
                   </div>
 
@@ -232,14 +227,14 @@ function VariantBody({
                     onValueChange={(val) =>
                       updateVariantOverride(variant.key, ovr.key, "product_id", val ?? "")
                     }
-                    placeholder="Select product"
+                    placeholder={t("stock.selectProduct")}
                     searchable
                     aria-label={`Variant ${variant.name || "unnamed"} override ${ovrIdx + 1}`}
                   />
 
                   <div className="grid grid-cols-2 gap-2">
                     <div className="grid gap-1">
-                      <Label className="text-xs">Quantity</Label>
+                      <Label className="text-xs">{t("common.quantity")}</Label>
                       <Input
                         type="number"
                         step="0.001"
@@ -256,7 +251,7 @@ function VariantBody({
                       />
                     </div>
                     <div className="grid gap-1">
-                      <Label className="text-xs">Unit</Label>
+                      <Label className="text-xs">{t("common.unit")}</Label>
                       <Input
                         value={ovr.unit}
                         onChange={(e) =>
@@ -271,8 +266,8 @@ function VariantBody({
             ))}
             {/* Drop indicator at end of overrides list */}
             {variant.material_overrides.length > 0 &&
-              variantDropTarget === null &&
-              variantPoolDragOver === variant.key && (
+              drag.dropTarget === null &&
+              drag.poolDragOver === variant.key && (
                 <div className="h-0.5 bg-primary rounded-full mx-2 my-1 transition-all" />
               )}
           </div>
@@ -288,7 +283,7 @@ function VariantBody({
           className="text-destructive"
           onClick={() => removeVariant(variant.key)}
         >
-          Delete Variant
+          {t("recipes.deleteVariant")}
         </Button>
       </div>
     </div>
@@ -296,6 +291,7 @@ function VariantBody({
 }
 
 function RecipesPage() {
+  const { t } = useTranslation()
   const client = useApi()
   const queryClient = useQueryClient()
 
@@ -314,6 +310,12 @@ function RecipesPage() {
       setDebouncedSearch(value)
     }, 300)
   }
+
+  useEffect(() => {
+    return () => {
+      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
+    }
+  }, [])
 
   // Recipe form state
   const [batchSize, setBatchSize] = useState(1)
@@ -625,52 +627,55 @@ function RecipesPage() {
     }
   }
 
-  const columns = [
-    {
-      id: "name",
-      header: "Product Name",
-      cell: (row: Product) => <span className="font-medium">{row.name}</span>,
-    },
-    {
-      id: "type",
-      header: "Type",
-      cell: (row: Product) => (
-        <Badge variant="secondary" className="capitalize">
-          {row.product_type}
-        </Badge>
-      ),
-    },
-    {
-      id: "batch_size",
-      header: "Batch Size",
-      cell: (row: Product) => (
-        <span className="text-muted-foreground">{getRecipeInfo(row).batchSize}</span>
-      ),
-    },
-    {
-      id: "materials_count",
-      header: "Materials",
-      cell: (row: Product) => {
-        const count = getRecipeInfo(row).materialsCount
-        return <span className="text-muted-foreground">{count > 0 ? count : "-"}</span>
+  const columns = useMemo(
+    () => [
+      {
+        id: "name",
+        header: t("recipes.productName"),
+        cell: (row: Product) => <span className="font-medium">{row.name}</span>,
       },
-    },
-    {
-      id: "status",
-      header: "Recipe",
-      cell: (row: Product) => {
-        const hasRecipe =
-          row.recipe &&
-          typeof row.recipe === "object" &&
-          (row.recipe as RecipeData).materials?.length > 0
-        return hasRecipe ? (
-          <Badge variant="default">Defined</Badge>
-        ) : (
-          <Badge variant="secondary">Not set</Badge>
-        )
+      {
+        id: "type",
+        header: t("common.type"),
+        cell: (row: Product) => (
+          <Badge variant="secondary" className="capitalize">
+            {row.product_type}
+          </Badge>
+        ),
       },
-    },
-  ]
+      {
+        id: "batch_size",
+        header: t("recipes.batchSize"),
+        cell: (row: Product) => (
+          <span className="text-muted-foreground">{getRecipeInfo(row).batchSize}</span>
+        ),
+      },
+      {
+        id: "materials_count",
+        header: t("recipes.materials"),
+        cell: (row: Product) => {
+          const count = getRecipeInfo(row).materialsCount
+          return <span className="text-muted-foreground">{count > 0 ? count : "-"}</span>
+        },
+      },
+      {
+        id: "status",
+        header: t("recipes.recipe"),
+        cell: (row: Product) => {
+          const hasRecipe =
+            row.recipe &&
+            typeof row.recipe === "object" &&
+            (row.recipe as RecipeData).materials?.length > 0
+          return hasRecipe ? (
+            <Badge variant="default">{t("recipes.defined")}</Badge>
+          ) : (
+            <Badge variant="secondary">{t("recipes.notSet")}</Badge>
+          )
+        },
+      },
+    ],
+    [t, getRecipeInfo]
+  )
 
   function openRecipeEditor(product: Product) {
     setEditingProduct(product)
@@ -854,7 +859,7 @@ function RecipesPage() {
       queryClient.invalidateQueries({ queryKey: ["products"] })
       setEditorOpen(false)
       setEditingProduct(null)
-      toast.success("Recipe saved successfully")
+      toast.success(t("recipes.recipeSaved"))
     },
     onError: (err: Error) => {
       toast.error(err.message)
@@ -868,7 +873,7 @@ function RecipesPage() {
 
   return (
     <>
-      <PageHeader title="Recipes" description="Manage product recipes and bills of materials" />
+      <PageHeader title={t("recipes.title")} description={t("recipes.description")} />
 
       <div className="space-y-4 p-6">
         {/* Search bar */}
@@ -880,7 +885,7 @@ function RecipesPage() {
               className="text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2"
             />
             <Input
-              placeholder="Search products..."
+              placeholder={t("recipes.searchProducts")}
               className="pl-9"
               value={searchQuery}
               onChange={(e) => handleSearchChange(e.target.value)}
@@ -894,7 +899,7 @@ function RecipesPage() {
           data={filtered}
           getRowId={(row) => row.id}
           isLoading={isLoading}
-          emptyMessage="No products with recipe support found. Create SEMI or FINISHED products first."
+          emptyMessage={t("recipes.noRecipeProducts")}
           onRowClick={openRecipeEditor}
         />
       </div>
@@ -903,7 +908,7 @@ function RecipesPage() {
       <Sheet open={editorOpen} onOpenChange={setEditorOpen}>
         <SheetContent side="right" className="sm:max-w-2xl">
           <SheetHeader>
-            <SheetTitle>Recipe: {editingProduct?.name ?? ""}</SheetTitle>
+            <SheetTitle>{t("recipes.recipeFor", { name: editingProduct?.name ?? "" })}</SheetTitle>
           </SheetHeader>
           <form onSubmit={handleSave} className="flex flex-col flex-1 overflow-hidden">
             <SheetBody className="grid gap-4">
@@ -920,7 +925,7 @@ function RecipesPage() {
                       size={14}
                       className="text-muted-foreground"
                     />
-                    <span className="text-sm font-medium">Material Pool</span>
+                    <span className="text-sm font-medium">{t("recipes.materials")}</span>
                     <span className="text-xs text-muted-foreground">
                       Drag products into materials list
                     </span>
@@ -974,7 +979,7 @@ function RecipesPage() {
                 )}
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="batch-size">Batch Size</Label>
+                <Label htmlFor="batch-size">{t("recipes.batchSize")}</Label>
                 <Input
                   id="batch-size"
                   type="number"
@@ -984,25 +989,25 @@ function RecipesPage() {
                   value={batchSize}
                   onChange={(e) => setBatchSize(Number(e.target.value))}
                 />
-                <p className="text-xs text-muted-foreground">How many units this recipe produces</p>
+                <p className="text-xs text-muted-foreground">{t("recipes.batchSizeDescription")}</p>
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="recipe-notes">Notes</Label>
+                <Label htmlFor="recipe-notes">{t("common.notes")}</Label>
                 <Textarea
                   id="recipe-notes"
                   value={notes}
                   onChange={(e) => setNotes(e.target.value)}
-                  placeholder="Optional recipe notes..."
+                  placeholder={t("recipes.optionalRecipeNotes")}
                   rows={2}
                 />
               </div>
 
               <div className="grid gap-2">
                 <div className="flex items-center justify-between">
-                  <Label>Materials</Label>
+                  <Label>{t("recipes.materials")}</Label>
                   <Button type="button" variant="outline" size="sm" onClick={addMaterial}>
-                    Add Material
+                    {t("recipes.addMaterial")}
                   </Button>
                 </div>
 
@@ -1021,9 +1026,7 @@ function RecipesPage() {
                 >
                   {materials.length === 0 && (
                     <p className="text-sm text-muted-foreground py-4 text-center">
-                      {poolDragOver
-                        ? "Drop material here"
-                        : 'No materials added yet. Click "Add Material" or drag from the pool.'}
+                      {poolDragOver ? "Drop material here" : t("recipes.noMaterialsAdded")}
                     </p>
                   )}
 
@@ -1057,7 +1060,7 @@ function RecipesPage() {
                                 <HugeiconsIcon icon={DragDropVerticalIcon} size={16} />
                               </div>
                               <span className="text-xs text-muted-foreground font-medium">
-                                Material {idx + 1}
+                                {t("recipes.materialNumber", { number: idx + 1 })}
                               </span>
                             </div>
                             <Button
@@ -1067,7 +1070,7 @@ function RecipesPage() {
                               className="h-6 px-2 text-destructive"
                               onClick={() => removeMaterial(mat.key)}
                             >
-                              Remove
+                              {t("common.remove")}
                             </Button>
                           </div>
 
@@ -1078,7 +1081,7 @@ function RecipesPage() {
                               onValueChange={(val) =>
                                 updateMaterial(mat.key, "product_id", val ?? "")
                               }
-                              placeholder="Select product"
+                              placeholder={t("stock.selectProduct")}
                               searchable
                               aria-label={`Material ${idx + 1} product`}
                             />
@@ -1086,7 +1089,7 @@ function RecipesPage() {
 
                           <div className="grid grid-cols-2 gap-2">
                             <div className="grid gap-1">
-                              <Label className="text-xs">Quantity</Label>
+                              <Label className="text-xs">{t("common.quantity")}</Label>
                               <Input
                                 type="number"
                                 step="0.001"
@@ -1098,7 +1101,7 @@ function RecipesPage() {
                               />
                             </div>
                             <div className="grid gap-1">
-                              <Label className="text-xs">Unit</Label>
+                              <Label className="text-xs">{t("common.unit")}</Label>
                               <Input
                                 value={mat.unit}
                                 onChange={(e) => updateMaterial(mat.key, "unit", e.target.value)}
@@ -1123,19 +1126,19 @@ function RecipesPage() {
               <div className="grid gap-2">
                 <div className="flex items-center justify-between">
                   <div>
-                    <Label>Variants</Label>
+                    <Label>{t("recipes.variants")}</Label>
                     <p className="text-xs text-muted-foreground mt-0.5">
-                      Named variations with material overrides and price modifiers
+                      {t("recipes.variantsDescription")}
                     </p>
                   </div>
                   <Button type="button" variant="outline" size="sm" onClick={addVariant}>
-                    Add Variant
+                    {t("recipes.addVariant")}
                   </Button>
                 </div>
 
                 {variants.length === 0 && (
                   <p className="text-sm text-muted-foreground py-4 text-center">
-                    No variants yet. Add variants like "Chocolate", "Gluten-Free", etc.
+                    {t("recipes.noVariantsYet")}
                   </p>
                 )}
 
@@ -1155,7 +1158,7 @@ function RecipesPage() {
                             className="text-muted-foreground"
                           />
                           <span className="text-sm font-medium">
-                            {variant.name || "Unnamed variant"}
+                            {variant.name || t("recipes.unnamedVariant")}
                           </span>
                           {variant.price_modifier !== 0 && (
                             <Badge variant="secondary" className="text-xs">
@@ -1165,8 +1168,10 @@ function RecipesPage() {
                           )}
                           {variant.material_overrides.length > 0 && (
                             <Badge variant="secondary" className="text-xs">
-                              {variant.material_overrides.length} override
-                              {variant.material_overrides.length !== 1 ? "s" : ""}
+                              {variant.material_overrides.length}{" "}
+                              {variant.material_overrides.length !== 1
+                                ? t("recipes.overrides")
+                                : t("recipes.override")}
                             </Badge>
                           )}
                         </div>
@@ -1182,16 +1187,18 @@ function RecipesPage() {
                           removeVariantOverride={removeVariantOverride}
                           updateVariantOverride={updateVariantOverride}
                           removeVariant={removeVariant}
-                          handleVariantDragStart={handleVariantDragStart}
-                          handleVariantDragOver={handleVariantDragOver}
-                          handleVariantDrop={handleVariantDrop}
-                          handleVariantDragEnd={handleVariantDragEnd}
-                          handleVariantListDrop={handleVariantListDrop}
-                          handleVariantListDragOver={handleVariantListDragOver}
-                          handleVariantListDragLeave={handleVariantListDragLeave}
-                          variantDragIndex={variantDragIndex}
-                          variantDropTarget={variantDropTarget}
-                          variantPoolDragOver={variantPoolDragOver}
+                          drag={{
+                            onDragStart: handleVariantDragStart,
+                            onDragOver: handleVariantDragOver,
+                            onDrop: handleVariantDrop,
+                            onDragEnd: handleVariantDragEnd,
+                            onListDrop: handleVariantListDrop,
+                            onListDragOver: handleVariantListDragOver,
+                            onListDragLeave: handleVariantListDragLeave,
+                            dragIndex: variantDragIndex,
+                            dropTarget: variantDropTarget,
+                            poolDragOver: variantPoolDragOver,
+                          }}
                         />
                       )}
                     </div>
@@ -1200,9 +1207,9 @@ function RecipesPage() {
               </div>
             </SheetBody>
             <SheetFooter>
-              <SheetClose render={<Button variant="outline" />}>Cancel</SheetClose>
+              <SheetClose render={<Button variant="outline" />}>{t("common.cancel")}</SheetClose>
               <Button type="submit" disabled={saveMutation.isPending}>
-                {saveMutation.isPending ? "Saving..." : "Save Recipe"}
+                {saveMutation.isPending ? t("common.saving") : t("recipes.saveRecipe")}
               </Button>
             </SheetFooter>
           </form>

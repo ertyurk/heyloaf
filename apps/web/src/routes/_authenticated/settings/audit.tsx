@@ -12,6 +12,7 @@ import {
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
 
@@ -29,23 +30,7 @@ interface AuditLogEntry {
   created_at: string
 }
 
-const entityTypeOptions = [
-  { value: "__all__", label: "All Entities" },
-  { value: "contact", label: "Contact" },
-  { value: "product", label: "Product" },
-  { value: "order", label: "Order" },
-  { value: "invoice", label: "Invoice" },
-  { value: "stock", label: "Stock" },
-  { value: "price_list", label: "Price List" },
-  { value: "user", label: "User" },
-]
-
-const actionOptions = [
-  { value: "__all__", label: "All Actions" },
-  { value: "create", label: "Create" },
-  { value: "update", label: "Update" },
-  { value: "delete", label: "Delete" },
-]
+// Options built inside the component to access t()
 
 const actionBadgeClass: Record<string, string> = {
   create: "bg-green-100 text-green-800",
@@ -64,10 +49,35 @@ function formatTimestamp(dateStr: string) {
 }
 
 function AuditLogsPage() {
+  const { t } = useTranslation()
   const client = useApi()
 
-  const [entityTypeFilter, setEntityTypeFilter] = useState("__all__")
-  const [actionFilter, setActionFilter] = useState("__all__")
+  const entityTypeOptions = useMemo(
+    () => [
+      { value: "all", label: t("settings.auditLogs.allEntities") },
+      { value: "contact", label: "Contact" },
+      { value: "product", label: "Product" },
+      { value: "order", label: "Order" },
+      { value: "invoice", label: "Invoice" },
+      { value: "stock", label: "Stock" },
+      { value: "price_list", label: "Price List" },
+      { value: "user", label: "User" },
+    ],
+    [t]
+  )
+
+  const actionOptions = useMemo(
+    () => [
+      { value: "all", label: t("settings.auditLogs.allActions") },
+      { value: "create", label: "Create" },
+      { value: "update", label: "Update" },
+      { value: "delete", label: "Delete" },
+    ],
+    [t]
+  )
+
+  const [entityTypeFilter, setEntityTypeFilter] = useState("all")
+  const [actionFilter, setActionFilter] = useState("all")
   const [dateFrom, setDateFrom] = useState("")
   const [dateTo, setDateTo] = useState("")
   const [selectedLog, setSelectedLog] = useState<AuditLogEntry | null>(null)
@@ -86,8 +96,8 @@ function AuditLogsPage() {
     queryKey: ["audit-logs", entityTypeFilter, actionFilter, dateFrom, dateTo],
     queryFn: async () => {
       const params: Record<string, string> = {}
-      if (entityTypeFilter !== "__all__") params.entity_type = entityTypeFilter
-      if (actionFilter !== "__all__") params.action = actionFilter
+      if (entityTypeFilter !== "all") params.entity_type = entityTypeFilter
+      if (actionFilter !== "all") params.action = actionFilter
       if (dateFrom) params.date_from = dateFrom
       if (dateTo) params.date_to = dateTo
       const res = await client.GET(
@@ -112,20 +122,20 @@ function AuditLogsPage() {
     () => [
       {
         id: "timestamp",
-        header: "Timestamp",
+        header: t("settings.auditLogs.timestamp"),
         cell: (row: AuditLogEntry) => (
           <span className="text-muted-foreground text-sm">{formatTimestamp(row.created_at)}</span>
         ),
       },
       {
         id: "user",
-        header: "User",
+        header: t("settings.auditLogs.user"),
         cell: (row: AuditLogEntry) =>
           users.find((u) => u.user_id === row.user_id)?.name ?? row.user_id.slice(0, 8),
       },
       {
         id: "entity_type",
-        header: "Entity Type",
+        header: t("settings.auditLogs.entityType"),
         cell: (row: AuditLogEntry) => (
           <Badge variant="outline" className="capitalize">
             {row.entity_type}
@@ -134,7 +144,7 @@ function AuditLogsPage() {
       },
       {
         id: "entity_id",
-        header: "Entity ID",
+        header: t("settings.auditLogs.entityId"),
         cell: (row: AuditLogEntry) => (
           <span className="font-mono text-xs text-muted-foreground">
             {row.entity_id.slice(0, 8)}...
@@ -143,7 +153,7 @@ function AuditLogsPage() {
       },
       {
         id: "action",
-        header: "Action",
+        header: t("settings.auditLogs.action"),
         cell: (row: AuditLogEntry) => (
           <Badge className={actionBadgeClass[row.action] ?? "bg-muted text-muted-foreground"}>
             {row.action.charAt(0).toUpperCase() + row.action.slice(1)}
@@ -152,27 +162,32 @@ function AuditLogsPage() {
       },
       {
         id: "changes",
-        header: "Changes",
+        header: t("settings.auditLogs.changes"),
         cell: (row: AuditLogEntry) => (
           <span className="text-xs text-muted-foreground">
-            {row.changes ? `${Object.keys(row.changes).length} field(s)` : "\u2014"}
+            {row.changes
+              ? t("settings.auditLogs.fields", { count: Object.keys(row.changes).length })
+              : "\u2014"}
           </span>
         ),
       },
     ],
-    [users]
+    [users, t]
   )
 
   return (
     <>
-      <PageHeader title="Audit Logs" description="System activity history" />
+      <PageHeader
+        title={t("settings.auditLogs.title")}
+        description={t("settings.auditLogs.description")}
+      />
 
       <div className="space-y-4 p-6">
         <div className="flex items-center gap-4">
           <AdvancedSelect
             options={entityTypeOptions}
             value={entityTypeFilter}
-            onValueChange={(v) => setEntityTypeFilter(v ?? "__all__")}
+            onValueChange={(v) => setEntityTypeFilter(v ?? "all")}
             placeholder="Entity Type"
             searchable={false}
             className="w-40"
@@ -180,7 +195,7 @@ function AuditLogsPage() {
           <AdvancedSelect
             options={actionOptions}
             value={actionFilter}
-            onValueChange={(v) => setActionFilter(v ?? "__all__")}
+            onValueChange={(v) => setActionFilter(v ?? "all")}
             placeholder="Action"
             searchable={false}
             className="w-36"
@@ -200,7 +215,7 @@ function AuditLogsPage() {
           data={filteredLogs}
           getRowId={(row) => row.id}
           isLoading={isLoading}
-          emptyMessage="No audit logs found."
+          emptyMessage={t("settings.auditLogs.noLogsFound")}
           onRowClick={(row) => setSelectedLog(row)}
         />
       </div>
@@ -213,31 +228,35 @@ function AuditLogsPage() {
       >
         <SheetContent side="right" className="sm:max-w-lg">
           <SheetHeader>
-            <SheetTitle>Audit Log Detail</SheetTitle>
+            <SheetTitle>{t("settings.auditLogs.detail")}</SheetTitle>
           </SheetHeader>
           <SheetBody>
             {selectedLog && (
               <div className="grid gap-4">
                 <div className="grid grid-cols-2 gap-3 text-sm">
                   <div>
-                    <p className="text-muted-foreground mb-1">Timestamp</p>
+                    <p className="text-muted-foreground mb-1">
+                      {t("settings.auditLogs.timestamp")}
+                    </p>
                     <p className="font-medium">{formatTimestamp(selectedLog.created_at)}</p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground mb-1">User</p>
+                    <p className="text-muted-foreground mb-1">{t("settings.auditLogs.user")}</p>
                     <p className="font-medium">
                       {users.find((u) => u.user_id === selectedLog.user_id)?.name ??
                         selectedLog.user_id}
                     </p>
                   </div>
                   <div>
-                    <p className="text-muted-foreground mb-1">Entity Type</p>
+                    <p className="text-muted-foreground mb-1">
+                      {t("settings.auditLogs.entityType")}
+                    </p>
                     <Badge variant="outline" className="capitalize">
                       {selectedLog.entity_type}
                     </Badge>
                   </div>
                   <div>
-                    <p className="text-muted-foreground mb-1">Action</p>
+                    <p className="text-muted-foreground mb-1">{t("settings.auditLogs.action")}</p>
                     <Badge
                       className={
                         actionBadgeClass[selectedLog.action] ?? "bg-muted text-muted-foreground"
@@ -248,17 +267,23 @@ function AuditLogsPage() {
                   </div>
                 </div>
                 <div>
-                  <p className="text-muted-foreground mb-1 text-sm">Entity ID</p>
+                  <p className="text-muted-foreground mb-1 text-sm">
+                    {t("settings.auditLogs.entityId")}
+                  </p>
                   <p className="font-mono text-sm">{selectedLog.entity_id}</p>
                 </div>
                 <div>
-                  <p className="text-muted-foreground mb-1 text-sm">Changes</p>
+                  <p className="text-muted-foreground mb-1 text-sm">
+                    {t("settings.auditLogs.changes")}
+                  </p>
                   {selectedLog.changes ? (
                     <pre className="rounded-md bg-muted p-3 text-xs overflow-auto max-h-96">
                       {JSON.stringify(selectedLog.changes, null, 2)}
                     </pre>
                   ) : (
-                    <p className="text-sm text-muted-foreground">No change data available.</p>
+                    <p className="text-sm text-muted-foreground">
+                      {t("settings.auditLogs.noChanges")}
+                    </p>
                   )}
                 </div>
               </div>

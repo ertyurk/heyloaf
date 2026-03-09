@@ -8,25 +8,17 @@ import Search01Icon from "@hugeicons/core-free-icons/Search01Icon"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { useMemo, useRef, useState } from "react"
+import { useEffect, useMemo, useRef, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
 import { formatCurrency } from "@/lib/format-currency"
 
 type Transaction = components["schemas"]["Transaction"]
-type Contact = components["schemas"]["Contact"]
 
 export const Route = createFileRoute("/_authenticated/transactions")({
   component: TransactionsPage,
 })
-
-const typeOptions = [
-  { value: "__all__", label: "All Types" },
-  { value: "invoice", label: "Invoice" },
-  { value: "payment", label: "Payment" },
-  { value: "receipt", label: "Receipt" },
-  { value: "purchase", label: "Purchase" },
-]
 
 const typeBadgeClass: Record<string, string> = {
   invoice: "bg-blue-100 text-blue-800",
@@ -45,13 +37,14 @@ function formatDate(dateStr: string | null) {
 }
 
 function TransactionsPage() {
+  const { t } = useTranslation()
   const client = useApi()
 
   const [search, setSearch] = useState("")
   const [debouncedSearch, setDebouncedSearch] = useState("")
   const searchTimer = useRef<ReturnType<typeof setTimeout>>(null)
-  const [typeFilter, setTypeFilter] = useState("__all__")
-  const [paymentMethodFilter, setPaymentMethodFilter] = useState("")
+  const [typeFilter, setTypeFilter] = useState("all")
+  const [paymentMethodFilter, setPaymentMethodFilter] = useState("all")
   const [dateFrom, setDateFrom] = useState("")
   const [dateTo, setDateTo] = useState("")
 
@@ -60,6 +53,12 @@ function TransactionsPage() {
     if (searchTimer.current) clearTimeout(searchTimer.current)
     searchTimer.current = setTimeout(() => setDebouncedSearch(value), 300)
   }
+
+  useEffect(() => {
+    return () => {
+      if (searchTimer.current) clearTimeout(searchTimer.current)
+    }
+  }, [])
 
   const { data: contactsData } = useQuery({
     queryKey: ["contacts"],
@@ -80,69 +79,62 @@ function TransactionsPage() {
   const contacts = contactsData?.data ?? []
   const paymentMethods = paymentMethodsData?.data ?? []
 
-  // Fetch transactions for all contacts and merge
-  const { data: allTransactions, isLoading } = useQuery({
-    queryKey: ["transactions", contacts.map((c) => c.id)],
+  const typeOptions = useMemo(
+    () => [
+      { value: "all", label: t("transactions.allTypes") },
+      { value: "invoice", label: t("transactions.invoice") },
+      { value: "payment", label: t("transactions.payment") },
+      { value: "receipt", label: t("transactions.receipt") },
+      { value: "purchase", label: t("transactions.purchase") },
+    ],
+    [t]
+  )
+
+  // Single API call to GET /api/transactions with server-side filtering
+  const { data: transactionsData, isLoading } = useQuery({
+    queryKey: ["transactions", debouncedSearch, typeFilter, paymentMethodFilter, dateFrom, dateTo],
     queryFn: async () => {
-      if (contacts.length === 0) return []
-      const results = await Promise.all(
-        contacts.map(async (contact) => {
-          const res = await client.GET("/api/contacts/{id}/transactions", {
-            params: { path: { id: contact.id } },
-          })
-          return res.data?.data ?? []
-        })
+      const query: Record<string, string> = {}
+      if (debouncedSearch) query.search = debouncedSearch
+      if (typeFilter !== "all") query.type = typeFilter
+      if (paymentMethodFilter !== "all") query.payment_method_id = paymentMethodFilter
+      if (dateFrom) query.date_from = dateFrom.slice(0, 10)
+      if (dateTo) query.date_to = dateTo.slice(0, 10)
+      const res = await client.GET(
+        "/api/transactions" as never,
+        {
+          params: { query },
+        } as never
       )
-      return results.flat()
+      return (res as { data?: { data?: Transaction[] } }).data
     },
-    enabled: contacts.length > 0,
   })
 
-  const transactions = allTransactions ?? []
+  const transactions = (transactionsData?.data ?? []) as Transaction[]
 
-  const filteredTransactions = useMemo(() => {
-    let result = transactions
-    if (debouncedSearch) {
-      const q = debouncedSearch.toLowerCase()
-      result = result.filter((t) => t.description?.toLowerCase().includes(q))
-    }
-    if (typeFilter !== "__all__") {
-      result = result.filter((t) => t.transaction_type === typeFilter)
-    }
-    if (dateFrom) {
-      result = result.filter((t) => t.date >= dateFrom.slice(0, 10))
-    }
-    if (dateTo) {
-      result = result.filter((t) => t.date <= dateTo.slice(0, 10))
-    }
-    if (paymentMethodFilter) {
-      result = result.filter((t) => t.payment_method_id === paymentMethodFilter)
-    }
-    // Sort by date descending
-    result = [...result].sort(
+  const sortedTransactions = useMemo(() => {
+    return [...transactions].sort(
       (a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime()
     )
-    return result
-  }, [transactions, debouncedSearch, typeFilter, paymentMethodFilter, dateFrom, dateTo])
+  }, [transactions])
 
   const columns = useMemo(
     () => [
       {
         id: "date",
-        header: "Date",
+        header: t("common.date"),
         cell: (row: Transaction) => (
           <span className="text-muted-foreground">{formatDate(row.date)}</span>
         ),
       },
       {
         id: "contact",
-        header: "Contact",
-        cell: (row: Transaction) =>
-          contacts.find((c: Contact) => c.id === row.contact_id)?.name ?? "\u2014",
+        header: t("common.contact"),
+        cell: (row: Transaction) => contacts.find((c) => c.id === row.contact_id)?.name ?? "\u2014",
       },
       {
         id: "type",
-        header: "Type",
+        header: t("common.type"),
         cell: (row: Transaction) => (
           <Badge
             className={typeBadgeClass[row.transaction_type] ?? "bg-muted text-muted-foreground"}
@@ -153,7 +145,7 @@ function TransactionsPage() {
       },
       {
         id: "amount",
-        header: <span className="text-right block">Amount</span>,
+        header: <span className="text-right block">{t("common.amount")}</span>,
         cell: (row: Transaction) => {
           const isNegative = row.amount < 0
           return (
@@ -166,13 +158,13 @@ function TransactionsPage() {
       },
       {
         id: "payment_method",
-        header: "Payment Method",
+        header: t("dashboard.paymentMethod"),
         cell: (row: Transaction) =>
           paymentMethods.find((pm) => pm.id === row.payment_method_id)?.name ?? "\u2014",
       },
       {
         id: "reference",
-        header: "Reference",
+        header: t("transactions.reference"),
         cell: (row: Transaction) => (
           <span className="text-muted-foreground text-xs">
             {row.reference_id
@@ -183,7 +175,7 @@ function TransactionsPage() {
       },
       {
         id: "balance_after",
-        header: <span className="text-right block">Balance After</span>,
+        header: <span className="text-right block">{t("transactions.balanceAfter")}</span>,
         cell: (row: Transaction) => (
           <span className="tabular-nums">{formatCurrency(row.balance_after)}</span>
         ),
@@ -191,7 +183,7 @@ function TransactionsPage() {
       },
       {
         id: "description",
-        header: "Description",
+        header: t("common.description"),
         cell: (row: Transaction) => (
           <span className="text-muted-foreground truncate max-w-[200px] block">
             {row.description ?? "\u2014"}
@@ -199,12 +191,12 @@ function TransactionsPage() {
         ),
       },
     ],
-    [contacts, paymentMethods]
+    [contacts, paymentMethods, t]
   )
 
   return (
     <>
-      <PageHeader title="Transactions" description="Financial transaction history" />
+      <PageHeader title={t("transactions.title")} description={t("transactions.description")} />
 
       <div className="space-y-4 p-6">
         <div className="flex items-center gap-4">
@@ -215,7 +207,7 @@ function TransactionsPage() {
               className="text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2"
             />
             <Input
-              placeholder="Search by description..."
+              placeholder={t("transactions.searchByDescription")}
               value={search}
               onChange={(e) => handleSearchChange(e.target.value)}
               className="pl-8"
@@ -224,19 +216,19 @@ function TransactionsPage() {
           <AdvancedSelect
             options={typeOptions}
             value={typeFilter}
-            onValueChange={(v) => setTypeFilter(v ?? "__all__")}
-            placeholder="Type"
+            onValueChange={(v) => setTypeFilter(v ?? "all")}
+            placeholder={t("common.type")}
             searchable={false}
             className="w-40"
           />
           <AdvancedSelect
             options={[
-              { value: "", label: "All Methods" },
+              { value: "all", label: t("transactions.allMethods") },
               ...paymentMethods.map((pm) => ({ value: pm.id, label: pm.name })),
             ]}
             value={paymentMethodFilter}
-            onValueChange={(val) => setPaymentMethodFilter(val ?? "")}
-            placeholder="Payment Method"
+            onValueChange={(val) => setPaymentMethodFilter(val ?? "all")}
+            placeholder={t("dashboard.paymentMethod")}
             className="w-44"
           />
           <DateRangeFilter
@@ -251,10 +243,10 @@ function TransactionsPage() {
 
         <DataTable
           columns={columns}
-          data={filteredTransactions}
+          data={sortedTransactions}
           getRowId={(row) => row.id}
           isLoading={isLoading}
-          emptyMessage="No transactions found."
+          emptyMessage={t("transactions.noTransactionsFound")}
         />
       </div>
     </>
