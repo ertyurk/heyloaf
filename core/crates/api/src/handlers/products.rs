@@ -3,9 +3,10 @@ use axum::{Extension, Json};
 use heyloaf_common::errors::AppError;
 use heyloaf_common::types::{ApiResponse, PaginatedResponse, PaginationParams};
 use heyloaf_dal::models::product::Product;
+use heyloaf_dal::repositories::price_list_item::PriceListItemRepository;
 use heyloaf_dal::repositories::product::ProductRepository;
 use heyloaf_services::audit_service::AuditBuilder;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
@@ -79,9 +80,34 @@ pub struct BulkCategoryRequest {
     pub category_id: Option<Uuid>,
 }
 
-#[derive(Debug, serde::Serialize, ToSchema)]
+#[derive(Debug, Serialize, ToSchema)]
 pub struct BulkActionResponse {
     pub affected: u64,
+}
+
+#[derive(Debug, Deserialize, Validate, ToSchema)]
+pub struct BulkPriceListRequest {
+    pub product_ids: Vec<Uuid>,
+    pub price_list_id: Uuid,
+    #[validate(length(min = 1, message = "Action is required"))]
+    pub action: String,
+    pub price: Option<f64>,
+}
+
+#[derive(Debug, Serialize, Deserialize, ToSchema)]
+pub struct PurchaseVariant {
+    pub name: String,
+    pub purchase_unit: String,
+    pub conversion_qty: f64,
+    pub barcode: Option<String>,
+    pub supplier_id: Option<String>,
+    #[serde(default)]
+    pub is_default: bool,
+}
+
+#[derive(Debug, Deserialize, ToSchema)]
+pub struct UpdatePurchaseOptionsRequest {
+    pub variants: Vec<PurchaseVariant>,
 }
 
 // --- Handlers ---
@@ -218,6 +244,7 @@ pub async fn update_product(
     let product = ProductRepository::update(
         &state.pool,
         id,
+        ctx.company_id,
         &body.name,
         body.code.as_deref(),
         body.barcode.as_deref(),
@@ -270,7 +297,7 @@ pub async fn delete_product(
         return Err(AppError::NotFound("Product not found".into()));
     }
 
-    ProductRepository::delete(&state.pool, id)
+    ProductRepository::delete(&state.pool, id, ctx.company_id)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
@@ -296,6 +323,7 @@ pub async fn delete_product(
 pub async fn bulk_activate(
     State(state): State<AppState>,
     Extension(ctx): Extension<CompanyContext>,
+    Extension(auth): Extension<AuthUser>,
     Json(body): Json<BulkIdsRequest>,
 ) -> Result<Json<ApiResponse<BulkActionResponse>>, AppError> {
     if body.ids.is_empty() {
@@ -306,6 +334,12 @@ pub async fn bulk_activate(
         ProductRepository::bulk_update_status(&state.pool, &body.ids, ctx.company_id, "active")
             .await
             .map_err(|e| AppError::Database(e.to_string()))?;
+
+    AuditBuilder::new(state.audit.clone(), ctx.company_id, auth.user_id)
+        .entity("product", Uuid::nil())
+        .action("bulk_activate")
+        .after(&serde_json::json!({ "ids": body.ids, "affected": affected }))
+        .emit();
 
     Ok(Json(ApiResponse::new(BulkActionResponse { affected })))
 }
@@ -321,6 +355,7 @@ pub async fn bulk_activate(
 pub async fn bulk_deactivate(
     State(state): State<AppState>,
     Extension(ctx): Extension<CompanyContext>,
+    Extension(auth): Extension<AuthUser>,
     Json(body): Json<BulkIdsRequest>,
 ) -> Result<Json<ApiResponse<BulkActionResponse>>, AppError> {
     if body.ids.is_empty() {
@@ -336,6 +371,12 @@ pub async fn bulk_deactivate(
     .await
     .map_err(|e| AppError::Database(e.to_string()))?;
 
+    AuditBuilder::new(state.audit.clone(), ctx.company_id, auth.user_id)
+        .entity("product", Uuid::nil())
+        .action("bulk_deactivate")
+        .after(&serde_json::json!({ "ids": body.ids, "affected": affected }))
+        .emit();
+
     Ok(Json(ApiResponse::new(BulkActionResponse { affected })))
 }
 
@@ -350,6 +391,7 @@ pub async fn bulk_deactivate(
 pub async fn bulk_category(
     State(state): State<AppState>,
     Extension(ctx): Extension<CompanyContext>,
+    Extension(auth): Extension<AuthUser>,
     Json(body): Json<BulkCategoryRequest>,
 ) -> Result<Json<ApiResponse<BulkActionResponse>>, AppError> {
     if body.ids.is_empty() {
@@ -365,5 +407,148 @@ pub async fn bulk_category(
     .await
     .map_err(|e| AppError::Database(e.to_string()))?;
 
+    AuditBuilder::new(state.audit.clone(), ctx.company_id, auth.user_id)
+        .entity("product", Uuid::nil())
+        .action("bulk_category")
+        .after(&serde_json::json!({
+            "ids": body.ids,
+            "category_id": body.category_id,
+            "affected": affected,
+        }))
+        .emit();
+
     Ok(Json(ApiResponse::new(BulkActionResponse { affected })))
+}
+
+#[utoipa::path(
+    post,
+    path = "/api/products/bulk/price-list",
+    tag = "products",
+    security(("bearer" = [])),
+    request_body = BulkPriceListRequest,
+    responses((status = 200, body = inline(ApiResponse<BulkActionResponse>)))
+)]
+pub async fn bulk_price_list(
+    State(state): State<AppState>,
+    Extension(ctx): Extension<CompanyContext>,
+    Extension(auth): Extension<AuthUser>,
+    ValidatedJson(body): ValidatedJson<BulkPriceListRequest>,
+) -> Result<Json<ApiResponse<BulkActionResponse>>, AppError> {
+    if body.product_ids.is_empty() {
+        return Err(AppError::BadRequest("No product IDs provided".into()));
+    }
+
+    let affected = match body.action.as_str() {
+        "add" => {
+            let price = body
+                .price
+                .ok_or_else(|| {
+                    AppError::BadRequest("Price is required for add action".into())
+                })?;
+
+            let items: Vec<(uuid::Uuid, f64, Option<f64>)> = body
+                .product_ids
+                .iter()
+                .map(|pid| (*pid, price, None))
+                .collect();
+
+            let results = PriceListItemRepository::bulk_upsert(
+                &state.pool,
+                ctx.company_id,
+                body.price_list_id,
+                &items,
+            )
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+
+            results.len() as u64
+        }
+        "remove" => {
+            let result = sqlx::query(
+                r"DELETE FROM price_list_items
+                WHERE price_list_id = $1
+                AND product_id = ANY($2)
+                AND company_id = $3",
+            )
+            .bind(body.price_list_id)
+            .bind(&body.product_ids)
+            .bind(ctx.company_id)
+            .execute(&state.pool)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
+
+            result.rows_affected()
+        }
+        _ => {
+            return Err(AppError::BadRequest(
+                "Action must be 'add' or 'remove'".into(),
+            ));
+        }
+    };
+
+    AuditBuilder::new(state.audit.clone(), ctx.company_id, auth.user_id)
+        .entity("price_list", body.price_list_id)
+        .action(&format!("bulk_{}", body.action))
+        .after(&serde_json::json!({
+            "product_ids": body.product_ids,
+            "affected": affected,
+        }))
+        .emit();
+
+    Ok(Json(ApiResponse::new(BulkActionResponse { affected })))
+}
+
+#[utoipa::path(
+    put,
+    path = "/api/products/{id}/purchase-options",
+    tag = "products",
+    security(("bearer" = [])),
+    params(("id" = Uuid, Path, description = "Product ID")),
+    request_body = UpdatePurchaseOptionsRequest,
+    responses((status = 200, body = inline(ApiResponse<Product>)))
+)]
+pub async fn update_purchase_options(
+    State(state): State<AppState>,
+    Extension(ctx): Extension<CompanyContext>,
+    Extension(auth): Extension<AuthUser>,
+    Path(id): Path<Uuid>,
+    Json(body): Json<UpdatePurchaseOptionsRequest>,
+) -> Result<Json<ApiResponse<Product>>, AppError> {
+    let existing = ProductRepository::find_by_id(&state.pool, id)
+        .await
+        .map_err(|e| AppError::Database(e.to_string()))?
+        .ok_or_else(|| AppError::NotFound("Product not found".into()))?;
+
+    if existing.company_id != ctx.company_id {
+        return Err(AppError::NotFound("Product not found".into()));
+    }
+
+    let purchase_options = serde_json::to_value(&body.variants)
+        .map_err(|e| AppError::BadRequest(format!("Invalid purchase options: {e}")))?;
+
+    let product = sqlx::query_as::<_, Product>(
+        r"UPDATE products SET purchase_options = $2
+        WHERE id = $1 AND company_id = $3
+        RETURNING id, company_id, name, code, barcode, category_id,
+            product_type::text, status::text, stock_status::text,
+            unit_of_measure, sale_unit_type, plu_type, plu_code, scale_enabled,
+            tax_rate, stock_tracking, min_stock_level, last_purchase_price,
+            calculated_cost, image_url, recipe, purchase_options,
+            created_at, updated_at",
+    )
+    .bind(id)
+    .bind(&purchase_options)
+    .bind(ctx.company_id)
+    .fetch_one(&state.pool)
+    .await
+    .map_err(|e| AppError::Database(e.to_string()))?;
+
+    AuditBuilder::new(state.audit.clone(), ctx.company_id, auth.user_id)
+        .entity("product", product.id)
+        .action("update_purchase_options")
+        .before(&existing)
+        .after(&product)
+        .emit();
+
+    Ok(Json(ApiResponse::new(product)))
 }

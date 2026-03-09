@@ -258,6 +258,38 @@ function ReportsPage() {
     enabled: activeTab === "production",
   })
 
+  // Dedicated report endpoints
+  const { data: hourlySalesData } = useQuery({
+    queryKey: ["reports", "hourly-sales", dateFrom.slice(0, 10)],
+    queryFn: async () => {
+      const res = await client.GET("/api/reports/hourly-sales", {
+        params: { query: { date: dateFrom.slice(0, 10) } },
+      })
+      return res.data
+    },
+    enabled: activeTab === "sales",
+  })
+
+  const { data: stockTurnoverData } = useQuery({
+    queryKey: ["reports", "stock-turnover"],
+    queryFn: async () => {
+      const res = await client.GET("/api/reports/stock-turnover", {
+        params: { query: { days: 30 } },
+      })
+      return res.data
+    },
+    enabled: activeTab === "stock",
+  })
+
+  const { data: profitMarginsData } = useQuery({
+    queryKey: ["reports", "profit-margins"],
+    queryFn: async () => {
+      const res = await client.GET("/api/reports/profit-margins")
+      return res.data
+    },
+    enabled: activeTab === "financial",
+  })
+
   // ── Raw data ──
 
   const allOrders = (ordersData?.data ?? []) as unknown as OrderWithItems[]
@@ -373,6 +405,7 @@ function ReportsPage() {
                 productMap={productMap}
                 categoryNameMap={categoryNameMap}
                 paymentMethodNameMap={paymentMethodNameMap}
+                hourlySales={hourlySalesData}
               />
             )}
           </TabsContent>
@@ -384,11 +417,16 @@ function ReportsPage() {
               productMap={productMap}
               dashboard={dashboard}
               filteredMovements={filteredMovements}
+              stockTurnover={stockTurnoverData}
             />
           </TabsContent>
 
           <TabsContent value="financial">
-            <FinancialTab filteredInvoices={filteredInvoices} contacts={contacts} />
+            <FinancialTab
+              filteredInvoices={filteredInvoices}
+              contacts={contacts}
+              profitMargins={profitMarginsData}
+            />
           </TabsContent>
 
           <TabsContent value="production">
@@ -426,16 +464,38 @@ function getAgingBucket(diffDays: number): "current" | "days30" | "days60" | "da
 // Sales Tab
 // ════════════════════════════════════════════════════════════════════
 
+interface HourlySalesEntry {
+  hour: number
+  count: number
+  total: number
+}
+
+interface StockTurnoverEntry {
+  product_id: string
+  product_name: string
+  turnover_rate: number
+}
+
+interface ProfitMarginEntry {
+  product_id: string
+  product_name: string
+  cost: number
+  selling_price: number
+  margin_percent: number
+}
+
 function SalesTab({
   filteredOrders,
   productMap,
   categoryNameMap,
   paymentMethodNameMap,
+  hourlySales,
 }: {
   filteredOrders: OrderWithItems[]
   productMap: Map<string, { id: string; category_id?: string | null; name: string }>
   categoryNameMap: Map<string, string>
   paymentMethodNameMap: Map<string, string>
+  hourlySales?: { data?: HourlySalesEntry[] }
 }) {
   const { t } = useTranslation()
   // Sales Summary
@@ -727,6 +787,102 @@ function SalesTab({
           </CardContent>
         </Card>
       </div>
+
+      {/* Hourly Sales Heatmap */}
+      <HourlySalesHeatmap data={hourlySales?.data} />
+    </div>
+  )
+}
+
+// ── Hourly Sales Heatmap ──
+
+const HEATMAP_LEVELS = [
+  "bg-muted",
+  "bg-green-100 dark:bg-green-900/30",
+  "bg-green-300 dark:bg-green-700/50",
+  "bg-green-500 dark:bg-green-500/60",
+  "bg-green-700 dark:bg-green-400",
+] as const
+
+function getHeatmapColor(intensity: number): string {
+  if (intensity === 0) return HEATMAP_LEVELS[0]
+  if (intensity < 0.25) return HEATMAP_LEVELS[1]
+  if (intensity < 0.5) return HEATMAP_LEVELS[2]
+  if (intensity < 0.75) return HEATMAP_LEVELS[3]
+  return HEATMAP_LEVELS[4]
+}
+
+function HourlySalesHeatmap({ data }: { data?: HourlySalesEntry[] }) {
+  const { t } = useTranslation()
+  const hours = Array.from({ length: 24 }, (_, i) => i)
+
+  const hourMap = useMemo(() => {
+    const map = new Map<number, HourlySalesEntry>()
+    if (data) {
+      for (const entry of data) {
+        map.set(entry.hour, entry)
+      }
+    }
+    return map
+  }, [data])
+
+  const maxTotal = useMemo(() => {
+    if (!data || data.length === 0) return 1
+    return Math.max(...data.map((d) => d.total))
+  }, [data])
+
+  if (!data || data.length === 0) {
+    return (
+      <div className="space-y-4">
+        <SectionHeader title={t("reports.hourlySalesHeatmap")} />
+        <Card>
+          <CardContent className="py-12">
+            <p className="text-sm text-muted-foreground text-center">{t("reports.noSalesData")}</p>
+          </CardContent>
+        </Card>
+      </div>
+    )
+  }
+
+  return (
+    <div className="space-y-4">
+      <SectionHeader
+        title={t("reports.hourlySalesHeatmap")}
+        exportData={data as unknown as Record<string, unknown>[]}
+        exportFilename="hourly-sales"
+      />
+      <Card>
+        <CardContent className="pt-4">
+          <div className="grid grid-cols-12 gap-1">
+            {hours.map((hour) => {
+              const entry = hourMap.get(hour)
+              const intensity = entry ? entry.total / maxTotal : 0
+              const bg = getHeatmapColor(intensity)
+              return (
+                <div
+                  key={hour}
+                  className={`${bg} rounded p-2 text-center transition-colors`}
+                  title={`${hour}:00 — ${formatCurrency(entry?.total ?? 0)} (${entry?.count ?? 0} ${t("reports.orders")})`}
+                >
+                  <p className="text-xs font-medium tabular-nums">{`${hour}:00`}</p>
+                  <p className="text-xs tabular-nums text-muted-foreground">{entry?.count ?? 0}</p>
+                </div>
+              )
+            })}
+          </div>
+          <div className="flex items-center justify-end gap-2 mt-3">
+            <span className="text-xs text-muted-foreground">{t("reports.less")}</span>
+            <div className="flex gap-0.5">
+              <div className="w-3 h-3 rounded-sm bg-muted" />
+              <div className="w-3 h-3 rounded-sm bg-green-100 dark:bg-green-900/30" />
+              <div className="w-3 h-3 rounded-sm bg-green-300 dark:bg-green-700/50" />
+              <div className="w-3 h-3 rounded-sm bg-green-500 dark:bg-green-500/60" />
+              <div className="w-3 h-3 rounded-sm bg-green-700 dark:bg-green-400" />
+            </div>
+            <span className="text-xs text-muted-foreground">{t("reports.more")}</span>
+          </div>
+        </CardContent>
+      </Card>
     </div>
   )
 }
@@ -741,12 +897,14 @@ function StockTab({
   productMap,
   dashboard,
   filteredMovements,
+  stockTurnover,
 }: {
   stocks: StockRecord[]
   productNameMap: Map<string, string>
   productMap: Map<string, { id: string; last_purchase_price?: number | null; name: string }>
   dashboard: { low_stock_count?: number } | undefined
   filteredMovements: StockMovement[]
+  stockTurnover?: { data?: StockTurnoverEntry[] }
 }) {
   const { t } = useTranslation()
   // Stock summary cards
@@ -1057,6 +1215,90 @@ function StockTab({
           emptyMessage={t("reports.noStockMovements")}
         />
       </div>
+
+      {/* Stock Turnover Rate */}
+      <StockTurnoverSection data={stockTurnover?.data} />
+    </div>
+  )
+}
+
+// ── Stock Turnover Section ──
+
+function StockTurnoverSection({ data }: { data?: StockTurnoverEntry[] }) {
+  const { t } = useTranslation()
+
+  const sortedData = useMemo(() => {
+    if (!data) return []
+    return [...data].sort((a, b) => b.turnover_rate - a.turnover_rate).slice(0, 20)
+  }, [data])
+
+  const turnoverColumns = useMemo(
+    () => [
+      {
+        id: "product_name",
+        header: t("common.product"),
+        cell: (row: StockTurnoverEntry) => <span className="font-medium">{row.product_name}</span>,
+      },
+      {
+        id: "turnover_rate",
+        header: <span className="text-right block">{t("reports.turnoverRate")}</span>,
+        cell: (row: StockTurnoverEntry) => (
+          <span className="tabular-nums">{row.turnover_rate.toFixed(2)}x</span>
+        ),
+        className: "text-right",
+      },
+    ],
+    [t]
+  )
+
+  return (
+    <div className="space-y-4">
+      <SectionHeader
+        title={t("reports.stockTurnoverRate")}
+        exportData={(sortedData ?? []) as unknown as Record<string, unknown>[]}
+        exportFilename="stock-turnover"
+      />
+      {sortedData.length === 0 ? (
+        <Card>
+          <CardContent className="py-12">
+            <p className="text-sm text-muted-foreground text-center">
+              {t("reports.noStockDataAvailable")}
+            </p>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          <Card>
+            <CardContent className="pt-4">
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={sortedData} layout="vertical">
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis type="number" className="text-xs" />
+                  <YAxis
+                    dataKey="product_name"
+                    type="category"
+                    className="text-xs"
+                    width={120}
+                    tick={{ fontSize: 11 }}
+                  />
+                  <Tooltip formatter={(value) => `${Number(value).toFixed(2)}x`} />
+                  <Bar
+                    dataKey="turnover_rate"
+                    fill="hsl(var(--chart-4, 30 80% 55%))"
+                    radius={[0, 4, 4, 0]}
+                  />
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+          <DataTable
+            columns={turnoverColumns}
+            data={sortedData}
+            getRowId={(row) => row.product_id}
+            emptyMessage={t("reports.noStockDataAvailable")}
+          />
+        </>
+      )}
     </div>
   )
 }
@@ -1068,9 +1310,11 @@ function StockTab({
 function FinancialTab({
   filteredInvoices,
   contacts,
+  profitMargins,
 }: {
   filteredInvoices: Invoice[]
   contacts: Contact[]
+  profitMargins?: { data?: ProfitMarginEntry[] }
 }) {
   const { t } = useTranslation()
   // Revenue vs Expenses
@@ -1329,6 +1573,117 @@ function FinancialTab({
           emptyMessage={t("reports.noContactsWithBalance")}
         />
       </div>
+
+      {/* Profit Margin by Product */}
+      <ProfitMarginsSection data={profitMargins?.data} />
+    </div>
+  )
+}
+
+// ── Profit Margins Section ──
+
+function ProfitMarginsSection({ data }: { data?: ProfitMarginEntry[] }) {
+  const { t } = useTranslation()
+
+  const sortedData = useMemo(() => {
+    if (!data) return []
+    return [...data].sort((a, b) => b.margin_percent - a.margin_percent)
+  }, [data])
+
+  const marginColumns = useMemo(
+    () => [
+      {
+        id: "product_name",
+        header: t("common.product"),
+        cell: (row: ProfitMarginEntry) => <span className="font-medium">{row.product_name}</span>,
+      },
+      {
+        id: "cost",
+        header: t("reports.cost"),
+        cell: (row: ProfitMarginEntry) => (
+          <span className="tabular-nums text-muted-foreground">{formatCurrency(row.cost)}</span>
+        ),
+      },
+      {
+        id: "selling_price",
+        header: t("reports.sellingPrice"),
+        cell: (row: ProfitMarginEntry) => (
+          <span className="tabular-nums">{formatCurrency(row.selling_price)}</span>
+        ),
+      },
+      {
+        id: "margin_percent",
+        header: <span className="text-right block">{t("reports.marginPercent")}</span>,
+        cell: (row: ProfitMarginEntry) => (
+          <Badge
+            variant={row.margin_percent >= 20 ? "default" : "secondary"}
+            className="tabular-nums"
+          >
+            {row.margin_percent.toFixed(1)}%
+          </Badge>
+        ),
+        className: "text-right",
+      },
+    ],
+    [t]
+  )
+
+  return (
+    <div className="space-y-4">
+      <SectionHeader
+        title={t("reports.profitMarginByProduct")}
+        exportData={(sortedData ?? []) as unknown as Record<string, unknown>[]}
+        exportFilename="profit-margins"
+      />
+      {sortedData.length === 0 ? (
+        <Card>
+          <CardContent className="py-12">
+            <p className="text-sm text-muted-foreground text-center">{t("reports.noProfitData")}</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <>
+          <Card>
+            <CardContent className="pt-4">
+              <ResponsiveContainer width="100%" height={300}>
+                <BarChart data={sortedData.slice(0, 15)}>
+                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted" />
+                  <XAxis
+                    dataKey="product_name"
+                    className="text-xs"
+                    tick={{ fontSize: 10 }}
+                    angle={-45}
+                    textAnchor="end"
+                    height={80}
+                  />
+                  <YAxis className="text-xs" unit="%" />
+                  <Tooltip formatter={(value) => `${Number(value).toFixed(1)}%`} />
+                  <Bar dataKey="margin_percent" radius={[4, 4, 0, 0]}>
+                    {sortedData.slice(0, 15).map((entry) => (
+                      <Cell
+                        key={entry.product_id}
+                        fill={
+                          entry.margin_percent >= 30
+                            ? "hsl(var(--chart-3, 150 60% 45%))"
+                            : entry.margin_percent >= 15
+                              ? "hsl(var(--chart-4, 30 80% 55%))"
+                              : "hsl(340 75% 55%)"
+                        }
+                      />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            </CardContent>
+          </Card>
+          <DataTable
+            columns={marginColumns}
+            data={sortedData}
+            getRowId={(row) => row.product_id}
+            emptyMessage={t("reports.noProfitData")}
+          />
+        </>
+      )}
     </div>
   )
 }

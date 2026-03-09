@@ -53,6 +53,7 @@ impl PosTerminalRepository {
     pub async fn update(
         pool: &PgPool,
         id: Uuid,
+        company_id: Uuid,
         name: &str,
         price_list_id: Option<Uuid>,
         is_active: bool,
@@ -60,7 +61,7 @@ impl PosTerminalRepository {
         let sql = format!(
             r"UPDATE pos_terminals SET
                 name = $2, price_list_id = $3, is_active = $4
-            WHERE id = $1
+            WHERE id = $1 AND company_id = $5
             RETURNING {}",
             Self::SELECT
         );
@@ -69,13 +70,19 @@ impl PosTerminalRepository {
             .bind(name)
             .bind(price_list_id)
             .bind(is_active)
+            .bind(company_id)
             .fetch_one(pool)
             .await
     }
 
-    pub async fn delete(pool: &PgPool, id: Uuid) -> Result<(), sqlx::Error> {
-        sqlx::query("DELETE FROM pos_terminals WHERE id = $1")
+    pub async fn delete(
+        pool: &PgPool,
+        id: Uuid,
+        company_id: Uuid,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query("DELETE FROM pos_terminals WHERE id = $1 AND company_id = $2")
             .bind(id)
+            .bind(company_id)
             .execute(pool)
             .await?;
         Ok(())

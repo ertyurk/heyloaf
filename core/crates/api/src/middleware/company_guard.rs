@@ -26,7 +26,7 @@ pub async fn company_guard_middleware(
 
     let company_id = auth_user
         .company_id
-        .ok_or_else(|| AppError::BadRequest("No active company selected".into()))?;
+        .ok_or_else(|| AppError::Forbidden("No active company selected".into()))?;
 
     // Fetch user_company row so we get the permissions JSONB.
     let uc = UserRepository::get_user_company(&state.pool, auth_user.user_id, company_id)

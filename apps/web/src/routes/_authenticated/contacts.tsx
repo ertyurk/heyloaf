@@ -32,6 +32,7 @@ import { createFileRoute } from "@tanstack/react-router"
 import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
+import { AuditHistory } from "@/components/audit-history"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
@@ -669,9 +670,14 @@ function ContactsPage() {
       >
         <SheetContent side="right" className="sm:max-w-md">
           <SheetHeader>
-            <SheetTitle>
-              {sheetMode === "create" ? t("contacts.newContact") : t("contacts.editContact")}
-            </SheetTitle>
+            <div className="flex items-center justify-between">
+              <SheetTitle>
+                {sheetMode === "create" ? t("contacts.newContact") : t("contacts.editContact")}
+              </SheetTitle>
+              {sheetMode === "edit" && editingContact && (
+                <AuditHistory entityType="contact" entityId={editingContact.id} />
+              )}
+            </div>
             <SheetDescription>
               {sheetMode === "create"
                 ? t("contacts.addNewContact")

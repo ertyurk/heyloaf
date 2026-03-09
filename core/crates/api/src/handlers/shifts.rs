@@ -178,6 +178,7 @@ pub async fn close_shift(
     let shift = ShiftRepository::close(
         &state.pool,
         id,
+        ctx.company_id,
         body.closing_balance,
         body.expected_balance,
         body.notes.as_deref(),

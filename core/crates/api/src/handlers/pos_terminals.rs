@@ -113,6 +113,7 @@ pub async fn update_pos_terminal(
     let terminal = PosTerminalRepository::update(
         &state.pool,
         id,
+        ctx.company_id,
         &body.name,
         body.price_list_id,
         body.is_active,
@@ -153,7 +154,7 @@ pub async fn delete_pos_terminal(
         return Err(AppError::NotFound("POS terminal not found".into()));
     }
 
-    PosTerminalRepository::delete(&state.pool, id)
+    PosTerminalRepository::delete(&state.pool, id, ctx.company_id)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 

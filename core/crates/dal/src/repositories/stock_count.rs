@@ -53,26 +53,37 @@ impl StockCountRepository {
     pub async fn complete_with_executor<'e>(
         executor: impl sqlx::PgExecutor<'e>,
         id: Uuid,
+        company_id: Uuid,
     ) -> Result<StockCount, sqlx::Error> {
         let sql = format!(
             r"UPDATE stock_counts SET status = 'completed'
-            WHERE id = $1
+            WHERE id = $1 AND company_id = $2
             RETURNING {}",
             Self::SELECT
         );
         sqlx::query_as::<_, StockCount>(&sql)
             .bind(id)
+            .bind(company_id)
             .fetch_one(executor)
             .await
     }
 
-    pub async fn complete(pool: &PgPool, id: Uuid) -> Result<StockCount, sqlx::Error> {
-        Self::complete_with_executor(pool, id).await
+    pub async fn complete(
+        pool: &PgPool,
+        id: Uuid,
+        company_id: Uuid,
+    ) -> Result<StockCount, sqlx::Error> {
+        Self::complete_with_executor(pool, id, company_id).await
     }
 
-    pub async fn delete(pool: &PgPool, id: Uuid) -> Result<(), sqlx::Error> {
-        sqlx::query("DELETE FROM stock_counts WHERE id = $1")
+    pub async fn delete(
+        pool: &PgPool,
+        id: Uuid,
+        company_id: Uuid,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query("DELETE FROM stock_counts WHERE id = $1 AND company_id = $2")
             .bind(id)
+            .bind(company_id)
             .execute(pool)
             .await?;
         Ok(())

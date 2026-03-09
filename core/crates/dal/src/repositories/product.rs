@@ -114,6 +114,7 @@ impl ProductRepository {
     pub async fn update(
         pool: &PgPool,
         id: Uuid,
+        company_id: Uuid,
         name: &str,
         code: Option<&str>,
         barcode: Option<&str>,
@@ -137,7 +138,7 @@ impl ProductRepository {
                 unit_of_measure = $8, sale_unit_type = $9, plu_type = $10,
                 plu_code = $11, scale_enabled = $12, tax_rate = $13,
                 stock_tracking = $14, min_stock_level = $15, image_url = $16
-            WHERE id = $1
+            WHERE id = $1 AND company_id = $17
             RETURNING {}",
             Self::SELECT
         );
@@ -158,6 +159,7 @@ impl ProductRepository {
             .bind(stock_tracking)
             .bind(min_stock_level)
             .bind(image_url)
+            .bind(company_id)
             .fetch_one(pool)
             .await
     }
@@ -165,17 +167,19 @@ impl ProductRepository {
     pub async fn update_recipe(
         pool: &PgPool,
         id: Uuid,
+        company_id: Uuid,
         recipe: &serde_json::Value,
     ) -> Result<Product, sqlx::Error> {
         let sql = format!(
             r"UPDATE products SET recipe = $2
-            WHERE id = $1
+            WHERE id = $1 AND company_id = $3
             RETURNING {}",
             Self::SELECT
         );
         sqlx::query_as::<_, Product>(&sql)
             .bind(id)
             .bind(recipe)
+            .bind(company_id)
             .fetch_one(pool)
             .await
     }
@@ -191,9 +195,10 @@ impl ProductRepository {
             .await
     }
 
-    pub async fn delete(pool: &PgPool, id: Uuid) -> Result<(), sqlx::Error> {
-        sqlx::query("DELETE FROM products WHERE id = $1")
+    pub async fn delete(pool: &PgPool, id: Uuid, company_id: Uuid) -> Result<(), sqlx::Error> {
+        sqlx::query("DELETE FROM products WHERE id = $1 AND company_id = $2")
             .bind(id)
+            .bind(company_id)
             .execute(pool)
             .await?;
         Ok(())

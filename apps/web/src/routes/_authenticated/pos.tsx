@@ -28,6 +28,7 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@heyloaf/ui/components/sheet"
+import Camera01Icon from "@hugeicons/core-free-icons/Camera01Icon"
 import Search01Icon from "@hugeicons/core-free-icons/Search01Icon"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
@@ -55,6 +56,96 @@ interface CartItem {
   price: number
   taxRate: number
   quantity: number
+  variant_name?: string
+}
+
+// --- Recipe variant types ---
+interface RecipeVariant {
+  name: string
+  price_modifier: number
+  notes?: string
+}
+
+interface RecipeData {
+  variants: RecipeVariant[]
+}
+
+// --- Camera Scanner component ---
+function CameraScanner({
+  onScan,
+  onClose,
+}: {
+  onScan: (code: string) => void
+  onClose: () => void
+}) {
+  const { t } = useTranslation()
+  const videoRef = useRef<HTMLVideoElement>(null)
+
+  useEffect(() => {
+    if (!("BarcodeDetector" in window)) return
+
+    let stream: MediaStream | null = null
+    let animFrame: number
+
+    const start = async () => {
+      stream = await navigator.mediaDevices.getUserMedia({
+        video: { facingMode: "environment" },
+      })
+      if (videoRef.current) {
+        videoRef.current.srcObject = stream
+        videoRef.current.play()
+      }
+
+      // @ts-expect-error BarcodeDetector not in TS types yet
+      const detector = new BarcodeDetector({
+        formats: ["ean_13", "ean_8", "code_128", "qr_code"],
+      })
+
+      const scan = async () => {
+        if (!videoRef.current) return
+        try {
+          const barcodes = await detector.detect(videoRef.current)
+          if (barcodes.length > 0) {
+            onScan(barcodes[0].rawValue)
+            return
+          }
+        } catch {
+          // detection failed, retry
+        }
+        animFrame = requestAnimationFrame(scan)
+      }
+      scan()
+    }
+
+    start()
+
+    return () => {
+      cancelAnimationFrame(animFrame)
+      if (stream) {
+        for (const track of stream.getTracks()) {
+          track.stop()
+        }
+      }
+    }
+  }, [onScan])
+
+  if (!("BarcodeDetector" in window)) {
+    return (
+      <div className="p-6 text-center text-sm text-muted-foreground">
+        {t("pos.cameraScannerUnsupported")}
+      </div>
+    )
+  }
+
+  return (
+    <div className="relative">
+      {/* biome-ignore lint/a11y/useMediaCaption: live camera feed for barcode scanning, no captions needed */}
+      <video ref={videoRef} className="w-full rounded-lg" />
+      <Button variant="outline" size="sm" onClick={onClose} className="absolute top-2 right-2">
+        {t("common.close")}
+      </Button>
+    </div>
+  )
 }
 
 // --- Parked Carts types ---
@@ -360,6 +451,17 @@ function PosPage() {
   const [paymentMethodId, setPaymentMethodId] = useState<string>("")
   const [selectedCartIndex, setSelectedCartIndex] = useState<number>(-1)
 
+  // Camera scanner state
+  const [cameraScannerOpen, setCameraScannerOpen] = useState(false)
+
+  // Variant selection state
+  const [variantSheetOpen, setVariantSheetOpen] = useState(false)
+  const [variantProduct, setVariantProduct] = useState<Product | null>(null)
+  const [variantOptions, setVariantOptions] = useState<RecipeVariant[]>([])
+
+  // Recipe cache (keyed by product id)
+  const recipeCacheRef = useRef<Map<string, RecipeData | null>>(new Map())
+
   // Receipt state
   const [receiptOpen, setReceiptOpen] = useState(false)
   const [lastOrder, setLastOrder] = useState<{
@@ -415,7 +517,7 @@ function PosPage() {
   })
 
   // Fetch payment methods
-  const { data: paymentMethodsData } = useQuery({
+  const { data: paymentMethodsData, isSuccess: paymentMethodsLoaded } = useQuery({
     queryKey: ["payment-methods"],
     queryFn: async () => {
       const res = await client.GET("/api/payment-methods")
@@ -470,9 +572,15 @@ function PosPage() {
     )
   }, [allProducts])
 
-  // POS-visible categories
+  // POS-visible categories, sorted by display_order
   const posCategories = useMemo(() => {
-    return categories.filter((c: Category) => c.pos_visible)
+    return [...categories]
+      .filter((c: Category) => c.pos_visible)
+      .sort(
+        (a: Category, b: Category) =>
+          (((a as Record<string, unknown>).display_order as number) ?? 0) -
+          (((b as Record<string, unknown>).display_order as number) ?? 0)
+      )
   }, [categories])
 
   // Filtered products based on category and search
@@ -501,29 +609,90 @@ function PosPage() {
     [priceMap]
   )
 
-  // Cart operations
-  const addToCart = useCallback(
-    (product: Product) => {
+  // Add item to cart (with optional variant)
+  const addToCartDirect = useCallback(
+    (product: Product, variant?: RecipeVariant) => {
+      const basePrice = getProductPrice(product)
+      const price = variant ? basePrice + variant.price_modifier : basePrice
+      const variantName = variant?.name
+
       setCart((prev) => {
-        const existing = prev.find((item) => item.productId === product.id)
+        const existing = prev.find(
+          (item) =>
+            item.productId === product.id && (item.variant_name ?? "") === (variantName ?? "")
+        )
         if (existing) {
           return prev.map((item) =>
-            item.productId === product.id ? { ...item, quantity: item.quantity + 1 } : item
+            item.productId === product.id && (item.variant_name ?? "") === (variantName ?? "")
+              ? { ...item, quantity: item.quantity + 1 }
+              : item
           )
         }
         return [
           ...prev,
           {
             productId: product.id,
-            name: product.name,
-            price: getProductPrice(product),
+            name: variantName ? `${product.name} (${variantName})` : product.name,
+            price,
             taxRate: getProductTaxRate(product),
             quantity: 1,
+            variant_name: variantName,
           },
         ]
       })
     },
     [getProductPrice, getProductTaxRate]
+  )
+
+  // Fetch recipe and check for variants before adding to cart
+  const handleProductClick = useCallback(
+    async (product: Product) => {
+      // Check cache first
+      const cached = recipeCacheRef.current.get(product.id)
+      if (cached !== undefined) {
+        if (cached && cached.variants.length > 0) {
+          setVariantProduct(product)
+          setVariantOptions(cached.variants)
+          setVariantSheetOpen(true)
+        } else {
+          addToCartDirect(product)
+        }
+        return
+      }
+
+      // Fetch recipe
+      try {
+        const res = await client.GET(
+          "/api/products/{id}/recipe" as never,
+          {
+            params: { path: { id: product.id } },
+          } as never
+        )
+        const data = (res as { data?: { data?: RecipeData } }).data?.data
+        const variants = data?.variants ?? []
+        recipeCacheRef.current.set(product.id, variants.length > 0 ? { variants } : null)
+        if (variants.length > 0) {
+          setVariantProduct(product)
+          setVariantOptions(variants)
+          setVariantSheetOpen(true)
+        } else {
+          addToCartDirect(product)
+        }
+      } catch {
+        // No recipe or error — add directly
+        recipeCacheRef.current.set(product.id, null)
+        addToCartDirect(product)
+      }
+    },
+    [client, addToCartDirect]
+  )
+
+  // Legacy addToCart for barcode scanning (no variant selection)
+  const addToCart = useCallback(
+    (product: Product) => {
+      addToCartDirect(product)
+    },
+    [addToCartDirect]
   )
 
   function updateQuantity(productId: string, delta: number) {
@@ -864,13 +1033,13 @@ function PosPage() {
     updateSplitRow,
   ])
 
-  // Auto-select default payment method
+  // Auto-select default payment method (only after query resolves)
   useEffect(() => {
-    if (!paymentMethodId && paymentMethods.length > 0) {
+    if (paymentMethodsLoaded && !paymentMethodId && paymentMethods.length > 0) {
       const defaultPm = paymentMethods.find((pm) => pm.is_default)
       setPaymentMethodId(defaultPm?.id ?? paymentMethods[0]!.id)
     }
-  }, [paymentMethods, paymentMethodId])
+  }, [paymentMethodsLoaded, paymentMethods, paymentMethodId])
 
   return (
     <div className="fixed inset-0 z-50 flex flex-col bg-background print:static print:z-auto">
@@ -980,18 +1149,28 @@ function PosPage() {
         <div className="flex flex-1 flex-col overflow-hidden">
           {/* Search bar */}
           <div className="shrink-0 border-b p-3">
-            <div className="relative">
-              <HugeiconsIcon
-                icon={Search01Icon}
-                size={16}
-                className="text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2"
-              />
-              <Input
-                placeholder={t("pos.searchProducts")}
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                className="pl-8"
-              />
+            <div className="flex items-center gap-2">
+              <div className="relative flex-1">
+                <HugeiconsIcon
+                  icon={Search01Icon}
+                  size={16}
+                  className="text-muted-foreground absolute left-2.5 top-1/2 -translate-y-1/2"
+                />
+                <Input
+                  placeholder={t("pos.searchProducts")}
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  className="pl-8"
+                />
+              </div>
+              <Button
+                variant="outline"
+                size="icon"
+                onClick={() => setCameraScannerOpen(true)}
+                title={t("pos.scanBarcode")}
+              >
+                <HugeiconsIcon icon={Camera01Icon} size={18} />
+              </Button>
             </div>
           </div>
 
@@ -1006,11 +1185,11 @@ function PosPage() {
                     className="cursor-pointer transition-colors hover:bg-accent"
                     role="button"
                     tabIndex={0}
-                    onClick={() => addToCart(product)}
+                    onClick={() => handleProductClick(product)}
                     onKeyDown={(e) => {
                       if (e.key === "Enter" || e.key === " ") {
                         e.preventDefault()
-                        addToCart(product)
+                        handleProductClick(product)
                       }
                     }}
                   >
@@ -1026,8 +1205,13 @@ function PosPage() {
                 )
               })}
               {filteredProducts.length === 0 && (
-                <div className="col-span-full py-12 text-center text-sm text-muted-foreground">
-                  {t("pos.noProductsFound")}
+                <div className="col-span-full py-12 text-center">
+                  <p className="text-sm text-muted-foreground">
+                    {t("pos.noProductsFound")}
+                  </p>
+                  <p className="mt-1 text-xs text-muted-foreground/70">
+                    {t("pos.noProductsHint")}
+                  </p>
                 </div>
               )}
             </div>
@@ -1193,21 +1377,27 @@ function PosPage() {
               {/* Payment method selection */}
               {!splitMode ? (
                 <>
-                  <Select
-                    value={paymentMethodId}
-                    onValueChange={(val) => setPaymentMethodId(val as string)}
-                  >
-                    <SelectTrigger className="mb-2 w-full">
-                      <SelectValue placeholder={t("pos.paymentMethod")} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {paymentMethods.map((pm) => (
-                        <SelectItem key={pm.id} value={pm.id}>
-                          {pm.name}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
+                  {paymentMethodsLoaded && paymentMethods.length > 0 ? (
+                    <Select
+                      value={paymentMethodId}
+                      onValueChange={(val) => setPaymentMethodId(val as string)}
+                    >
+                      <SelectTrigger className="mb-2 w-full">
+                        <SelectValue placeholder={t("pos.paymentMethod")} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {paymentMethods.map((pm) => (
+                          <SelectItem key={pm.id} value={pm.id}>
+                            {pm.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  ) : (
+                    <div className="mb-2 flex h-9 w-full items-center rounded-md border px-3">
+                      <span className="text-sm text-muted-foreground">{t("common.loading")}</span>
+                    </div>
+                  )}
                   <Button
                     variant="outline"
                     size="sm"
@@ -1302,6 +1492,86 @@ function PosPage() {
         onCancel={() => setConfirmDeleteParkedCartId(null)}
         description={t("pos.confirmDeleteParkedCart")}
       />
+
+      {/* Variant Selection Sheet */}
+      <Sheet open={variantSheetOpen} onOpenChange={setVariantSheetOpen}>
+        <SheetContent side="right" className="sm:max-w-sm">
+          <SheetHeader>
+            <SheetTitle>{t("pos.selectVariant")}</SheetTitle>
+          </SheetHeader>
+          <SheetBody>
+            {variantProduct && (
+              <div className="space-y-2">
+                {/* Base (no variant) option */}
+                <button
+                  type="button"
+                  className="flex w-full items-center justify-between rounded-md border p-3 text-left transition-colors hover:bg-accent"
+                  onClick={() => {
+                    addToCartDirect(variantProduct)
+                    setVariantSheetOpen(false)
+                    setVariantProduct(null)
+                  }}
+                >
+                  <span className="text-sm font-medium">{t("pos.basePrice")}</span>
+                  <span className="text-sm tabular-nums text-muted-foreground">
+                    {formatCurrency(getProductPrice(variantProduct))}
+                  </span>
+                </button>
+                {variantOptions.map((variant) => (
+                  <button
+                    key={variant.name}
+                    type="button"
+                    className="flex w-full items-center justify-between rounded-md border p-3 text-left transition-colors hover:bg-accent"
+                    onClick={() => {
+                      addToCartDirect(variantProduct, variant)
+                      setVariantSheetOpen(false)
+                      setVariantProduct(null)
+                    }}
+                  >
+                    <span className="text-sm font-medium">{variant.name}</span>
+                    <span className="text-sm tabular-nums text-muted-foreground">
+                      {variant.price_modifier !== 0 && (
+                        <span className="mr-2 text-xs">
+                          {variant.price_modifier > 0 ? "+" : ""}
+                          {formatCurrency(variant.price_modifier)}
+                        </span>
+                      )}
+                      {formatCurrency(getProductPrice(variantProduct) + variant.price_modifier)}
+                    </span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </SheetBody>
+          <SheetFooter>
+            <SheetClose render={<Button variant="outline" />}>{t("common.cancel")}</SheetClose>
+          </SheetFooter>
+        </SheetContent>
+      </Sheet>
+
+      {/* Camera Barcode Scanner Sheet */}
+      <Sheet open={cameraScannerOpen} onOpenChange={setCameraScannerOpen}>
+        <SheetContent side="right" className="sm:max-w-md">
+          <SheetHeader>
+            <SheetTitle>{t("pos.cameraScanner")}</SheetTitle>
+          </SheetHeader>
+          <SheetBody>
+            <CameraScanner
+              onScan={(code) => {
+                setCameraScannerOpen(false)
+                const product = posProducts.find((p) => p.barcode === code || p.code === code)
+                if (product) {
+                  addToCart(product)
+                  toast.success(t("pos.addedProduct", { name: product.name }))
+                } else {
+                  toast.error(t("pos.productNotFoundForBarcode", { barcode: code }))
+                }
+              }}
+              onClose={() => setCameraScannerOpen(false)}
+            />
+          </SheetBody>
+        </SheetContent>
+      </Sheet>
     </div>
   )
 }

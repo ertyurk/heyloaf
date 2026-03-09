@@ -3,7 +3,7 @@ use utoipa::OpenApi;
 use crate::handlers::{
     audit, auth, categories, company, contacts, currencies, dashboard, invoices,
     marketplace_channels, notifications, orders, payment_methods, pos_terminals, price_lists,
-    production, products, recipes, shifts, stock, transactions, users,
+    production, products, recipes, reports, shifts, stock, super_admin, transactions, users,
 };
 
 #[derive(OpenApi)]
@@ -139,8 +139,21 @@ use crate::handlers::{
         users::update_user_role,
         users::update_user_permissions,
         users::remove_user,
+        users::update_preferences,
         // Dashboard
         dashboard::get_dashboard,
+        // Reports
+        reports::hourly_sales,
+        reports::stock_turnover,
+        reports::profit_margins,
+        // Super Admin
+        super_admin::list_companies,
+        super_admin::create_company,
+        super_admin::deactivate_company,
+        super_admin::list_all_users,
+        // Products (additional)
+        products::bulk_price_list,
+        products::update_purchase_options,
     ),
     components(schemas(
         // Auth
@@ -241,11 +254,26 @@ use crate::handlers::{
         users::CreateUserRequest,
         users::UpdateRoleRequest,
         users::UpdatePermissionsRequest,
+        users::UpdatePreferencesRequest,
+        users::UserPreferencesResponse,
         heyloaf_dal::models::user::CompanyUser,
+        heyloaf_dal::models::user::UserCompany,
         // Audit
         heyloaf_dal::models::audit::AuditLog,
         // Dashboard
         dashboard::DashboardData,
+        // Reports
+        reports::HourlySales,
+        reports::StockTurnover,
+        reports::ProfitMargin,
+        // Super Admin
+        super_admin::CompanyWithUserCount,
+        super_admin::SuperAdminUser,
+        super_admin::CreateCompanyRequest,
+        // Products (additional)
+        products::BulkPriceListRequest,
+        products::PurchaseVariant,
+        products::UpdatePurchaseOptionsRequest,
     )),
     tags(
         (name = "auth", description = "Authentication endpoints"),
@@ -269,6 +297,8 @@ use crate::handlers::{
         (name = "users", description = "User management"),
         (name = "audit", description = "Audit log management"),
         (name = "dashboard", description = "Dashboard aggregations"),
+        (name = "reports", description = "Report endpoints"),
+        (name = "super-admin", description = "Super admin platform management"),
     )
 )]
 pub struct ApiDoc;

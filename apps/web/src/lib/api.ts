@@ -1,6 +1,6 @@
 import { createClient } from "@heyloaf/api-client"
 
-export const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8081"
+export const API_BASE_URL = import.meta.env.VITE_API_URL ?? "http://localhost:8083"
 
 let isRefreshing = false
 let refreshPromise: Promise<string | null> | null = null

@@ -7,9 +7,9 @@ const LANGUAGE_STORAGE_KEY = "heyloaf-language"
 
 function getSavedLanguage(): string {
   try {
-    return localStorage.getItem(LANGUAGE_STORAGE_KEY) ?? "en"
+    return localStorage.getItem(LANGUAGE_STORAGE_KEY) ?? "tr"
   } catch {
-    return "en"
+    return "tr"
   }
 }
 
@@ -27,7 +27,7 @@ i18n.use(initReactI18next).init({
     tr: { translation: tr },
   },
   lng: getSavedLanguage(),
-  fallbackLng: "en",
+  fallbackLng: "tr",
   interpolation: { escapeValue: false },
 })
 

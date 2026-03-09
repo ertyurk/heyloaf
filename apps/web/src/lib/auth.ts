@@ -22,6 +22,9 @@ interface AuthState {
   companies: Company[]
   role: string | null
   permissions: Permissions
+  isSuperAdmin: boolean
+  /** Runtime-only flag — true once zustand persist has rehydrated from localStorage. */
+  _hasHydrated: boolean
 
   setAuth: (data: {
     token: string
@@ -30,6 +33,7 @@ interface AuthState {
     companies?: Company[]
     role?: string | null
     permissions?: Permissions
+    isSuperAdmin?: boolean
   }) => void
   setToken: (token: string) => void
   setCompany: (company: Company) => void
@@ -48,6 +52,8 @@ export const useAuthStore = create<AuthState>()(
       companies: [],
       role: null,
       permissions: {},
+      isSuperAdmin: false,
+      _hasHydrated: false,
 
       setAuth: (data) =>
         set({
@@ -62,6 +68,7 @@ export const useAuthStore = create<AuthState>()(
                 : [],
           role: data.role ?? null,
           permissions: data.permissions ?? {},
+          isSuperAdmin: data.isSuperAdmin ?? false,
         }),
 
       setToken: (token) => set({ token }),
@@ -70,7 +77,7 @@ export const useAuthStore = create<AuthState>()(
 
       clearAuth: () => {
         // Fire-and-forget logout to clear the httpOnly refresh cookie
-        fetch(`${API_BASE_URL}/auth/logout`, {
+        fetch(`${API_BASE_URL}/api/auth/logout`, {
           method: "POST",
           credentials: "include",
         }).catch(() => {
@@ -84,6 +91,7 @@ export const useAuthStore = create<AuthState>()(
           companies: [],
           role: null,
           permissions: {},
+          isSuperAdmin: false,
         })
       },
 
@@ -103,6 +111,20 @@ export const useAuthStore = create<AuthState>()(
     }),
     {
       name: "heyloaf-auth",
+      partialize: (state) => {
+        const { _hasHydrated, ...rest } = state
+        return rest
+      },
     }
   )
 )
+
+// Register hydration callback AFTER store is defined to avoid TDZ
+if (typeof window !== "undefined") {
+  const setHydrated = () => useAuthStore.setState({ _hasHydrated: true })
+  if (useAuthStore.persist.hasHydrated()) {
+    setHydrated()
+  } else {
+    useAuthStore.persist.onFinishHydration(setHydrated)
+  }
+}

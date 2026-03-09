@@ -158,6 +158,7 @@ impl InvoiceRepository {
     pub async fn update_with_executor<'e>(
         executor: impl sqlx::PgExecutor<'e>,
         id: Uuid,
+        company_id: Uuid,
         contact_id: Option<Uuid>,
         date: NaiveDate,
         due_date: Option<NaiveDate>,
@@ -179,7 +180,7 @@ impl InvoiceRepository {
                 tax_number = $7, tax_office = $8, notes = $9,
                 line_items = $10, subtotal = $11, tax_total = $12,
                 grand_total = $13, base_currency_total = $14
-            WHERE id = $1
+            WHERE id = $1 AND company_id = $15
             RETURNING {}",
             Self::SELECT
         );
@@ -198,6 +199,7 @@ impl InvoiceRepository {
             .bind(tax_total)
             .bind(grand_total)
             .bind(base_currency_total)
+            .bind(company_id)
             .fetch_one(executor)
             .await
     }
@@ -206,6 +208,7 @@ impl InvoiceRepository {
     pub async fn update(
         pool: &PgPool,
         id: Uuid,
+        company_id: Uuid,
         contact_id: Option<Uuid>,
         date: NaiveDate,
         due_date: Option<NaiveDate>,
@@ -221,9 +224,9 @@ impl InvoiceRepository {
         base_currency_total: f64,
     ) -> Result<Invoice, sqlx::Error> {
         Self::update_with_executor(
-            pool, id, contact_id, date, due_date, currency_code, exchange_rate,
-            tax_number, tax_office, notes, line_items, subtotal, tax_total,
-            grand_total, base_currency_total,
+            pool, id, company_id, contact_id, date, due_date, currency_code,
+            exchange_rate, tax_number, tax_office, notes, line_items, subtotal,
+            tax_total, grand_total, base_currency_total,
         )
         .await
     }
@@ -231,17 +234,19 @@ impl InvoiceRepository {
     pub async fn update_status(
         pool: &PgPool,
         id: Uuid,
+        company_id: Uuid,
         status: &str,
     ) -> Result<Invoice, sqlx::Error> {
         let sql = format!(
             r"UPDATE invoices SET status = $2::invoice_status
-            WHERE id = $1
+            WHERE id = $1 AND company_id = $3
             RETURNING {}",
             Self::SELECT
         );
         sqlx::query_as::<_, Invoice>(&sql)
             .bind(id)
             .bind(status)
+            .bind(company_id)
             .fetch_one(pool)
             .await
     }
@@ -249,16 +254,18 @@ impl InvoiceRepository {
     pub async fn delete_with_executor<'e>(
         executor: impl sqlx::PgExecutor<'e>,
         id: Uuid,
+        company_id: Uuid,
     ) -> Result<(), sqlx::Error> {
-        sqlx::query("DELETE FROM invoices WHERE id = $1")
+        sqlx::query("DELETE FROM invoices WHERE id = $1 AND company_id = $2")
             .bind(id)
+            .bind(company_id)
             .execute(executor)
             .await?;
         Ok(())
     }
 
-    pub async fn delete(pool: &PgPool, id: Uuid) -> Result<(), sqlx::Error> {
-        Self::delete_with_executor(pool, id).await
+    pub async fn delete(pool: &PgPool, id: Uuid, company_id: Uuid) -> Result<(), sqlx::Error> {
+        Self::delete_with_executor(pool, id, company_id).await
     }
 
     pub async fn next_number_with_executor<'e>(
@@ -268,7 +275,12 @@ impl InvoiceRepository {
     ) -> Result<String, sqlx::Error> {
         let (prefix, counter_type) = match invoice_type {
             "purchase" => ("AL", "invoice_purchase"),
-            _ => ("ST", "invoice_sales"),
+            "sale" => ("ST", "invoice_sales"),
+            other => {
+                return Err(sqlx::Error::Protocol(format!(
+                    "Unknown invoice type: '{other}'. Must be 'purchase' or 'sale'"
+                )));
+            }
         };
 
         let year = chrono::Utc::now().format("%Y");

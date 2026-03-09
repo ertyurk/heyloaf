@@ -126,40 +126,46 @@ impl StockMovementRepository {
 
     pub async fn list_by_reference_with_executor<'e>(
         executor: impl sqlx::PgExecutor<'e>,
+        company_id: Uuid,
         reference_type: &str,
         reference_id: Uuid,
     ) -> Result<Vec<StockMovement>, sqlx::Error> {
         let sql = format!(
             r"SELECT {} FROM stock_movements
-            WHERE reference_type = $1 AND reference_id = $2
+            WHERE reference_type = $1 AND reference_id = $2 AND company_id = $3
             ORDER BY created_at ASC",
             Self::SELECT
         );
         sqlx::query_as::<_, StockMovement>(&sql)
             .bind(reference_type)
             .bind(reference_id)
+            .bind(company_id)
             .fetch_all(executor)
             .await
     }
 
     pub async fn list_by_reference(
         pool: &PgPool,
+        company_id: Uuid,
         reference_type: &str,
         reference_id: Uuid,
     ) -> Result<Vec<StockMovement>, sqlx::Error> {
-        Self::list_by_reference_with_executor(pool, reference_type, reference_id).await
+        Self::list_by_reference_with_executor(pool, company_id, reference_type, reference_id).await
     }
 
     pub async fn delete_by_reference_with_executor<'e>(
         executor: impl sqlx::PgExecutor<'e>,
+        company_id: Uuid,
         reference_type: &str,
         reference_id: Uuid,
     ) -> Result<u64, sqlx::Error> {
         let result = sqlx::query(
-            "DELETE FROM stock_movements WHERE reference_type = $1 AND reference_id = $2",
+            "DELETE FROM stock_movements
+            WHERE reference_type = $1 AND reference_id = $2 AND company_id = $3",
         )
         .bind(reference_type)
         .bind(reference_id)
+        .bind(company_id)
         .execute(executor)
         .await?;
         Ok(result.rows_affected())
@@ -167,9 +173,11 @@ impl StockMovementRepository {
 
     pub async fn delete_by_reference(
         pool: &PgPool,
+        company_id: Uuid,
         reference_type: &str,
         reference_id: Uuid,
     ) -> Result<u64, sqlx::Error> {
-        Self::delete_by_reference_with_executor(pool, reference_type, reference_id).await
+        Self::delete_by_reference_with_executor(pool, company_id, reference_type, reference_id)
+            .await
     }
 }

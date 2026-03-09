@@ -215,6 +215,7 @@ pub async fn update_contact(
     let contact = ContactRepository::update(
         &state.pool,
         id,
+        ctx.company_id,
         &body.name,
         body.contact_person.as_deref(),
         &body.contact_type,
@@ -273,7 +274,7 @@ pub async fn delete_contact(
         ));
     }
 
-    ContactRepository::delete(&state.pool, id)
+    ContactRepository::delete(&state.pool, id, ctx.company_id)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
@@ -374,7 +375,7 @@ pub async fn record_payment(
     })?;
 
     let updated_contact =
-        ContactRepository::update_balance_with_executor(&mut *tx, id, -body.amount)
+        ContactRepository::update_balance_with_executor(&mut *tx, id, ctx.company_id, -body.amount)
             .await
             .map_err(|e| AppError::Database(e.to_string()))?;
 

@@ -16,6 +16,7 @@ import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
+import { useAuthStore } from "@/lib/auth"
 import { saveLanguage } from "@/lib/i18n"
 
 export const Route = createFileRoute("/_authenticated/settings/general")({
@@ -40,8 +41,10 @@ function GeneralSettingsPage() {
   const { t, i18n } = useTranslation()
   const client = useApi()
   const queryClient = useQueryClient()
+  const user = useAuthStore((s) => s.user)
 
   const [form, setForm] = useState<GeneralForm>(emptyForm)
+  const [preferredLanguage, setPreferredLanguage] = useState(i18n.language)
 
   const { data, isLoading } = useQuery({
     queryKey: ["company"],
@@ -100,6 +103,31 @@ function GeneralSettingsPage() {
     },
     onError: () => toast.error(t("settings.general.failedToSave")),
   })
+
+  const preferredLanguageMutation = useMutation({
+    mutationFn: async (lang: string) => {
+      if (!user) return
+      await client.PUT(
+        "/api/users/{id}/preferences" as never,
+        {
+          params: { path: { id: user.id } },
+          body: { preferred_language: lang },
+        } as never
+      )
+    },
+    onSuccess: (_data, lang) => {
+      i18n.changeLanguage(lang)
+      saveLanguage(lang)
+      toast.success(t("settings.general.saved"))
+    },
+    onError: () => toast.error(t("settings.general.failedToSave")),
+  })
+
+  function handlePreferredLanguageChange(lang: string | null) {
+    if (!lang) return
+    setPreferredLanguage(lang)
+    preferredLanguageMutation.mutate(lang)
+  }
 
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -195,8 +223,8 @@ function GeneralSettingsPage() {
                       <SelectValue placeholder={t("settings.general.selectLanguage")} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="en">{t("settings.general.english")}</SelectItem>
-                      <SelectItem value="tr">{t("settings.general.turkish")}</SelectItem>
+                      <SelectItem value="en">English</SelectItem>
+                      <SelectItem value="tr">Turkce (Turkish)</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -208,6 +236,28 @@ function GeneralSettingsPage() {
                 </Button>
               </div>
             </form>
+          </CardContent>
+        </Card>
+
+        <Card className="mx-auto max-w-2xl">
+          <CardHeader>
+            <CardTitle>{t("settings.preferredLanguage")}</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              {t("settings.languageDescription")}
+            </p>
+            <div className="grid gap-2 max-w-xs">
+              <Select value={preferredLanguage} onValueChange={handlePreferredLanguageChange}>
+                <SelectTrigger className="w-full">
+                  <SelectValue placeholder={t("settings.general.selectLanguage")} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">English</SelectItem>
+                  <SelectItem value="tr">Turkce (Turkish)</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
           </CardContent>
         </Card>
       </div>

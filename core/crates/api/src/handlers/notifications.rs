@@ -122,7 +122,7 @@ pub async fn mark_read(
         return Err(AppError::NotFound("Notification not found".into()));
     }
 
-    NotificationRepository::mark_read(&state.pool, id)
+    NotificationRepository::mark_read(&state.pool, id, auth.user_id)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 

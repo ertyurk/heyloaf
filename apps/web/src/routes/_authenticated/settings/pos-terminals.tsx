@@ -23,6 +23,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { useState } from "react"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
@@ -44,6 +45,7 @@ const emptyForm: TerminalForm = {
 }
 
 function PosTerminalsPage() {
+  const { t } = useTranslation()
   const client = useApi()
   const queryClient = useQueryClient()
 
@@ -77,10 +79,10 @@ function PosTerminalsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pos-terminals"] })
-      toast.success("Terminal created")
+      toast.success(t("settings.posTerminals.terminalCreated"))
       closeSheet()
     },
-    onError: () => toast.error("Failed to create terminal"),
+    onError: () => toast.error(t("settings.posTerminals.failedToCreate")),
   })
 
   const updateMutation = useMutation({
@@ -99,10 +101,10 @@ function PosTerminalsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pos-terminals"] })
-      toast.success("Terminal updated")
+      toast.success(t("settings.posTerminals.terminalUpdated"))
       closeSheet()
     },
-    onError: () => toast.error("Failed to update terminal"),
+    onError: () => toast.error(t("settings.posTerminals.failedToUpdate")),
   })
 
   const deleteMutation = useMutation({
@@ -113,9 +115,9 @@ function PosTerminalsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["pos-terminals"] })
-      toast.success("Terminal deleted")
+      toast.success(t("settings.posTerminals.terminalDeleted"))
     },
-    onError: () => toast.error("Failed to delete terminal"),
+    onError: () => toast.error(t("settings.posTerminals.failedToDelete")),
   })
 
   function openCreate() {
@@ -164,8 +166,11 @@ function PosTerminalsPage() {
 
   return (
     <>
-      <PageHeader title="POS Terminals" description="Configure point-of-sale terminals">
-        <Button onClick={openCreate}>Add Terminal</Button>
+      <PageHeader
+        title={t("settings.posTerminals.title")}
+        description={t("settings.posTerminals.description")}
+      >
+        <Button onClick={openCreate}>{t("settings.posTerminals.addTerminal")}</Button>
       </PageHeader>
 
       <div className="space-y-4 p-6">
@@ -173,12 +178,12 @@ function PosTerminalsPage() {
           columns={[
             {
               id: "name",
-              header: "Name",
+              header: t("common.name"),
               cell: (row) => row.name,
             },
             {
               id: "price_list",
-              header: "Price List",
+              header: t("settings.terminalPriceList"),
               cell: (row) => {
                 const priceList = priceLists.find((pl) => pl.id === row.price_list_id)
                 return priceList?.name ?? "-"
@@ -186,10 +191,10 @@ function PosTerminalsPage() {
             },
             {
               id: "status",
-              header: "Status",
+              header: t("common.status"),
               cell: (row) => (
                 <Badge variant={row.is_active ? "default" : "outline"}>
-                  {row.is_active ? "Active" : "Inactive"}
+                  {row.is_active ? t("common.active") : t("common.inactive")}
                 </Badge>
               ),
             },
@@ -197,14 +202,14 @@ function PosTerminalsPage() {
           data={terminals}
           getRowId={(row) => row.id}
           isLoading={isLoading}
-          emptyMessage="No POS terminals configured yet."
+          emptyMessage={t("settings.posTerminals.noTerminals")}
           onRowClick={openEdit}
           rowActions={(row) => (
             <>
-              <DropdownMenuItem onClick={() => openEdit(row)}>Edit</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => openEdit(row)}>{t("common.edit")}</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={() => deleteMutation.mutate(row.id)}>
-                Delete
+                {t("common.delete")}
               </DropdownMenuItem>
             </>
           )}
@@ -214,12 +219,16 @@ function PosTerminalsPage() {
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
         <SheetContent side="right" className="sm:max-w-md">
           <SheetHeader>
-            <SheetTitle>{editingId ? "Edit Terminal" : "Add Terminal"}</SheetTitle>
+            <SheetTitle>
+              {editingId
+                ? t("settings.posTerminals.editTerminal")
+                : t("settings.posTerminals.addTerminal")}
+            </SheetTitle>
           </SheetHeader>
           <form onSubmit={handleSubmit} className="flex flex-1 flex-col">
             <SheetBody className="grid gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="name">Name</Label>
+                <Label htmlFor="name">{t("common.name")}</Label>
                 <Input
                   id="name"
                   value={form.name}
@@ -229,13 +238,13 @@ function PosTerminalsPage() {
                 />
               </div>
               <div className="grid gap-2">
-                <Label>Price List</Label>
+                <Label>{t("settings.terminalPriceList")}</Label>
                 <Select
                   value={form.price_list_id}
                   onValueChange={(val) => setForm((f) => ({ ...f, price_list_id: val ?? "" }))}
                 >
                   <SelectTrigger className="w-full">
-                    <SelectValue placeholder="Select price list" />
+                    <SelectValue placeholder={t("settings.selectPriceList")} />
                   </SelectTrigger>
                   <SelectContent>
                     {priceLists.map((pl) => (
@@ -255,13 +264,13 @@ function PosTerminalsPage() {
                       setForm((f) => ({ ...f, is_active: checked === true }))
                     }
                   />
-                  <Label htmlFor="is_active">Active</Label>
+                  <Label htmlFor="is_active">{t("common.active")}</Label>
                 </div>
               )}
             </SheetBody>
             <SheetFooter>
               <Button type="submit" disabled={isSaving}>
-                {isSaving ? "Saving..." : editingId ? "Update" : "Create"}
+                {isSaving ? t("common.saving") : editingId ? t("common.save") : t("common.create")}
               </Button>
             </SheetFooter>
           </form>

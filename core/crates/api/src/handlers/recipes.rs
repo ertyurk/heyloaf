@@ -130,7 +130,7 @@ pub async fn update_recipe(
         "notes": body.notes,
     });
 
-    let product = ProductRepository::update_recipe(&state.pool, id, &recipe_value)
+    let product = ProductRepository::update_recipe(&state.pool, id, ctx.company_id, &recipe_value)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 

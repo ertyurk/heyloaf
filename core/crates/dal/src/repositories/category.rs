@@ -40,11 +40,13 @@ impl CategoryRepository {
         pos_visible: bool,
     ) -> Result<Category, sqlx::Error> {
         let depth = if let Some(pid) = parent_id {
-            let parent =
-                sqlx::query_scalar::<_, i32>("SELECT depth FROM product_categories WHERE id = $1")
-                    .bind(pid)
-                    .fetch_one(pool)
-                    .await?;
+            let parent = sqlx::query_scalar::<_, i32>(
+                "SELECT depth FROM product_categories WHERE id = $1 AND company_id = $2",
+            )
+            .bind(pid)
+            .bind(company_id)
+            .fetch_one(pool)
+            .await?;
             parent + 1
         } else {
             0
@@ -100,20 +102,33 @@ impl CategoryRepository {
         Ok(())
     }
 
-    pub async fn has_children(pool: &PgPool, id: Uuid) -> Result<bool, sqlx::Error> {
-        let count: i64 =
-            sqlx::query_scalar("SELECT COUNT(*) FROM product_categories WHERE parent_id = $1")
-                .bind(id)
-                .fetch_one(pool)
-                .await?;
+    pub async fn has_children(
+        pool: &PgPool,
+        id: Uuid,
+        company_id: Uuid,
+    ) -> Result<bool, sqlx::Error> {
+        let count: i64 = sqlx::query_scalar(
+            "SELECT COUNT(*) FROM product_categories WHERE parent_id = $1 AND company_id = $2",
+        )
+        .bind(id)
+        .bind(company_id)
+        .fetch_one(pool)
+        .await?;
         Ok(count > 0)
     }
 
-    pub async fn has_products(pool: &PgPool, id: Uuid) -> Result<bool, sqlx::Error> {
-        let count: i64 = sqlx::query_scalar("SELECT COUNT(*) FROM products WHERE category_id = $1")
-            .bind(id)
-            .fetch_one(pool)
-            .await?;
+    pub async fn has_products(
+        pool: &PgPool,
+        id: Uuid,
+        company_id: Uuid,
+    ) -> Result<bool, sqlx::Error> {
+        let count: i64 = sqlx::query_scalar(
+            "SELECT COUNT(*) FROM products WHERE category_id = $1 AND company_id = $2",
+        )
+        .bind(id)
+        .bind(company_id)
+        .fetch_one(pool)
+        .await?;
         Ok(count > 0)
     }
 }

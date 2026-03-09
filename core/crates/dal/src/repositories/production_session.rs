@@ -82,18 +82,20 @@ impl ProductionSessionRepository {
     pub async fn add_item(
         pool: &PgPool,
         id: Uuid,
+        company_id: Uuid,
         item: &serde_json::Value,
     ) -> Result<ProductionSession, sqlx::Error> {
         let sql = format!(
             r"UPDATE production_sessions SET
                 items = items || $2::jsonb
-            WHERE id = $1
+            WHERE id = $1 AND company_id = $3
             RETURNING {}",
             Self::SELECT
         );
         sqlx::query_as::<_, ProductionSession>(&sql)
             .bind(id)
             .bind(item)
+            .bind(company_id)
             .fetch_one(pool)
             .await
     }
@@ -101,18 +103,20 @@ impl ProductionSessionRepository {
     pub async fn complete_with_executor<'e>(
         executor: impl sqlx::PgExecutor<'e>,
         id: Uuid,
+        company_id: Uuid,
         completed_by: Uuid,
     ) -> Result<ProductionSession, sqlx::Error> {
         let sql = format!(
             r"UPDATE production_sessions SET
                 status = 'completed', completed_at = now(), completed_by = $2
-            WHERE id = $1
+            WHERE id = $1 AND company_id = $3
             RETURNING {}",
             Self::SELECT
         );
         sqlx::query_as::<_, ProductionSession>(&sql)
             .bind(id)
             .bind(completed_by)
+            .bind(company_id)
             .fetch_one(executor)
             .await
     }
@@ -120,23 +124,32 @@ impl ProductionSessionRepository {
     pub async fn complete(
         pool: &PgPool,
         id: Uuid,
+        company_id: Uuid,
         completed_by: Uuid,
     ) -> Result<ProductionSession, sqlx::Error> {
-        Self::complete_with_executor(pool, id, completed_by).await
+        Self::complete_with_executor(pool, id, company_id, completed_by).await
     }
 
     pub async fn delete_with_executor<'e>(
         executor: impl sqlx::PgExecutor<'e>,
         id: Uuid,
+        company_id: Uuid,
     ) -> Result<(), sqlx::Error> {
-        sqlx::query("DELETE FROM production_sessions WHERE id = $1")
-            .bind(id)
-            .execute(executor)
-            .await?;
+        sqlx::query(
+            "DELETE FROM production_sessions WHERE id = $1 AND company_id = $2",
+        )
+        .bind(id)
+        .bind(company_id)
+        .execute(executor)
+        .await?;
         Ok(())
     }
 
-    pub async fn delete(pool: &PgPool, id: Uuid) -> Result<(), sqlx::Error> {
-        Self::delete_with_executor(pool, id).await
+    pub async fn delete(
+        pool: &PgPool,
+        id: Uuid,
+        company_id: Uuid,
+    ) -> Result<(), sqlx::Error> {
+        Self::delete_with_executor(pool, id, company_id).await
     }
 }

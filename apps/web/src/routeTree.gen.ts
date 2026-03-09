@@ -13,6 +13,7 @@ import { Route as LoginRouteImport } from './routes/login'
 import { Route as AuthenticatedRouteImport } from './routes/_authenticated'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AuthenticatedTransactionsRouteImport } from './routes/_authenticated/transactions'
+import { Route as AuthenticatedSuperAdminRouteImport } from './routes/_authenticated/super-admin'
 import { Route as AuthenticatedStockRouteImport } from './routes/_authenticated/stock'
 import { Route as AuthenticatedShiftsRouteImport } from './routes/_authenticated/shifts'
 import { Route as AuthenticatedReportsRouteImport } from './routes/_authenticated/reports'
@@ -30,6 +31,7 @@ import { Route as AuthenticatedCategoriesRouteImport } from './routes/_authentic
 import { Route as AuthenticatedSettingsIndexRouteImport } from './routes/_authenticated/settings/index'
 import { Route as AuthenticatedSettingsUsersRouteImport } from './routes/_authenticated/settings/users'
 import { Route as AuthenticatedSettingsStockRouteImport } from './routes/_authenticated/settings/stock'
+import { Route as AuthenticatedSettingsScaleRouteImport } from './routes/_authenticated/settings/scale'
 import { Route as AuthenticatedSettingsPriceListsRouteImport } from './routes/_authenticated/settings/price-lists'
 import { Route as AuthenticatedSettingsPosTerminalsRouteImport } from './routes/_authenticated/settings/pos-terminals'
 import { Route as AuthenticatedSettingsPaymentMethodsRouteImport } from './routes/_authenticated/settings/payment-methods'
@@ -62,6 +64,11 @@ const AuthenticatedTransactionsRoute =
     path: '/transactions',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedSuperAdminRoute = AuthenticatedSuperAdminRouteImport.update({
+  id: '/super-admin',
+  path: '/super-admin',
+  getParentRoute: () => AuthenticatedRoute,
+} as any)
 const AuthenticatedStockRoute = AuthenticatedStockRouteImport.update({
   id: '/stock',
   path: '/stock',
@@ -151,6 +158,12 @@ const AuthenticatedSettingsStockRoute =
     path: '/settings/stock',
     getParentRoute: () => AuthenticatedRoute,
   } as any)
+const AuthenticatedSettingsScaleRoute =
+  AuthenticatedSettingsScaleRouteImport.update({
+    id: '/settings/scale',
+    path: '/settings/scale',
+    getParentRoute: () => AuthenticatedRoute,
+  } as any)
 const AuthenticatedSettingsPriceListsRoute =
   AuthenticatedSettingsPriceListsRouteImport.update({
     id: '/settings/price-lists',
@@ -235,6 +248,7 @@ export interface FileRoutesByFullPath {
   '/reports': typeof AuthenticatedReportsRoute
   '/shifts': typeof AuthenticatedShiftsRoute
   '/stock': typeof AuthenticatedStockRoute
+  '/super-admin': typeof AuthenticatedSuperAdminRoute
   '/transactions': typeof AuthenticatedTransactionsRoute
   '/contacts/$contactId': typeof AuthenticatedContactsContactIdRoute
   '/orders/$orderId': typeof AuthenticatedOrdersOrderIdRoute
@@ -246,6 +260,7 @@ export interface FileRoutesByFullPath {
   '/settings/payment-methods': typeof AuthenticatedSettingsPaymentMethodsRoute
   '/settings/pos-terminals': typeof AuthenticatedSettingsPosTerminalsRoute
   '/settings/price-lists': typeof AuthenticatedSettingsPriceListsRouteWithChildren
+  '/settings/scale': typeof AuthenticatedSettingsScaleRoute
   '/settings/stock': typeof AuthenticatedSettingsStockRoute
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/settings/': typeof AuthenticatedSettingsIndexRoute
@@ -268,6 +283,7 @@ export interface FileRoutesByTo {
   '/reports': typeof AuthenticatedReportsRoute
   '/shifts': typeof AuthenticatedShiftsRoute
   '/stock': typeof AuthenticatedStockRoute
+  '/super-admin': typeof AuthenticatedSuperAdminRoute
   '/transactions': typeof AuthenticatedTransactionsRoute
   '/contacts/$contactId': typeof AuthenticatedContactsContactIdRoute
   '/orders/$orderId': typeof AuthenticatedOrdersOrderIdRoute
@@ -279,6 +295,7 @@ export interface FileRoutesByTo {
   '/settings/payment-methods': typeof AuthenticatedSettingsPaymentMethodsRoute
   '/settings/pos-terminals': typeof AuthenticatedSettingsPosTerminalsRoute
   '/settings/price-lists': typeof AuthenticatedSettingsPriceListsRouteWithChildren
+  '/settings/scale': typeof AuthenticatedSettingsScaleRoute
   '/settings/stock': typeof AuthenticatedSettingsStockRoute
   '/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/settings': typeof AuthenticatedSettingsIndexRoute
@@ -303,6 +320,7 @@ export interface FileRoutesById {
   '/_authenticated/reports': typeof AuthenticatedReportsRoute
   '/_authenticated/shifts': typeof AuthenticatedShiftsRoute
   '/_authenticated/stock': typeof AuthenticatedStockRoute
+  '/_authenticated/super-admin': typeof AuthenticatedSuperAdminRoute
   '/_authenticated/transactions': typeof AuthenticatedTransactionsRoute
   '/_authenticated/contacts/$contactId': typeof AuthenticatedContactsContactIdRoute
   '/_authenticated/orders/$orderId': typeof AuthenticatedOrdersOrderIdRoute
@@ -314,6 +332,7 @@ export interface FileRoutesById {
   '/_authenticated/settings/payment-methods': typeof AuthenticatedSettingsPaymentMethodsRoute
   '/_authenticated/settings/pos-terminals': typeof AuthenticatedSettingsPosTerminalsRoute
   '/_authenticated/settings/price-lists': typeof AuthenticatedSettingsPriceListsRouteWithChildren
+  '/_authenticated/settings/scale': typeof AuthenticatedSettingsScaleRoute
   '/_authenticated/settings/stock': typeof AuthenticatedSettingsStockRoute
   '/_authenticated/settings/users': typeof AuthenticatedSettingsUsersRoute
   '/_authenticated/settings/': typeof AuthenticatedSettingsIndexRoute
@@ -338,6 +357,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/shifts'
     | '/stock'
+    | '/super-admin'
     | '/transactions'
     | '/contacts/$contactId'
     | '/orders/$orderId'
@@ -349,6 +369,7 @@ export interface FileRouteTypes {
     | '/settings/payment-methods'
     | '/settings/pos-terminals'
     | '/settings/price-lists'
+    | '/settings/scale'
     | '/settings/stock'
     | '/settings/users'
     | '/settings/'
@@ -371,6 +392,7 @@ export interface FileRouteTypes {
     | '/reports'
     | '/shifts'
     | '/stock'
+    | '/super-admin'
     | '/transactions'
     | '/contacts/$contactId'
     | '/orders/$orderId'
@@ -382,6 +404,7 @@ export interface FileRouteTypes {
     | '/settings/payment-methods'
     | '/settings/pos-terminals'
     | '/settings/price-lists'
+    | '/settings/scale'
     | '/settings/stock'
     | '/settings/users'
     | '/settings'
@@ -405,6 +428,7 @@ export interface FileRouteTypes {
     | '/_authenticated/reports'
     | '/_authenticated/shifts'
     | '/_authenticated/stock'
+    | '/_authenticated/super-admin'
     | '/_authenticated/transactions'
     | '/_authenticated/contacts/$contactId'
     | '/_authenticated/orders/$orderId'
@@ -416,6 +440,7 @@ export interface FileRouteTypes {
     | '/_authenticated/settings/payment-methods'
     | '/_authenticated/settings/pos-terminals'
     | '/_authenticated/settings/price-lists'
+    | '/_authenticated/settings/scale'
     | '/_authenticated/settings/stock'
     | '/_authenticated/settings/users'
     | '/_authenticated/settings/'
@@ -456,6 +481,13 @@ declare module '@tanstack/react-router' {
       path: '/transactions'
       fullPath: '/transactions'
       preLoaderRoute: typeof AuthenticatedTransactionsRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/super-admin': {
+      id: '/_authenticated/super-admin'
+      path: '/super-admin'
+      fullPath: '/super-admin'
+      preLoaderRoute: typeof AuthenticatedSuperAdminRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/stock': {
@@ -575,6 +607,13 @@ declare module '@tanstack/react-router' {
       path: '/settings/stock'
       fullPath: '/settings/stock'
       preLoaderRoute: typeof AuthenticatedSettingsStockRouteImport
+      parentRoute: typeof AuthenticatedRoute
+    }
+    '/_authenticated/settings/scale': {
+      id: '/_authenticated/settings/scale'
+      path: '/settings/scale'
+      fullPath: '/settings/scale'
+      preLoaderRoute: typeof AuthenticatedSettingsScaleRouteImport
       parentRoute: typeof AuthenticatedRoute
     }
     '/_authenticated/settings/price-lists': {
@@ -711,6 +750,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedReportsRoute: typeof AuthenticatedReportsRoute
   AuthenticatedShiftsRoute: typeof AuthenticatedShiftsRoute
   AuthenticatedStockRoute: typeof AuthenticatedStockRoute
+  AuthenticatedSuperAdminRoute: typeof AuthenticatedSuperAdminRoute
   AuthenticatedTransactionsRoute: typeof AuthenticatedTransactionsRoute
   AuthenticatedSettingsAuditRoute: typeof AuthenticatedSettingsAuditRoute
   AuthenticatedSettingsCompanyRoute: typeof AuthenticatedSettingsCompanyRoute
@@ -720,6 +760,7 @@ interface AuthenticatedRouteChildren {
   AuthenticatedSettingsPaymentMethodsRoute: typeof AuthenticatedSettingsPaymentMethodsRoute
   AuthenticatedSettingsPosTerminalsRoute: typeof AuthenticatedSettingsPosTerminalsRoute
   AuthenticatedSettingsPriceListsRoute: typeof AuthenticatedSettingsPriceListsRouteWithChildren
+  AuthenticatedSettingsScaleRoute: typeof AuthenticatedSettingsScaleRoute
   AuthenticatedSettingsStockRoute: typeof AuthenticatedSettingsStockRoute
   AuthenticatedSettingsUsersRoute: typeof AuthenticatedSettingsUsersRoute
   AuthenticatedSettingsIndexRoute: typeof AuthenticatedSettingsIndexRoute
@@ -740,6 +781,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
   AuthenticatedReportsRoute: AuthenticatedReportsRoute,
   AuthenticatedShiftsRoute: AuthenticatedShiftsRoute,
   AuthenticatedStockRoute: AuthenticatedStockRoute,
+  AuthenticatedSuperAdminRoute: AuthenticatedSuperAdminRoute,
   AuthenticatedTransactionsRoute: AuthenticatedTransactionsRoute,
   AuthenticatedSettingsAuditRoute: AuthenticatedSettingsAuditRoute,
   AuthenticatedSettingsCompanyRoute: AuthenticatedSettingsCompanyRoute,
@@ -753,6 +795,7 @@ const AuthenticatedRouteChildren: AuthenticatedRouteChildren = {
     AuthenticatedSettingsPosTerminalsRoute,
   AuthenticatedSettingsPriceListsRoute:
     AuthenticatedSettingsPriceListsRouteWithChildren,
+  AuthenticatedSettingsScaleRoute: AuthenticatedSettingsScaleRoute,
   AuthenticatedSettingsStockRoute: AuthenticatedSettingsStockRoute,
   AuthenticatedSettingsUsersRoute: AuthenticatedSettingsUsersRoute,
   AuthenticatedSettingsIndexRoute: AuthenticatedSettingsIndexRoute,
@@ -770,3 +813,12 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}

@@ -33,6 +33,7 @@ pub struct CreateMovementRequest {
     pub product_id: Uuid,
     #[validate(length(min = 1, message = "Movement type is required"))]
     pub movement_type: String,
+    #[validate(range(exclusive_min = 0.0, message = "Quantity must be greater than zero"))]
     pub quantity: f64,
     pub description: Option<String>,
 }
@@ -55,6 +56,7 @@ pub struct StockCountItem {
 #[derive(Debug, Deserialize, Validate, ToSchema)]
 pub struct CreateStockCountRequest {
     pub notes: Option<String>,
+    #[validate(length(min = 1, message = "At least one item is required"))]
     pub items: Vec<StockCountItem>,
 }
 
@@ -316,13 +318,17 @@ pub async fn complete_stock_count(
             let counted_quantity = item.get("counted_quantity").and_then(|v| v.as_f64());
 
             if let (Some(product_id), Some(counted)) = (product_id, counted_quantity) {
-                // Get current stock level
-                let current =
-                    StockRepository::find_by_product(&state.pool, ctx.company_id, product_id)
-                        .await
-                        .map_err(|e| AppError::Database(e.to_string()))?;
+                // Get current stock level INSIDE the transaction to avoid TOCTOU race
+                let current: Option<f64> = sqlx::query_scalar(
+                    "SELECT quantity FROM stock WHERE company_id = $1 AND product_id = $2 FOR UPDATE",
+                )
+                .bind(ctx.company_id)
+                .bind(product_id)
+                .fetch_optional(&mut *tx)
+                .await
+                .map_err(|e| AppError::Database(e.to_string()))?;
 
-                let current_qty = current.map_or(0.0, |s| s.quantity);
+                let current_qty = current.unwrap_or(0.0);
                 let diff = counted - current_qty;
 
                 if diff.abs() > f64::EPSILON {
@@ -348,7 +354,7 @@ pub async fn complete_stock_count(
         }
     }
 
-    let stock_count = StockCountRepository::complete_with_executor(&mut *tx, id)
+    let stock_count = StockCountRepository::complete_with_executor(&mut *tx, id, ctx.company_id)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 

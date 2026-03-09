@@ -4,5979 +4,7012 @@
  */
 
 export interface paths {
-  "/api/auth/logout": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post: operations["logout"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/auth/switch-company": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post: operations["switch_company"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/categories": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["list_categories"]
-    put?: never
-    post: operations["create_category"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/categories/{id}": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["get_category"]
-    put: operations["update_category"]
-    post?: never
-    delete: operations["delete_category"]
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/company": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["get_company"]
-    put: operations["update_company"]
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/contacts": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["list_contacts"]
-    put?: never
-    post: operations["create_contact"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/contacts/{id}": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["get_contact"]
-    put: operations["update_contact"]
-    post?: never
-    delete: operations["delete_contact"]
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/contacts/{id}/payment": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post: operations["record_payment"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/contacts/{id}/transactions": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["list_contact_transactions"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/currencies": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["list_currencies"]
-    put?: never
-    post: operations["create_currency"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/currencies/{id}": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["get_currency"]
-    put: operations["update_currency"]
-    post?: never
-    delete: operations["delete_currency"]
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/dashboard": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["get_dashboard"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/invoices": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["list_invoices"]
-    put?: never
-    post: operations["create_invoice"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/invoices/{id}": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["get_invoice"]
-    put: operations["update_invoice"]
-    post?: never
-    delete: operations["delete_invoice"]
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/invoices/{id}/status": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put: operations["update_invoice_status"]
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/marketplace-channels": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["list_marketplace_channels"]
-    put?: never
-    post: operations["create_marketplace_channel"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/marketplace-channels/{id}": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["get_marketplace_channel"]
-    put: operations["update_marketplace_channel"]
-    post?: never
-    delete: operations["delete_marketplace_channel"]
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/notifications": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["list_notifications"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/notifications/read-all": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post: operations["mark_all_read"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/notifications/unread-count": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["unread_count"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/notifications/{id}/read": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post: operations["mark_read"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/orders": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["list_orders"]
-    put?: never
-    post: operations["create_order"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/orders/{id}": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["get_order"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/orders/{id}/return": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post: operations["return_order"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/orders/{id}/void": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post: operations["void_order"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/payment-methods": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["list_payment_methods"]
-    put?: never
-    post: operations["create_payment_method"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/payment-methods/{id}": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put: operations["update_payment_method"]
-    post?: never
-    delete: operations["delete_payment_method"]
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/payment-methods/{id}/default": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post: operations["set_default_payment_method"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/pos-terminals": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["list_pos_terminals"]
-    put?: never
-    post: operations["create_pos_terminal"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/pos-terminals/{id}": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put: operations["update_pos_terminal"]
-    post?: never
-    delete: operations["delete_pos_terminal"]
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/price-lists": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["list_price_lists"]
-    put?: never
-    post: operations["create_price_list"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/price-lists/items/{item_id}": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post?: never
-    delete: operations["delete_price_list_item"]
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/price-lists/{id}": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["get_price_list"]
-    put: operations["update_price_list"]
-    post?: never
-    delete: operations["delete_price_list"]
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/price-lists/{id}/default": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post: operations["set_default_price_list"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/price-lists/{id}/items": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["list_price_list_items"]
-    put?: never
-    post: operations["upsert_price_list_items"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/production/records": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["list_production_records"]
-    put?: never
-    post: operations["create_production_record"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/production/records/{id}": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["get_production_record"]
-    put: operations["update_production_record"]
-    post?: never
-    delete: operations["delete_production_record"]
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/production/sessions": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["list_production_sessions"]
-    put?: never
-    post: operations["create_production_session"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/production/sessions/{id}": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post?: never
-    delete: operations["delete_production_session"]
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/production/sessions/{id}/complete": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post: operations["complete_production_session"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/production/sessions/{id}/items": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post: operations["add_session_item"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/products": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["list_products"]
-    put?: never
-    post: operations["create_product"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/products/bulk/activate": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post: operations["bulk_activate"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/products/bulk/category": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post: operations["bulk_category"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/products/bulk/deactivate": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post: operations["bulk_deactivate"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/products/{id}": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["get_product"]
-    put: operations["update_product"]
-    post?: never
-    delete: operations["delete_product"]
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/shifts": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["list_shifts"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/shifts/current": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["get_current_shift"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/shifts/open": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post: operations["open_shift"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/shifts/{id}/close": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post: operations["close_shift"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/stock": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["list_stock"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/stock/counts": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["list_stock_counts"]
-    put?: never
-    post: operations["create_stock_count"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/stock/counts/{id}/complete": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post: operations["complete_stock_count"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/stock/low": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["list_low_stock"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/stock/movements": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["list_movements"]
-    put?: never
-    post: operations["create_movement"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/stock/{product_id}": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["get_stock"]
-    put?: never
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/stock/{product_id}/levels": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put: operations["update_stock_levels"]
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/users": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["list_users"]
-    put?: never
-    post: operations["create_user"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/users/{id}": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get: operations["get_user"]
-    put?: never
-    post?: never
-    delete: operations["remove_user"]
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/users/{id}/permissions": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put: operations["update_user_permissions"]
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/api/users/{id}/role": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put: operations["update_user_role"]
-    post?: never
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/auth/login": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post: operations["login"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/auth/refresh": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post: operations["refresh"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
-  "/auth/register": {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    get?: never
-    put?: never
-    post: operations["register"]
-    delete?: never
-    options?: never
-    head?: never
-    patch?: never
-    trace?: never
-  }
+    "/api/audit-logs": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_audit_logs"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/logout": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["logout"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/auth/switch-company": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["switch_company"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/categories": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_categories"];
+        put?: never;
+        post: operations["create_category"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/categories/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_category"];
+        put: operations["update_category"];
+        post?: never;
+        delete: operations["delete_category"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/company": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_company"];
+        put: operations["update_company"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/contacts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_contacts"];
+        put?: never;
+        post: operations["create_contact"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/contacts/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_contact"];
+        put: operations["update_contact"];
+        post?: never;
+        delete: operations["delete_contact"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/contacts/{id}/payment": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["record_payment"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/contacts/{id}/transactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_contact_transactions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/currencies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_currencies"];
+        put?: never;
+        post: operations["create_currency"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/currencies/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_currency"];
+        put: operations["update_currency"];
+        post?: never;
+        delete: operations["delete_currency"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/dashboard": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_dashboard"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/invoices": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_invoices"];
+        put?: never;
+        post: operations["create_invoice"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/invoices/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_invoice"];
+        put: operations["update_invoice"];
+        post?: never;
+        delete: operations["delete_invoice"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/invoices/{id}/status": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["update_invoice_status"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/marketplace-channels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_marketplace_channels"];
+        put?: never;
+        post: operations["create_marketplace_channel"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/marketplace-channels/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_marketplace_channel"];
+        put: operations["update_marketplace_channel"];
+        post?: never;
+        delete: operations["delete_marketplace_channel"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_notifications"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/read-all": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["mark_all_read"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/unread-count": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["unread_count"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/notifications/{id}/read": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["mark_read"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orders": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_orders"];
+        put?: never;
+        post: operations["create_order"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orders/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_order"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orders/{id}/return": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["return_order"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/orders/{id}/void": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["void_order"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/payment-methods": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_payment_methods"];
+        put?: never;
+        post: operations["create_payment_method"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/payment-methods/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["update_payment_method"];
+        post?: never;
+        delete: operations["delete_payment_method"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/payment-methods/{id}/default": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["set_default_payment_method"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pos-terminals": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_pos_terminals"];
+        put?: never;
+        post: operations["create_pos_terminal"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/pos-terminals/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["update_pos_terminal"];
+        post?: never;
+        delete: operations["delete_pos_terminal"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/price-lists": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_price_lists"];
+        put?: never;
+        post: operations["create_price_list"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/price-lists/items/{item_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["delete_price_list_item"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/price-lists/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_price_list"];
+        put: operations["update_price_list"];
+        post?: never;
+        delete: operations["delete_price_list"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/price-lists/{id}/default": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["set_default_price_list"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/price-lists/{id}/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_price_list_items"];
+        put?: never;
+        post: operations["upsert_price_list_items"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/production/records": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_production_records"];
+        put?: never;
+        post: operations["create_production_record"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/production/records/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_production_record"];
+        put: operations["update_production_record"];
+        post?: never;
+        delete: operations["delete_production_record"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/production/sessions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_production_sessions"];
+        put?: never;
+        post: operations["create_production_session"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/production/sessions/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post?: never;
+        delete: operations["delete_production_session"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/production/sessions/{id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["complete_production_session"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/production/sessions/{id}/items": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["add_session_item"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/products": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_products"];
+        put?: never;
+        post: operations["create_product"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/products/bulk/activate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["bulk_activate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/products/bulk/category": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["bulk_category"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/products/bulk/deactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["bulk_deactivate"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/products/bulk/price-list": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["bulk_price_list"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/products/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_product"];
+        put: operations["update_product"];
+        post?: never;
+        delete: operations["delete_product"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/products/{id}/purchase-options": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["update_purchase_options"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/products/{id}/recipe": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_recipe"];
+        put: operations["update_recipe"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/products/{id}/recipe/cost": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_recipe_cost"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/hourly-sales": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["hourly_sales"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/profit-margins": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["profit_margins"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/reports/stock-turnover": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["stock_turnover"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shifts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_shifts"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shifts/current": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_current_shift"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shifts/open": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["open_shift"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shifts/{id}/close": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["close_shift"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/shifts/{id}/z-report": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_z_report"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stock": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_stock"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stock/counts": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_stock_counts"];
+        put?: never;
+        post: operations["create_stock_count"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stock/counts/{id}/complete": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["complete_stock_count"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stock/low": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_low_stock"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stock/movements": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_movements"];
+        put?: never;
+        post: operations["create_movement"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stock/{product_id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_stock"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/stock/{product_id}/levels": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["update_stock_levels"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/super-admin/companies": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_companies"];
+        put?: never;
+        post: operations["create_company"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/super-admin/companies/{id}/deactivate": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["deactivate_company"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/super-admin/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_all_users"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/transactions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_transactions"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/users": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["list_users"];
+        put?: never;
+        post: operations["create_user"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/users/{id}": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get: operations["get_user"];
+        put?: never;
+        post?: never;
+        delete: operations["remove_user"];
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/users/{id}/permissions": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["update_user_permissions"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/users/{id}/preferences": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["update_preferences"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/users/{id}/role": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put: operations["update_user_role"];
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/login": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["login"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/refresh": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["refresh"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/auth/register": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        post: operations["register"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
 }
-export type webhooks = Record<string, never>
+export type webhooks = Record<string, never>;
 export interface components {
-  schemas: {
-    AddSessionItemRequest: {
-      item: unknown
-    }
-    BulkActionResponse: {
-      /** Format: int64 */
-      affected: number
-    }
-    BulkCategoryRequest: {
-      /** Format: uuid */
-      category_id?: string | null
-      ids: string[]
-    }
-    BulkIdsRequest: {
-      ids: string[]
-    }
-    BulkPriceListItemEntry: {
-      /** Format: double */
-      price: number
-      /** Format: uuid */
-      product_id: string
-      /** Format: double */
-      vat_rate?: number | null
-    }
-    Category: {
-      /** Format: uuid */
-      company_id: string
-      /** Format: date-time */
-      created_at: string
-      /** Format: int32 */
-      depth: number
-      description?: string | null
-      /** Format: int32 */
-      display_order: number
-      /** Format: uuid */
-      id: string
-      name: string
-      /** Format: uuid */
-      parent_id?: string | null
-      pos_visible: boolean
-      status: string
-      /** Format: date-time */
-      updated_at: string
-    }
-    CloseShiftRequest: {
-      /** Format: double */
-      closing_balance: number
-      /** Format: double */
-      expected_balance?: number | null
-      notes?: string | null
-    }
-    Company: {
-      address?: string | null
-      /** Format: date-time */
-      created_at: string
-      default_currency: string
-      default_language: string
-      /** Format: double */
-      default_tax_rate: number
-      email?: string | null
-      /** Format: uuid */
-      id: string
-      logo_url?: string | null
-      name: string
-      phone?: string | null
-      settings: unknown
-      tax_number?: string | null
-      tax_office?: string | null
-      timezone: string
-      /** Format: date-time */
-      updated_at: string
-      website?: string | null
-    }
-    CompanyUser: {
-      email: string
-      is_active: boolean
-      /** Format: date-time */
-      joined_at: string
-      name: string
-      permissions: unknown
-      role: string
-      /** Format: uuid */
-      user_id: string
-    }
-    Contact: {
-      address?: string | null
-      /** Format: double */
-      balance: number
-      /** Format: uuid */
-      company_id: string
-      contact_person?: string | null
-      contact_type: string
-      /** Format: date-time */
-      created_at: string
-      /** Format: double */
-      credit_limit?: number | null
-      email?: string | null
-      /** Format: uuid */
-      id: string
-      name: string
-      notes?: string | null
-      phone?: string | null
-      status: string
-      tax_number?: string | null
-      tax_office?: string | null
-      /** Format: date-time */
-      updated_at: string
-    }
-    CreateCategoryRequest: {
-      description?: string | null
-      /** Format: int32 */
-      display_order?: number
-      name: string
-      /** Format: uuid */
-      parent_id?: string | null
-      pos_visible?: boolean
-    }
-    CreateContactRequest: {
-      address?: string | null
-      contact_person?: string | null
-      contact_type: string
-      /** Format: double */
-      credit_limit?: number | null
-      email?: string | null
-      name: string
-      notes?: string | null
-      phone?: string | null
-      tax_number?: string | null
-      tax_office?: string | null
-    }
-    CreateCurrencyRequest: {
-      code: string
-      /** Format: double */
-      exchange_rate?: number
-      is_base?: boolean
-      name: string
-      symbol?: string | null
-    }
-    CreateInvoiceRequest: {
-      /** Format: double */
-      base_currency_total: number
-      /** Format: uuid */
-      contact_id?: string | null
-      currency_code?: string
-      /** Format: date */
-      date: string
-      /** Format: date */
-      due_date?: string | null
-      /** Format: double */
-      exchange_rate?: number
-      /** Format: double */
-      grand_total: number
-      invoice_type: string
-      line_items: unknown
-      notes?: string | null
-      /** Format: double */
-      subtotal: number
-      tax_number?: string | null
-      tax_office?: string | null
-      /** Format: double */
-      tax_total: number
-    }
-    CreateMarketplaceChannelRequest: {
-      code: string
-      name: string
-    }
-    CreateMovementRequest: {
-      description?: string | null
-      movement_type: string
-      /** Format: uuid */
-      product_id: string
-      /** Format: double */
-      quantity: number
-    }
-    CreateOrderItemRequest: {
-      /** Format: double */
-      line_total: number
-      /** Format: uuid */
-      product_id?: string | null
-      product_name: string
-      /** Format: double */
-      quantity: number
-      /** Format: double */
-      unit_price: number
-      variant_name?: string | null
-      /** Format: double */
-      vat_rate: number
-    }
-    CreateOrderRequest: {
-      items: components["schemas"]["CreateOrderItemRequest"][]
-      notes?: string | null
-      /** Format: uuid */
-      payment_method_id?: string | null
-      /** Format: uuid */
-      shift_id?: string | null
-      /** Format: uuid */
-      terminal_id?: string | null
-    }
-    CreatePaymentMethodRequest: {
-      /** Format: int32 */
-      display_order?: number
-      is_default?: boolean
-      name: string
-    }
-    CreatePosTerminalRequest: {
-      name: string
-      /** Format: uuid */
-      price_list_id?: string | null
-    }
-    CreatePriceListRequest: {
-      channel_type: string
-      city?: string | null
-      is_default?: boolean
-      /** Format: uuid */
-      marketplace_channel_id?: string | null
-      name: string
-    }
-    CreateProductRequest: {
-      barcode?: string | null
-      /** Format: uuid */
-      category_id?: string | null
-      code?: string | null
-      name: string
-      product_type: string
-      stock_tracking?: boolean
-      /** Format: double */
-      tax_rate?: number | null
-      unit_of_measure: string
-    }
-    CreateProductionRecordRequest: {
-      /** Format: double */
-      batch_size: number
-      materials?: unknown
-      notes?: string | null
-      /** Format: uuid */
-      product_id: string
-      /** Format: double */
-      quantity: number
-      unit: string
-      variant_name?: string | null
-    }
-    CreateProductionSessionRequest: {
-      name?: string | null
-    }
-    CreateStockCountRequest: {
-      items: unknown
-      notes?: string | null
-    }
-    CreateUserRequest: {
-      email: string
-      name: string
-      password: string
-      role: string
-    }
-    Currency: {
-      code: string
-      /** Format: uuid */
-      company_id: string
-      /** Format: date-time */
-      created_at: string
-      /** Format: double */
-      exchange_rate: number
-      /** Format: uuid */
-      id: string
-      is_active: boolean
-      is_base: boolean
-      name: string
-      symbol: string
-      /** Format: date-time */
-      updated_at: string
-    }
-    DashboardData: {
-      /** Format: int64 */
-      low_stock_count: number
-      /** Format: double */
-      outstanding_payables: number
-      /** Format: double */
-      outstanding_receivables: number
-      /** Format: int64 */
-      today_production_count: number
-      /** Format: int64 */
-      today_sales_count: number
-      /** Format: double */
-      today_sales_total: number
-    }
-    Invoice: {
-      /** Format: double */
-      base_currency_total: number
-      /** Format: uuid */
-      company_id: string
-      /** Format: uuid */
-      contact_id?: string | null
-      /** Format: date-time */
-      created_at: string
-      currency_code: string
-      /** Format: date */
-      date: string
-      /** Format: date */
-      due_date?: string | null
-      /** Format: double */
-      exchange_rate: number
-      /** Format: double */
-      grand_total: number
-      /** Format: uuid */
-      id: string
-      invoice_number: string
-      invoice_type: string
-      line_items: unknown
-      notes?: string | null
-      status: string
-      /** Format: double */
-      subtotal: number
-      tax_number?: string | null
-      tax_office?: string | null
-      /** Format: double */
-      tax_total: number
-      /** Format: date-time */
-      updated_at: string
-    }
-    LoginCompany: {
-      /** Format: uuid */
-      id: string
-      name: string
-    }
-    LoginRequest: {
-      email: string
-      password: string
-    }
-    LoginResponse: {
-      access_token: string
-      company?: null | components["schemas"]["LoginCompany"]
-      /** Format: int64 */
-      expires_in: number
-      permissions: unknown
-      refresh_token: string
-      role?: string | null
-      token_type: string
-      user: components["schemas"]["LoginUser"]
-    }
-    LoginUser: {
-      email: string
-      /** Format: uuid */
-      id: string
-      name: string
-    }
-    MarkAllReadResponse: {
-      /** Format: int64 */
-      affected: number
-    }
-    MarketplaceChannel: {
-      code: string
-      /** Format: uuid */
-      company_id: string
-      /** Format: date-time */
-      created_at: string
-      /** Format: uuid */
-      id: string
-      is_active: boolean
-      name: string
-      /** Format: date-time */
-      updated_at: string
-    }
-    Notification: {
-      /** Format: uuid */
-      company_id: string
-      /** Format: date-time */
-      created_at: string
-      /** Format: uuid */
-      entity_id?: string | null
-      entity_type?: string | null
-      /** Format: uuid */
-      id: string
-      is_read: boolean
-      message: string
-      notification_type: string
-      title: string
-      /** Format: uuid */
-      user_id?: string | null
-    }
-    OpenShiftRequest: {
-      /** Format: double */
-      opening_balance?: number
-      /** Format: uuid */
-      terminal_id?: string | null
-    }
-    Order: {
-      /** Format: uuid */
-      cashier_id: string
-      /** Format: uuid */
-      company_id: string
-      /** Format: date-time */
-      created_at: string
-      /** Format: uuid */
-      id: string
-      notes?: string | null
-      order_number: string
-      /** Format: uuid */
-      payment_method_id?: string | null
-      /** Format: uuid */
-      shift_id?: string | null
-      status: string
-      /** Format: double */
-      subtotal: number
-      /** Format: double */
-      tax_total: number
-      /** Format: uuid */
-      terminal_id?: string | null
-      /** Format: double */
-      total: number
-      /** Format: date-time */
-      updated_at: string
-    }
-    OrderItem: {
-      /** Format: date-time */
-      created_at: string
-      /** Format: uuid */
-      id: string
-      /** Format: double */
-      line_total: number
-      /** Format: uuid */
-      order_id: string
-      /** Format: uuid */
-      product_id?: string | null
-      product_name: string
-      /** Format: double */
-      quantity: number
-      /** Format: double */
-      unit_price: number
-      variant_name?: string | null
-      /** Format: double */
-      vat_rate: number
-    }
-    OrderWithItems: components["schemas"]["Order"] & {
-      items: components["schemas"]["OrderItem"][]
-    }
-    PaymentMethod: {
-      /** Format: uuid */
-      company_id: string
-      /** Format: date-time */
-      created_at: string
-      /** Format: int32 */
-      display_order: number
-      /** Format: uuid */
-      id: string
-      is_active: boolean
-      is_default: boolean
-      name: string
-      /** Format: date-time */
-      updated_at: string
-    }
-    PosTerminal: {
-      /** Format: uuid */
-      company_id: string
-      /** Format: date-time */
-      created_at: string
-      /** Format: uuid */
-      id: string
-      is_active: boolean
-      name: string
-      /** Format: uuid */
-      price_list_id?: string | null
-      /** Format: date-time */
-      updated_at: string
-    }
-    PriceList: {
-      channel_type: string
-      city?: string | null
-      /** Format: uuid */
-      company_id: string
-      /** Format: date-time */
-      created_at: string
-      /** Format: uuid */
-      id: string
-      is_active: boolean
-      is_default: boolean
-      /** Format: uuid */
-      marketplace_channel_id?: string | null
-      name: string
-      /** Format: date-time */
-      updated_at: string
-    }
-    PriceListItem: {
-      /** Format: uuid */
-      company_id: string
-      /** Format: date-time */
-      created_at: string
-      /** Format: uuid */
-      id: string
-      is_active: boolean
-      /** Format: double */
-      price: number
-      /** Format: uuid */
-      price_list_id: string
-      /** Format: uuid */
-      product_id: string
-      /** Format: date-time */
-      updated_at: string
-      /** Format: double */
-      vat_rate?: number | null
-    }
-    Product: {
-      barcode?: string | null
-      /** Format: double */
-      calculated_cost?: number | null
-      /** Format: uuid */
-      category_id?: string | null
-      code?: string | null
-      /** Format: uuid */
-      company_id: string
-      /** Format: date-time */
-      created_at: string
-      /** Format: uuid */
-      id: string
-      image_url?: string | null
-      /** Format: double */
-      last_purchase_price?: number | null
-      /** Format: double */
-      min_stock_level?: number | null
-      name: string
-      plu_code?: string | null
-      plu_type?: string | null
-      product_type: string
-      purchase_options?: unknown
-      recipe?: unknown
-      sale_unit_type?: string | null
-      scale_enabled: boolean
-      status: string
-      stock_status: string
-      stock_tracking: boolean
-      /** Format: double */
-      tax_rate?: number | null
-      unit_of_measure: string
-      /** Format: date-time */
-      updated_at: string
-    }
-    ProductionRecord: {
-      /** Format: double */
-      batch_size: number
-      /** Format: uuid */
-      company_id: string
-      /** Format: date-time */
-      created_at: string
-      /** Format: uuid */
-      id: string
-      materials: unknown
-      notes?: string | null
-      /** Format: date-time */
-      produced_at: string
-      /** Format: uuid */
-      produced_by: string
-      /** Format: uuid */
-      product_id: string
-      /** Format: double */
-      quantity: number
-      unit: string
-      /** Format: date-time */
-      updated_at: string
-      variant_name?: string | null
-    }
-    ProductionSession: {
-      /** Format: uuid */
-      company_id: string
-      /** Format: date-time */
-      completed_at?: string | null
-      /** Format: uuid */
-      completed_by?: string | null
-      /** Format: date-time */
-      created_at: string
-      /** Format: uuid */
-      id: string
-      items: unknown
-      name?: string | null
-      status: string
-      /** Format: date-time */
-      updated_at: string
-    }
-    RecordPaymentRequest: {
-      /** Format: double */
-      amount: number
-      /** Format: date */
-      date?: string | null
-      description?: string | null
-      /** Format: uuid */
-      payment_method_id?: string | null
-    }
-    RefreshRequest: {
-      refresh_token?: string | null
-    }
-    RegisterRequest: {
-      email: string
-      name: string
-      password: string
-    }
-    Shift: {
-      /** Format: uuid */
-      cashier_id: string
-      /** Format: date-time */
-      closed_at?: string | null
-      /** Format: double */
-      closing_balance?: number | null
-      /** Format: uuid */
-      company_id: string
-      /** Format: date-time */
-      created_at: string
-      /** Format: double */
-      expected_balance?: number | null
-      /** Format: uuid */
-      id: string
-      notes?: string | null
-      /** Format: date-time */
-      opened_at: string
-      /** Format: double */
-      opening_balance: number
-      status: string
-      /** Format: uuid */
-      terminal_id?: string | null
-      /** Format: date-time */
-      updated_at: string
-    }
-    Stock: {
-      /** Format: uuid */
-      company_id: string
-      /** Format: date-time */
-      created_at: string
-      /** Format: uuid */
-      id: string
-      /** Format: date-time */
-      last_movement_at?: string | null
-      location?: string | null
-      /** Format: double */
-      max_level?: number | null
-      /** Format: double */
-      min_level?: number | null
-      /** Format: uuid */
-      product_id: string
-      /** Format: double */
-      quantity: number
-      /** Format: double */
-      reserved_quantity: number
-      /** Format: date-time */
-      updated_at: string
-    }
-    StockCount: {
-      /** Format: uuid */
-      company_id: string
-      /** Format: date-time */
-      counted_at: string
-      /** Format: uuid */
-      counted_by: string
-      /** Format: date-time */
-      created_at: string
-      /** Format: uuid */
-      id: string
-      items: unknown
-      notes?: string | null
-      status: string
-      /** Format: date-time */
-      updated_at: string
-    }
-    StockMovement: {
-      /** Format: uuid */
-      company_id: string
-      /** Format: date-time */
-      created_at: string
-      /** Format: uuid */
-      created_by: string
-      description?: string | null
-      /** Format: uuid */
-      id: string
-      movement_type: string
-      /** Format: uuid */
-      product_id: string
-      /** Format: double */
-      quantity: number
-      /** Format: uuid */
-      reference_id?: string | null
-      reference_type?: string | null
-      source: string
-      /** Format: double */
-      total_price?: number | null
-      /** Format: double */
-      unit_price?: number | null
-      /** Format: double */
-      vat_rate?: number | null
-    }
-    SwitchCompanyRequest: {
-      /** Format: uuid */
-      company_id: string
-    }
-    TokenResponse: {
-      access_token: string
-      /** Format: int64 */
-      expires_in: number
-      refresh_token: string
-      token_type: string
-    }
-    Transaction: {
-      /** Format: double */
-      amount: number
-      /** Format: double */
-      balance_after: number
-      /** Format: uuid */
-      company_id: string
-      /** Format: uuid */
-      contact_id?: string | null
-      /** Format: date-time */
-      created_at: string
-      /** Format: date */
-      date: string
-      description?: string | null
-      /** Format: uuid */
-      id: string
-      /** Format: uuid */
-      payment_method_id?: string | null
-      /** Format: uuid */
-      reference_id?: string | null
-      reference_type?: string | null
-      transaction_type: string
-    }
-    UnreadCountResponse: {
-      /** Format: int64 */
-      count: number
-    }
-    UpdateCategoryRequest: {
-      description?: string | null
-      /** Format: int32 */
-      display_order?: number
-      name: string
-      pos_visible?: boolean
-    }
-    UpdateCompanyRequest: {
-      address?: string | null
-      default_currency: string
-      default_language: string
-      /** Format: double */
-      default_tax_rate: number
-      email?: string | null
-      name: string
-      phone?: string | null
-      settings?: Record<string, unknown> | null
-      tax_number?: string | null
-      tax_office?: string | null
-      timezone: string
-      website?: string | null
-    }
-    UpdateContactRequest: {
-      address?: string | null
-      contact_person?: string | null
-      contact_type: string
-      /** Format: double */
-      credit_limit?: number | null
-      email?: string | null
-      name: string
-      notes?: string | null
-      phone?: string | null
-      status: string
-      tax_number?: string | null
-      tax_office?: string | null
-    }
-    UpdateCurrencyRequest: {
-      /** Format: double */
-      exchange_rate?: number
-      is_active?: boolean
-      name: string
-      symbol?: string | null
-    }
-    UpdateInvoiceRequest: {
-      /** Format: double */
-      base_currency_total: number
-      /** Format: uuid */
-      contact_id?: string | null
-      currency_code?: string
-      /** Format: date */
-      date: string
-      /** Format: date */
-      due_date?: string | null
-      /** Format: double */
-      exchange_rate?: number
-      /** Format: double */
-      grand_total: number
-      line_items: unknown
-      notes?: string | null
-      /** Format: double */
-      subtotal: number
-      tax_number?: string | null
-      tax_office?: string | null
-      /** Format: double */
-      tax_total: number
-    }
-    UpdateInvoiceStatusRequest: {
-      status: string
-    }
-    UpdateMarketplaceChannelRequest: {
-      code: string
-      is_active?: boolean
-      name: string
-    }
-    UpdatePaymentMethodRequest: {
-      /** Format: int32 */
-      display_order?: number
-      is_active?: boolean
-      name: string
-    }
-    UpdatePosTerminalRequest: {
-      is_active?: boolean
-      name: string
-      /** Format: uuid */
-      price_list_id?: string | null
-    }
-    UpdatePriceListRequest: {
-      channel_type: string
-      city?: string | null
-      is_active?: boolean
-      /** Format: uuid */
-      marketplace_channel_id?: string | null
-      name: string
-    }
-    UpdateProductRequest: {
-      barcode?: string | null
-      /** Format: uuid */
-      category_id?: string | null
-      code?: string | null
-      image_url?: string | null
-      /** Format: double */
-      min_stock_level?: number | null
-      name: string
-      plu_code?: string | null
-      plu_type?: string | null
-      sale_unit_type?: string | null
-      scale_enabled?: boolean
-      status: string
-      stock_status: string
-      stock_tracking?: boolean
-      /** Format: double */
-      tax_rate?: number | null
-      unit_of_measure: string
-    }
-    UpdateProductionRecordRequest: {
-      materials?: unknown
-      notes?: string | null
-      /** Format: double */
-      quantity: number
-    }
-    UpdatePermissionsRequest: {
-      permissions: unknown
-    }
-    UpdateRoleRequest: {
-      role: string
-    }
-    UpdateStockLevelsRequest: {
-      /** Format: double */
-      max_level?: number | null
-      /** Format: double */
-      min_level?: number | null
-    }
-    UpsertPriceListItemRequest: {
-      items?: components["schemas"]["BulkPriceListItemEntry"][] | null
-      /** Format: double */
-      price?: number | null
-      /** Format: uuid */
-      product_id?: string | null
-      /** Format: double */
-      vat_rate?: number | null
-    }
-  }
-  responses: never
-  parameters: never
-  requestBodies: never
-  headers: never
-  pathItems: never
+    schemas: {
+        AddSessionItemRequest: {
+            item: components["schemas"]["SessionItem"];
+        };
+        AuditLog: {
+            action: string;
+            changes?: unknown;
+            /** Format: uuid */
+            company_id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            entity_id: string;
+            entity_type: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            user_id: string;
+        };
+        BulkActionResponse: {
+            /** Format: int64 */
+            affected: number;
+        };
+        BulkCategoryRequest: {
+            /** Format: uuid */
+            category_id?: string | null;
+            ids: string[];
+        };
+        BulkIdsRequest: {
+            ids: string[];
+        };
+        BulkPriceListItemEntry: {
+            /** Format: double */
+            price: number;
+            /** Format: uuid */
+            product_id: string;
+            /** Format: double */
+            vat_rate?: number | null;
+        };
+        BulkPriceListRequest: {
+            action: string;
+            /** Format: double */
+            price?: number | null;
+            /** Format: uuid */
+            price_list_id: string;
+            product_ids: string[];
+        };
+        Category: {
+            /** Format: uuid */
+            company_id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: int32 */
+            depth: number;
+            description?: string | null;
+            /** Format: int32 */
+            display_order: number;
+            /** Format: uuid */
+            id: string;
+            name: string;
+            /** Format: uuid */
+            parent_id?: string | null;
+            pos_visible: boolean;
+            status: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        CloseShiftRequest: {
+            /** Format: double */
+            closing_balance: number;
+            /** Format: double */
+            expected_balance?: number | null;
+            notes?: string | null;
+        };
+        Company: {
+            address?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            default_currency: string;
+            default_language: string;
+            /** Format: double */
+            default_tax_rate: number;
+            email?: string | null;
+            /** Format: uuid */
+            id: string;
+            logo_url?: string | null;
+            name: string;
+            phone?: string | null;
+            settings: unknown;
+            tax_number?: string | null;
+            tax_office?: string | null;
+            timezone: string;
+            /** Format: date-time */
+            updated_at: string;
+            website?: string | null;
+        };
+        CompanyUser: {
+            email: string;
+            is_active: boolean;
+            /** Format: date-time */
+            joined_at: string;
+            name: string;
+            permissions: unknown;
+            role: string;
+            /** Format: uuid */
+            user_id: string;
+        };
+        CompanyWithUserCount: {
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            id: string;
+            is_active: boolean;
+            name: string;
+            /** Format: int64 */
+            user_count: number;
+        };
+        Contact: {
+            address?: string | null;
+            /** Format: double */
+            balance: number;
+            /** Format: uuid */
+            company_id: string;
+            contact_person?: string | null;
+            contact_type: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: double */
+            credit_limit?: number | null;
+            email?: string | null;
+            /** Format: uuid */
+            id: string;
+            name: string;
+            notes?: string | null;
+            phone?: string | null;
+            status: string;
+            tax_number?: string | null;
+            tax_office?: string | null;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        CreateCategoryRequest: {
+            description?: string | null;
+            /** Format: int32 */
+            display_order?: number;
+            name: string;
+            /** Format: uuid */
+            parent_id?: string | null;
+            pos_visible?: boolean;
+        };
+        CreateCompanyRequest: {
+            name: string;
+            settings?: unknown;
+        };
+        CreateContactRequest: {
+            address?: string | null;
+            contact_person?: string | null;
+            contact_type: string;
+            /** Format: double */
+            credit_limit?: number | null;
+            email?: string | null;
+            name: string;
+            notes?: string | null;
+            phone?: string | null;
+            tax_number?: string | null;
+            tax_office?: string | null;
+        };
+        CreateCurrencyRequest: {
+            code: string;
+            /** Format: double */
+            exchange_rate?: number;
+            is_base?: boolean;
+            name: string;
+            symbol?: string | null;
+        };
+        CreateInvoiceRequest: {
+            /** Format: double */
+            base_currency_total: number;
+            /** Format: uuid */
+            contact_id?: string | null;
+            currency_code?: string;
+            /** Format: date */
+            date: string;
+            /** Format: date */
+            due_date?: string | null;
+            /** Format: double */
+            exchange_rate?: number;
+            /** Format: double */
+            grand_total: number;
+            invoice_type: string;
+            line_items: unknown;
+            notes?: string | null;
+            /** Format: double */
+            subtotal: number;
+            tax_number?: string | null;
+            tax_office?: string | null;
+            /** Format: double */
+            tax_total: number;
+        };
+        CreateMarketplaceChannelRequest: {
+            code: string;
+            name: string;
+        };
+        CreateMovementRequest: {
+            description?: string | null;
+            movement_type: string;
+            /** Format: uuid */
+            product_id: string;
+            /** Format: double */
+            quantity: number;
+        };
+        CreateOrderItemRequest: {
+            /** Format: double */
+            line_total: number;
+            /** Format: uuid */
+            product_id?: string | null;
+            product_name: string;
+            /** Format: double */
+            quantity: number;
+            /** Format: double */
+            unit_price: number;
+            variant_name?: string | null;
+            /** Format: double */
+            vat_rate: number;
+        };
+        CreateOrderRequest: {
+            items: components["schemas"]["CreateOrderItemRequest"][];
+            notes?: string | null;
+            /** Format: uuid */
+            payment_method_id?: string | null;
+            /** Format: uuid */
+            shift_id?: string | null;
+            /** Format: uuid */
+            terminal_id?: string | null;
+        };
+        CreatePaymentMethodRequest: {
+            /** Format: int32 */
+            display_order?: number;
+            is_default?: boolean;
+            name: string;
+        };
+        CreatePosTerminalRequest: {
+            name: string;
+            /** Format: uuid */
+            price_list_id?: string | null;
+        };
+        CreatePriceListRequest: {
+            channel_type: string;
+            city?: string | null;
+            is_default?: boolean;
+            /** Format: uuid */
+            marketplace_channel_id?: string | null;
+            name: string;
+        };
+        CreateProductRequest: {
+            barcode?: string | null;
+            /** Format: uuid */
+            category_id?: string | null;
+            code?: string | null;
+            name: string;
+            product_type: string;
+            stock_tracking?: boolean;
+            /** Format: double */
+            tax_rate?: number | null;
+            unit_of_measure: string;
+        };
+        CreateProductionRecordRequest: {
+            /** Format: double */
+            batch_size: number;
+            materials?: unknown;
+            notes?: string | null;
+            /** Format: uuid */
+            product_id: string;
+            /** Format: double */
+            quantity: number;
+            unit: string;
+            variant_name?: string | null;
+        };
+        CreateProductionSessionRequest: {
+            name?: string | null;
+        };
+        CreateStockCountRequest: {
+            items: components["schemas"]["StockCountItem"][];
+            notes?: string | null;
+        };
+        CreateUserRequest: {
+            email: string;
+            name: string;
+            password: string;
+            role: string;
+        };
+        Currency: {
+            code: string;
+            /** Format: uuid */
+            company_id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: double */
+            exchange_rate: number;
+            /** Format: uuid */
+            id: string;
+            is_active: boolean;
+            is_base: boolean;
+            name: string;
+            symbol: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        DashboardData: {
+            /** Format: int64 */
+            low_stock_count: number;
+            /** Format: double */
+            outstanding_payables: number;
+            /** Format: double */
+            outstanding_receivables: number;
+            /** Format: int64 */
+            today_production_count: number;
+            /** Format: int64 */
+            today_sales_count: number;
+            /** Format: double */
+            today_sales_total: number;
+        };
+        HourlySales: {
+            /** Format: int64 */
+            count: number;
+            /** Format: double */
+            hour: number;
+            /** Format: double */
+            total: number;
+        };
+        Invoice: {
+            /** Format: double */
+            base_currency_total: number;
+            /** Format: uuid */
+            company_id: string;
+            /** Format: uuid */
+            contact_id?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            currency_code: string;
+            /** Format: date */
+            date: string;
+            /** Format: date */
+            due_date?: string | null;
+            /** Format: double */
+            exchange_rate: number;
+            /** Format: double */
+            grand_total: number;
+            /** Format: uuid */
+            id: string;
+            invoice_number: string;
+            invoice_type: string;
+            line_items: unknown;
+            notes?: string | null;
+            status: string;
+            /** Format: double */
+            subtotal: number;
+            tax_number?: string | null;
+            tax_office?: string | null;
+            /** Format: double */
+            tax_total: number;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        LoginCompany: {
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
+        LoginRequest: {
+            email: string;
+            password: string;
+        };
+        LoginResponse: {
+            access_token: string;
+            company?: null | components["schemas"]["LoginCompany"];
+            /** Format: int64 */
+            expires_in: number;
+            permissions: unknown;
+            preferred_language?: string | null;
+            refresh_token: string;
+            role?: string | null;
+            token_type: string;
+            user: components["schemas"]["LoginUser"];
+        };
+        LoginUser: {
+            email: string;
+            /** Format: uuid */
+            id: string;
+            name: string;
+        };
+        MarkAllReadResponse: {
+            /** Format: int64 */
+            affected: number;
+        };
+        MarketplaceChannel: {
+            code: string;
+            /** Format: uuid */
+            company_id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            id: string;
+            is_active: boolean;
+            name: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        MaterialCostLine: {
+            /** Format: double */
+            line_cost?: number | null;
+            /** Format: uuid */
+            product_id: string;
+            product_name: string;
+            /** Format: double */
+            quantity: number;
+            unit: string;
+            /** Format: double */
+            unit_price?: number | null;
+        };
+        Notification: {
+            /** Format: uuid */
+            company_id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            entity_id?: string | null;
+            entity_type?: string | null;
+            /** Format: uuid */
+            id: string;
+            is_read: boolean;
+            message: string;
+            notification_type: string;
+            title: string;
+            /** Format: uuid */
+            user_id?: string | null;
+        };
+        OpenShiftRequest: {
+            /** Format: double */
+            opening_balance?: number;
+            /** Format: uuid */
+            terminal_id?: string | null;
+        };
+        Order: {
+            /** Format: uuid */
+            cashier_id: string;
+            /** Format: uuid */
+            company_id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            id: string;
+            notes?: string | null;
+            order_number: string;
+            /** Format: uuid */
+            payment_method_id?: string | null;
+            /** Format: uuid */
+            shift_id?: string | null;
+            status: string;
+            /** Format: double */
+            subtotal: number;
+            /** Format: double */
+            tax_total: number;
+            /** Format: uuid */
+            terminal_id?: string | null;
+            /** Format: double */
+            total: number;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        OrderItem: {
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: double */
+            line_total: number;
+            /** Format: uuid */
+            order_id: string;
+            /** Format: uuid */
+            product_id?: string | null;
+            product_name: string;
+            /** Format: double */
+            quantity: number;
+            /** Format: double */
+            returned_quantity: number;
+            /** Format: double */
+            unit_price: number;
+            variant_name?: string | null;
+            /** Format: double */
+            vat_rate: number;
+        };
+        OrderReasonRequest: {
+            reason: string;
+        };
+        OrderWithItems: components["schemas"]["Order"] & {
+            items: components["schemas"]["OrderItem"][];
+        };
+        PaymentMethod: {
+            /** Format: uuid */
+            company_id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: int32 */
+            display_order: number;
+            /** Format: uuid */
+            id: string;
+            is_active: boolean;
+            is_default: boolean;
+            name: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        PaymentMethodSummary: {
+            /** Format: int64 */
+            count: number;
+            method_name: string;
+            /** Format: double */
+            total: number;
+        };
+        PosTerminal: {
+            /** Format: uuid */
+            company_id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            id: string;
+            is_active: boolean;
+            name: string;
+            /** Format: uuid */
+            price_list_id?: string | null;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        PriceList: {
+            channel_type: string;
+            city?: string | null;
+            /** Format: uuid */
+            company_id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            id: string;
+            is_active: boolean;
+            is_default: boolean;
+            /** Format: uuid */
+            marketplace_channel_id?: string | null;
+            name: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        PriceListItem: {
+            /** Format: uuid */
+            company_id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            id: string;
+            is_active: boolean;
+            /** Format: double */
+            price: number;
+            /** Format: uuid */
+            price_list_id: string;
+            /** Format: uuid */
+            product_id: string;
+            /** Format: date-time */
+            updated_at: string;
+            /** Format: double */
+            vat_rate?: number | null;
+        };
+        Product: {
+            barcode?: string | null;
+            /** Format: double */
+            calculated_cost?: number | null;
+            /** Format: uuid */
+            category_id?: string | null;
+            code?: string | null;
+            /** Format: uuid */
+            company_id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            id: string;
+            image_url?: string | null;
+            /** Format: double */
+            last_purchase_price?: number | null;
+            /** Format: double */
+            min_stock_level?: number | null;
+            name: string;
+            plu_code?: string | null;
+            plu_type?: string | null;
+            product_type: string;
+            purchase_options?: unknown;
+            recipe?: unknown;
+            sale_unit_type?: string | null;
+            scale_enabled: boolean;
+            status: string;
+            stock_status: string;
+            stock_tracking: boolean;
+            /** Format: double */
+            tax_rate?: number | null;
+            unit_of_measure: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        ProductionRecord: {
+            /** Format: double */
+            batch_size: number;
+            /** Format: uuid */
+            company_id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            id: string;
+            materials: unknown;
+            notes?: string | null;
+            /** Format: date-time */
+            produced_at: string;
+            /** Format: uuid */
+            produced_by: string;
+            /** Format: uuid */
+            product_id: string;
+            /** Format: double */
+            quantity: number;
+            unit: string;
+            /** Format: date-time */
+            updated_at: string;
+            variant_name?: string | null;
+        };
+        ProductionSession: {
+            /** Format: uuid */
+            company_id: string;
+            /** Format: date-time */
+            completed_at?: string | null;
+            /** Format: uuid */
+            completed_by?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            id: string;
+            items: unknown;
+            name?: string | null;
+            status: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        ProfitMargin: {
+            /** Format: double */
+            cost: number;
+            /** Format: double */
+            margin_percent: number;
+            /** Format: uuid */
+            product_id: string;
+            product_name: string;
+            /** Format: double */
+            selling_price: number;
+        };
+        PurchaseVariant: {
+            barcode?: string | null;
+            /** Format: double */
+            conversion_qty: number;
+            is_default?: boolean;
+            name: string;
+            purchase_unit: string;
+            supplier_id?: string | null;
+        };
+        RecipeCostResponse: {
+            /** Format: double */
+            batch_size: number;
+            materials: components["schemas"]["MaterialCostLine"][];
+            /** Format: double */
+            total_cost: number;
+            /** Format: double */
+            unit_cost: number;
+        };
+        RecipeMaterial: {
+            /** Format: uuid */
+            product_id: string;
+            /** Format: double */
+            quantity: number;
+            unit: string;
+        };
+        RecipeVariant: {
+            material_overrides: components["schemas"]["RecipeMaterial"][];
+            name: string;
+            notes?: string | null;
+            /** Format: double */
+            price_modifier?: number | null;
+        };
+        RecordPaymentRequest: {
+            /** Format: double */
+            amount: number;
+            /** Format: date */
+            date?: string | null;
+            description?: string | null;
+            /** Format: uuid */
+            payment_method_id?: string | null;
+        };
+        RefreshRequest: {
+            refresh_token?: string | null;
+        };
+        RegisterRequest: {
+            email: string;
+            name: string;
+            password: string;
+        };
+        ReturnItem: {
+            /** Format: uuid */
+            order_item_id: string;
+            /** Format: double */
+            quantity: number;
+        };
+        ReturnOrderRequest: {
+            /**
+             * @description If provided, only return these specific items (partial return).
+             *     If `None`, do a full return (existing behavior).
+             */
+            items?: components["schemas"]["ReturnItem"][] | null;
+            reason: string;
+        };
+        SessionItem: {
+            materials?: unknown;
+            notes?: string | null;
+            /** Format: uuid */
+            product_id: string;
+            /** Format: double */
+            quantity: number;
+        };
+        Shift: {
+            /** Format: uuid */
+            cashier_id: string;
+            /** Format: date-time */
+            closed_at?: string | null;
+            /** Format: double */
+            closing_balance?: number | null;
+            /** Format: uuid */
+            company_id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: double */
+            expected_balance?: number | null;
+            /** Format: uuid */
+            id: string;
+            notes?: string | null;
+            /** Format: date-time */
+            opened_at: string;
+            /** Format: double */
+            opening_balance: number;
+            status: string;
+            /** Format: uuid */
+            terminal_id?: string | null;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        Stock: {
+            /** Format: uuid */
+            company_id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            id: string;
+            /** Format: date-time */
+            last_movement_at?: string | null;
+            location?: string | null;
+            /** Format: double */
+            max_level?: number | null;
+            /** Format: double */
+            min_level?: number | null;
+            /** Format: uuid */
+            product_id: string;
+            /** Format: double */
+            quantity: number;
+            /** Format: double */
+            reserved_quantity: number;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        StockCount: {
+            /** Format: uuid */
+            company_id: string;
+            /** Format: date-time */
+            counted_at: string;
+            /** Format: uuid */
+            counted_by: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            id: string;
+            items: unknown;
+            notes?: string | null;
+            status: string;
+            /** Format: date-time */
+            updated_at: string;
+        };
+        StockCountItem: {
+            /** Format: double */
+            counted_quantity: number;
+            /** Format: uuid */
+            product_id: string;
+        };
+        StockMovement: {
+            /** Format: uuid */
+            company_id: string;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: uuid */
+            created_by: string;
+            description?: string | null;
+            /** Format: uuid */
+            id: string;
+            movement_type: string;
+            /** Format: uuid */
+            product_id: string;
+            /** Format: double */
+            quantity: number;
+            /** Format: uuid */
+            reference_id?: string | null;
+            reference_type?: string | null;
+            source: string;
+            /** Format: double */
+            total_price?: number | null;
+            /** Format: double */
+            unit_price?: number | null;
+            /** Format: double */
+            vat_rate?: number | null;
+        };
+        StockTurnover: {
+            /** Format: uuid */
+            product_id: string;
+            product_name: string;
+            /** Format: double */
+            turnover_rate: number;
+        };
+        SuperAdminUser: {
+            /** Format: int64 */
+            company_count: number;
+            /** Format: date-time */
+            created_at: string;
+            email: string;
+            /** Format: uuid */
+            id: string;
+            is_super_admin: boolean;
+            name: string;
+        };
+        SwitchCompanyRequest: {
+            /** Format: uuid */
+            company_id: string;
+        };
+        TokenResponse: {
+            access_token: string;
+            /** Format: int64 */
+            expires_in: number;
+            refresh_token: string;
+            token_type: string;
+        };
+        Transaction: {
+            /** Format: double */
+            amount: number;
+            /** Format: double */
+            balance_after: number;
+            /** Format: uuid */
+            company_id: string;
+            /** Format: uuid */
+            contact_id?: string | null;
+            /** Format: date-time */
+            created_at: string;
+            /** Format: date */
+            date: string;
+            description?: string | null;
+            /** Format: uuid */
+            id: string;
+            /** Format: uuid */
+            payment_method_id?: string | null;
+            /** Format: uuid */
+            reference_id?: string | null;
+            reference_type?: string | null;
+            transaction_type: string;
+        };
+        UnreadCountResponse: {
+            /** Format: int64 */
+            count: number;
+        };
+        UpdateCategoryRequest: {
+            description?: string | null;
+            /** Format: int32 */
+            display_order?: number;
+            name: string;
+            pos_visible?: boolean;
+        };
+        UpdateCompanyRequest: {
+            address?: string | null;
+            default_currency: string;
+            default_language: string;
+            /** Format: double */
+            default_tax_rate: number;
+            email?: string | null;
+            logo_url?: string | null;
+            name: string;
+            phone?: string | null;
+            settings?: unknown;
+            tax_number?: string | null;
+            tax_office?: string | null;
+            timezone: string;
+            website?: string | null;
+        };
+        UpdateContactRequest: {
+            address?: string | null;
+            contact_person?: string | null;
+            contact_type: string;
+            /** Format: double */
+            credit_limit?: number | null;
+            email?: string | null;
+            name: string;
+            notes?: string | null;
+            phone?: string | null;
+            status: string;
+            tax_number?: string | null;
+            tax_office?: string | null;
+        };
+        UpdateCurrencyRequest: {
+            /** Format: double */
+            exchange_rate?: number;
+            is_active?: boolean;
+            name: string;
+            symbol?: string | null;
+        };
+        UpdateInvoiceRequest: {
+            /** Format: double */
+            base_currency_total: number;
+            /** Format: uuid */
+            contact_id?: string | null;
+            currency_code?: string;
+            /** Format: date */
+            date: string;
+            /** Format: date */
+            due_date?: string | null;
+            /** Format: double */
+            exchange_rate?: number;
+            /** Format: double */
+            grand_total: number;
+            line_items: unknown;
+            notes?: string | null;
+            /** Format: double */
+            subtotal: number;
+            tax_number?: string | null;
+            tax_office?: string | null;
+            /** Format: double */
+            tax_total: number;
+        };
+        UpdateInvoiceStatusRequest: {
+            status: string;
+        };
+        UpdateMarketplaceChannelRequest: {
+            code: string;
+            is_active?: boolean;
+            name: string;
+        };
+        UpdatePaymentMethodRequest: {
+            /** Format: int32 */
+            display_order?: number;
+            is_active?: boolean;
+            name: string;
+        };
+        UpdatePermissionsRequest: {
+            permissions: unknown;
+        };
+        UpdatePosTerminalRequest: {
+            is_active?: boolean;
+            name: string;
+            /** Format: uuid */
+            price_list_id?: string | null;
+        };
+        UpdatePreferencesRequest: {
+            preferred_language: string;
+        };
+        UpdatePriceListRequest: {
+            channel_type: string;
+            city?: string | null;
+            is_active?: boolean;
+            /** Format: uuid */
+            marketplace_channel_id?: string | null;
+            name: string;
+        };
+        UpdateProductRequest: {
+            barcode?: string | null;
+            /** Format: uuid */
+            category_id?: string | null;
+            code?: string | null;
+            image_url?: string | null;
+            /** Format: double */
+            min_stock_level?: number | null;
+            name: string;
+            plu_code?: string | null;
+            plu_type?: string | null;
+            sale_unit_type?: string | null;
+            scale_enabled?: boolean;
+            status: string;
+            stock_status: string;
+            stock_tracking?: boolean;
+            /** Format: double */
+            tax_rate?: number | null;
+            unit_of_measure: string;
+        };
+        UpdateProductionRecordRequest: {
+            materials?: unknown;
+            notes?: string | null;
+            /** Format: double */
+            quantity: number;
+        };
+        UpdatePurchaseOptionsRequest: {
+            variants: components["schemas"]["PurchaseVariant"][];
+        };
+        UpdateRecipeRequest: {
+            /** Format: double */
+            batch_size: number;
+            materials: components["schemas"]["RecipeMaterial"][];
+            notes?: string | null;
+            variants?: components["schemas"]["RecipeVariant"][] | null;
+        };
+        UpdateRoleRequest: {
+            role: string;
+        };
+        UpdateStockLevelsRequest: {
+            /** Format: double */
+            max_level?: number | null;
+            /** Format: double */
+            min_level?: number | null;
+        };
+        UpsertPriceListItemRequest: {
+            items?: components["schemas"]["BulkPriceListItemEntry"][] | null;
+            /** Format: double */
+            price?: number | null;
+            /** Format: uuid */
+            product_id?: string | null;
+            /** Format: double */
+            vat_rate?: number | null;
+        };
+        UserPreferencesResponse: {
+            preferred_language: string;
+        };
+        ZReport: {
+            /** Format: double */
+            actual_cash?: number | null;
+            cashier_name: string;
+            /** Format: date-time */
+            closed_at?: string | null;
+            /** Format: double */
+            closing_balance?: number | null;
+            /** Format: double */
+            discrepancy?: number | null;
+            /** Format: double */
+            expected_cash: number;
+            /** Format: date-time */
+            opened_at: string;
+            /** Format: double */
+            opening_balance: number;
+            payment_method_breakdown: components["schemas"]["PaymentMethodSummary"][];
+            /** Format: int64 */
+            returned_orders: number;
+            /** Format: uuid */
+            shift_id: string;
+            /** Format: int64 */
+            total_items_sold: number;
+            /** Format: int64 */
+            total_orders: number;
+            /** Format: double */
+            total_sales: number;
+            /** Format: int64 */
+            voided_orders: number;
+        };
+    };
+    responses: never;
+    parameters: never;
+    requestBodies: never;
+    headers: never;
+    pathItems: never;
 }
-export type $defs = Record<string, never>
+export type $defs = Record<string, never>;
 export interface operations {
-  logout: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-    }
-  }
-  switch_company: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["SwitchCompanyRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              access_token: string
-              /** Format: int64 */
-              expires_in: number
-              refresh_token: string
-              token_type: string
-            }
-          }
-        }
-      }
-    }
-  }
-  list_categories: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: int32 */
-              depth: number
-              description?: string | null
-              /** Format: int32 */
-              display_order: number
-              /** Format: uuid */
-              id: string
-              name: string
-              /** Format: uuid */
-              parent_id?: string | null
-              pos_visible: boolean
-              status: string
-              /** Format: date-time */
-              updated_at: string
-            }[]
-          }
-        }
-      }
-    }
-  }
-  create_category: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["CreateCategoryRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: int32 */
-              depth: number
-              description?: string | null
-              /** Format: int32 */
-              display_order: number
-              /** Format: uuid */
-              id: string
-              name: string
-              /** Format: uuid */
-              parent_id?: string | null
-              pos_visible: boolean
-              status: string
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  get_category: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Category ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: int32 */
-              depth: number
-              description?: string | null
-              /** Format: int32 */
-              display_order: number
-              /** Format: uuid */
-              id: string
-              name: string
-              /** Format: uuid */
-              parent_id?: string | null
-              pos_visible: boolean
-              status: string
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  update_category: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Category ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UpdateCategoryRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: int32 */
-              depth: number
-              description?: string | null
-              /** Format: int32 */
-              display_order: number
-              /** Format: uuid */
-              id: string
-              name: string
-              /** Format: uuid */
-              parent_id?: string | null
-              pos_visible: boolean
-              status: string
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  delete_category: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Category ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-    }
-  }
-  get_company: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              address?: string | null
-              /** Format: date-time */
-              created_at: string
-              default_currency: string
-              default_language: string
-              /** Format: double */
-              default_tax_rate: number
-              email?: string | null
-              /** Format: uuid */
-              id: string
-              logo_url?: string | null
-              name: string
-              phone?: string | null
-              settings: unknown
-              tax_number?: string | null
-              tax_office?: string | null
-              timezone: string
-              /** Format: date-time */
-              updated_at: string
-              website?: string | null
-            }
-          }
-        }
-      }
-    }
-  }
-  update_company: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UpdateCompanyRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              address?: string | null
-              /** Format: date-time */
-              created_at: string
-              default_currency: string
-              default_language: string
-              /** Format: double */
-              default_tax_rate: number
-              email?: string | null
-              /** Format: uuid */
-              id: string
-              logo_url?: string | null
-              name: string
-              phone?: string | null
-              settings: unknown
-              tax_number?: string | null
-              tax_office?: string | null
-              timezone: string
-              /** Format: date-time */
-              updated_at: string
-              website?: string | null
-            }
-          }
-        }
-      }
-    }
-  }
-  list_contacts: {
-    parameters: {
-      query?: {
-        /** @description Filter by contact type */
-        contact_type?: string
-        /** @description Filter by status */
-        status?: string
-        /** @description Search by name, contact person, phone, or email */
-        search?: string
-        /** @description Page number */
-        page?: number
-        /** @description Items per page */
-        per_page?: number
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              address?: string | null
-              /** Format: double */
-              balance: number
-              /** Format: uuid */
-              company_id: string
-              contact_person?: string | null
-              contact_type: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: double */
-              credit_limit?: number | null
-              email?: string | null
-              /** Format: uuid */
-              id: string
-              name: string
-              notes?: string | null
-              phone?: string | null
-              status: string
-              tax_number?: string | null
-              tax_office?: string | null
-              /** Format: date-time */
-              updated_at: string
-            }[]
-            /** Format: int32 */
-            page: number
-            /** Format: int32 */
-            per_page: number
-            /** Format: int64 */
-            total: number
-            /** Format: int32 */
-            total_pages: number
-          }
-        }
-      }
-    }
-  }
-  create_contact: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["CreateContactRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              address?: string | null
-              /** Format: double */
-              balance: number
-              /** Format: uuid */
-              company_id: string
-              contact_person?: string | null
-              contact_type: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: double */
-              credit_limit?: number | null
-              email?: string | null
-              /** Format: uuid */
-              id: string
-              name: string
-              notes?: string | null
-              phone?: string | null
-              status: string
-              tax_number?: string | null
-              tax_office?: string | null
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  get_contact: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Contact ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              address?: string | null
-              /** Format: double */
-              balance: number
-              /** Format: uuid */
-              company_id: string
-              contact_person?: string | null
-              contact_type: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: double */
-              credit_limit?: number | null
-              email?: string | null
-              /** Format: uuid */
-              id: string
-              name: string
-              notes?: string | null
-              phone?: string | null
-              status: string
-              tax_number?: string | null
-              tax_office?: string | null
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  update_contact: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Contact ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UpdateContactRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              address?: string | null
-              /** Format: double */
-              balance: number
-              /** Format: uuid */
-              company_id: string
-              contact_person?: string | null
-              contact_type: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: double */
-              credit_limit?: number | null
-              email?: string | null
-              /** Format: uuid */
-              id: string
-              name: string
-              notes?: string | null
-              phone?: string | null
-              status: string
-              tax_number?: string | null
-              tax_office?: string | null
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  delete_contact: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Contact ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-    }
-  }
-  record_payment: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Contact ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["RecordPaymentRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: double */
-              amount: number
-              /** Format: double */
-              balance_after: number
-              /** Format: uuid */
-              company_id: string
-              /** Format: uuid */
-              contact_id?: string | null
-              /** Format: date-time */
-              created_at: string
-              /** Format: date */
-              date: string
-              description?: string | null
-              /** Format: uuid */
-              id: string
-              /** Format: uuid */
-              payment_method_id?: string | null
-              /** Format: uuid */
-              reference_id?: string | null
-              reference_type?: string | null
-              transaction_type: string
-            }
-          }
-        }
-      }
-    }
-  }
-  list_contact_transactions: {
-    parameters: {
-      query?: {
-        /** @description Filter by transaction type */
-        transaction_type?: string
-        /** @description Filter by start date */
-        date_from?: string
-        /** @description Filter by end date */
-        date_to?: string
-        /** @description Page number */
-        page?: number
-        /** @description Items per page */
-        per_page?: number
-      }
-      header?: never
-      path: {
-        /** @description Contact ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: double */
-              amount: number
-              /** Format: double */
-              balance_after: number
-              /** Format: uuid */
-              company_id: string
-              /** Format: uuid */
-              contact_id?: string | null
-              /** Format: date-time */
-              created_at: string
-              /** Format: date */
-              date: string
-              description?: string | null
-              /** Format: uuid */
-              id: string
-              /** Format: uuid */
-              payment_method_id?: string | null
-              /** Format: uuid */
-              reference_id?: string | null
-              reference_type?: string | null
-              transaction_type: string
-            }[]
-            /** Format: int32 */
-            page: number
-            /** Format: int32 */
-            per_page: number
-            /** Format: int64 */
-            total: number
-            /** Format: int32 */
-            total_pages: number
-          }
-        }
-      }
-    }
-  }
-  list_currencies: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              code: string
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: double */
-              exchange_rate: number
-              /** Format: uuid */
-              id: string
-              is_active: boolean
-              is_base: boolean
-              name: string
-              symbol: string
-              /** Format: date-time */
-              updated_at: string
-            }[]
-          }
-        }
-      }
-    }
-  }
-  create_currency: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["CreateCurrencyRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              code: string
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: double */
-              exchange_rate: number
-              /** Format: uuid */
-              id: string
-              is_active: boolean
-              is_base: boolean
-              name: string
-              symbol: string
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  get_currency: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Currency ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              code: string
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: double */
-              exchange_rate: number
-              /** Format: uuid */
-              id: string
-              is_active: boolean
-              is_base: boolean
-              name: string
-              symbol: string
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  update_currency: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Currency ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UpdateCurrencyRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              code: string
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: double */
-              exchange_rate: number
-              /** Format: uuid */
-              id: string
-              is_active: boolean
-              is_base: boolean
-              name: string
-              symbol: string
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  delete_currency: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Currency ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-    }
-  }
-  get_dashboard: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: int64 */
-              low_stock_count: number
-              /** Format: double */
-              outstanding_payables: number
-              /** Format: double */
-              outstanding_receivables: number
-              /** Format: int64 */
-              today_production_count: number
-              /** Format: int64 */
-              today_sales_count: number
-              /** Format: double */
-              today_sales_total: number
-            }
-          }
-        }
-      }
-    }
-  }
-  list_invoices: {
-    parameters: {
-      query?: {
-        /** @description Filter by invoice type */
-        invoice_type?: string
-        /** @description Filter by status */
-        status?: string
-        /** @description Filter by start date */
-        date_from?: string
-        /** @description Filter by end date */
-        date_to?: string
-        /** @description Page number */
-        page?: number
-        /** @description Items per page */
-        per_page?: number
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: double */
-              base_currency_total: number
-              /** Format: uuid */
-              company_id: string
-              /** Format: uuid */
-              contact_id?: string | null
-              /** Format: date-time */
-              created_at: string
-              currency_code: string
-              /** Format: date */
-              date: string
-              /** Format: date */
-              due_date?: string | null
-              /** Format: double */
-              exchange_rate: number
-              /** Format: double */
-              grand_total: number
-              /** Format: uuid */
-              id: string
-              invoice_number: string
-              invoice_type: string
-              line_items: unknown
-              notes?: string | null
-              status: string
-              /** Format: double */
-              subtotal: number
-              tax_number?: string | null
-              tax_office?: string | null
-              /** Format: double */
-              tax_total: number
-              /** Format: date-time */
-              updated_at: string
-            }[]
-            /** Format: int32 */
-            page: number
-            /** Format: int32 */
-            per_page: number
-            /** Format: int64 */
-            total: number
-            /** Format: int32 */
-            total_pages: number
-          }
-        }
-      }
-    }
-  }
-  create_invoice: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["CreateInvoiceRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: double */
-              base_currency_total: number
-              /** Format: uuid */
-              company_id: string
-              /** Format: uuid */
-              contact_id?: string | null
-              /** Format: date-time */
-              created_at: string
-              currency_code: string
-              /** Format: date */
-              date: string
-              /** Format: date */
-              due_date?: string | null
-              /** Format: double */
-              exchange_rate: number
-              /** Format: double */
-              grand_total: number
-              /** Format: uuid */
-              id: string
-              invoice_number: string
-              invoice_type: string
-              line_items: unknown
-              notes?: string | null
-              status: string
-              /** Format: double */
-              subtotal: number
-              tax_number?: string | null
-              tax_office?: string | null
-              /** Format: double */
-              tax_total: number
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  get_invoice: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Invoice ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: double */
-              base_currency_total: number
-              /** Format: uuid */
-              company_id: string
-              /** Format: uuid */
-              contact_id?: string | null
-              /** Format: date-time */
-              created_at: string
-              currency_code: string
-              /** Format: date */
-              date: string
-              /** Format: date */
-              due_date?: string | null
-              /** Format: double */
-              exchange_rate: number
-              /** Format: double */
-              grand_total: number
-              /** Format: uuid */
-              id: string
-              invoice_number: string
-              invoice_type: string
-              line_items: unknown
-              notes?: string | null
-              status: string
-              /** Format: double */
-              subtotal: number
-              tax_number?: string | null
-              tax_office?: string | null
-              /** Format: double */
-              tax_total: number
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  update_invoice: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Invoice ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UpdateInvoiceRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: double */
-              base_currency_total: number
-              /** Format: uuid */
-              company_id: string
-              /** Format: uuid */
-              contact_id?: string | null
-              /** Format: date-time */
-              created_at: string
-              currency_code: string
-              /** Format: date */
-              date: string
-              /** Format: date */
-              due_date?: string | null
-              /** Format: double */
-              exchange_rate: number
-              /** Format: double */
-              grand_total: number
-              /** Format: uuid */
-              id: string
-              invoice_number: string
-              invoice_type: string
-              line_items: unknown
-              notes?: string | null
-              status: string
-              /** Format: double */
-              subtotal: number
-              tax_number?: string | null
-              tax_office?: string | null
-              /** Format: double */
-              tax_total: number
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  delete_invoice: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Invoice ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-    }
-  }
-  update_invoice_status: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Invoice ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UpdateInvoiceStatusRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: double */
-              base_currency_total: number
-              /** Format: uuid */
-              company_id: string
-              /** Format: uuid */
-              contact_id?: string | null
-              /** Format: date-time */
-              created_at: string
-              currency_code: string
-              /** Format: date */
-              date: string
-              /** Format: date */
-              due_date?: string | null
-              /** Format: double */
-              exchange_rate: number
-              /** Format: double */
-              grand_total: number
-              /** Format: uuid */
-              id: string
-              invoice_number: string
-              invoice_type: string
-              line_items: unknown
-              notes?: string | null
-              status: string
-              /** Format: double */
-              subtotal: number
-              tax_number?: string | null
-              tax_office?: string | null
-              /** Format: double */
-              tax_total: number
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  list_marketplace_channels: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              code: string
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              is_active: boolean
-              name: string
-              /** Format: date-time */
-              updated_at: string
-            }[]
-          }
-        }
-      }
-    }
-  }
-  create_marketplace_channel: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["CreateMarketplaceChannelRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              code: string
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              is_active: boolean
-              name: string
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  get_marketplace_channel: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Marketplace channel ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              code: string
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              is_active: boolean
-              name: string
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  update_marketplace_channel: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Marketplace channel ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UpdateMarketplaceChannelRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              code: string
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              is_active: boolean
-              name: string
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  delete_marketplace_channel: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Marketplace channel ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-    }
-  }
-  list_notifications: {
-    parameters: {
-      query?: {
-        /** @description Filter by read status */
-        is_read?: boolean
-        /** @description Page number */
-        page?: number
-        /** @description Items per page */
-        per_page?: number
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              entity_id?: string | null
-              entity_type?: string | null
-              /** Format: uuid */
-              id: string
-              is_read: boolean
-              message: string
-              notification_type: string
-              title: string
-              /** Format: uuid */
-              user_id?: string | null
-            }[]
-            /** Format: int32 */
-            page: number
-            /** Format: int32 */
-            per_page: number
-            /** Format: int64 */
-            total: number
-            /** Format: int32 */
-            total_pages: number
-          }
-        }
-      }
-    }
-  }
-  mark_all_read: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: int64 */
-              affected: number
-            }
-          }
-        }
-      }
-    }
-  }
-  unread_count: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: int64 */
-              count: number
-            }
-          }
-        }
-      }
-    }
-  }
-  mark_read: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Notification ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-    }
-  }
-  list_orders: {
-    parameters: {
-      query?: {
-        /** @description Filter by status */
-        status?: string
-        /** @description Filter by cashier */
-        cashier_id?: string
-        /** @description Filter from date */
-        date_from?: string
-        /** @description Filter to date */
-        date_to?: string
-        /** @description Page number */
-        page?: number
-        /** @description Items per page */
-        per_page?: number
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: uuid */
-              cashier_id: string
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              notes?: string | null
-              order_number: string
-              /** Format: uuid */
-              payment_method_id?: string | null
-              /** Format: uuid */
-              shift_id?: string | null
-              status: string
-              /** Format: double */
-              subtotal: number
-              /** Format: double */
-              tax_total: number
-              /** Format: uuid */
-              terminal_id?: string | null
-              /** Format: double */
-              total: number
-              /** Format: date-time */
-              updated_at: string
-            }[]
-            /** Format: int32 */
-            page: number
-            /** Format: int32 */
-            per_page: number
-            /** Format: int64 */
-            total: number
-            /** Format: int32 */
-            total_pages: number
-          }
-        }
-      }
-    }
-  }
-  create_order: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["CreateOrderRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: components["schemas"]["Order"] & {
-              items: components["schemas"]["OrderItem"][]
-            }
-          }
-        }
-      }
-    }
-  }
-  get_order: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Order ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: components["schemas"]["Order"] & {
-              items: components["schemas"]["OrderItem"][]
-            }
-          }
-        }
-      }
-    }
-  }
-  return_order: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Order ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: uuid */
-              cashier_id: string
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              notes?: string | null
-              order_number: string
-              /** Format: uuid */
-              payment_method_id?: string | null
-              /** Format: uuid */
-              shift_id?: string | null
-              status: string
-              /** Format: double */
-              subtotal: number
-              /** Format: double */
-              tax_total: number
-              /** Format: uuid */
-              terminal_id?: string | null
-              /** Format: double */
-              total: number
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  void_order: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Order ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: uuid */
-              cashier_id: string
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              notes?: string | null
-              order_number: string
-              /** Format: uuid */
-              payment_method_id?: string | null
-              /** Format: uuid */
-              shift_id?: string | null
-              status: string
-              /** Format: double */
-              subtotal: number
-              /** Format: double */
-              tax_total: number
-              /** Format: uuid */
-              terminal_id?: string | null
-              /** Format: double */
-              total: number
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  list_payment_methods: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: int32 */
-              display_order: number
-              /** Format: uuid */
-              id: string
-              is_active: boolean
-              is_default: boolean
-              name: string
-              /** Format: date-time */
-              updated_at: string
-            }[]
-          }
-        }
-      }
-    }
-  }
-  create_payment_method: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["CreatePaymentMethodRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: int32 */
-              display_order: number
-              /** Format: uuid */
-              id: string
-              is_active: boolean
-              is_default: boolean
-              name: string
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  update_payment_method: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Payment method ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UpdatePaymentMethodRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: int32 */
-              display_order: number
-              /** Format: uuid */
-              id: string
-              is_active: boolean
-              is_default: boolean
-              name: string
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  delete_payment_method: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Payment method ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-    }
-  }
-  set_default_payment_method: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Payment method ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: int32 */
-              display_order: number
-              /** Format: uuid */
-              id: string
-              is_active: boolean
-              is_default: boolean
-              name: string
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  list_pos_terminals: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              is_active: boolean
-              name: string
-              /** Format: uuid */
-              price_list_id?: string | null
-              /** Format: date-time */
-              updated_at: string
-            }[]
-          }
-        }
-      }
-    }
-  }
-  create_pos_terminal: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["CreatePosTerminalRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              is_active: boolean
-              name: string
-              /** Format: uuid */
-              price_list_id?: string | null
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  update_pos_terminal: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description POS terminal ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UpdatePosTerminalRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              is_active: boolean
-              name: string
-              /** Format: uuid */
-              price_list_id?: string | null
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  delete_pos_terminal: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description POS terminal ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-    }
-  }
-  list_price_lists: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              channel_type: string
-              city?: string | null
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              is_active: boolean
-              is_default: boolean
-              /** Format: uuid */
-              marketplace_channel_id?: string | null
-              name: string
-              /** Format: date-time */
-              updated_at: string
-            }[]
-          }
-        }
-      }
-    }
-  }
-  create_price_list: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["CreatePriceListRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              channel_type: string
-              city?: string | null
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              is_active: boolean
-              is_default: boolean
-              /** Format: uuid */
-              marketplace_channel_id?: string | null
-              name: string
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  delete_price_list_item: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Price list item ID */
-        item_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-    }
-  }
-  get_price_list: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Price list ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              channel_type: string
-              city?: string | null
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              is_active: boolean
-              is_default: boolean
-              /** Format: uuid */
-              marketplace_channel_id?: string | null
-              name: string
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  update_price_list: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Price list ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UpdatePriceListRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              channel_type: string
-              city?: string | null
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              is_active: boolean
-              is_default: boolean
-              /** Format: uuid */
-              marketplace_channel_id?: string | null
-              name: string
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  delete_price_list: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Price list ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-    }
-  }
-  set_default_price_list: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Price list ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              channel_type: string
-              city?: string | null
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              is_active: boolean
-              is_default: boolean
-              /** Format: uuid */
-              marketplace_channel_id?: string | null
-              name: string
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  list_price_list_items: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Price list ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              is_active: boolean
-              /** Format: double */
-              price: number
-              /** Format: uuid */
-              price_list_id: string
-              /** Format: uuid */
-              product_id: string
-              /** Format: date-time */
-              updated_at: string
-              /** Format: double */
-              vat_rate?: number | null
-            }[]
-          }
-        }
-      }
-    }
-  }
-  upsert_price_list_items: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Price list ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UpsertPriceListItemRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              is_active: boolean
-              /** Format: double */
-              price: number
-              /** Format: uuid */
-              price_list_id: string
-              /** Format: uuid */
-              product_id: string
-              /** Format: date-time */
-              updated_at: string
-              /** Format: double */
-              vat_rate?: number | null
-            }[]
-          }
-        }
-      }
-    }
-  }
-  list_production_records: {
-    parameters: {
-      query?: {
-        /** @description Filter by product */
-        product_id?: string
-        /** @description Filter from date */
-        date_from?: string
-        /** @description Filter to date */
-        date_to?: string
-        /** @description Page number */
-        page?: number
-        /** @description Items per page */
-        per_page?: number
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: double */
-              batch_size: number
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              materials: unknown
-              notes?: string | null
-              /** Format: date-time */
-              produced_at: string
-              /** Format: uuid */
-              produced_by: string
-              /** Format: uuid */
-              product_id: string
-              /** Format: double */
-              quantity: number
-              unit: string
-              /** Format: date-time */
-              updated_at: string
-              variant_name?: string | null
-            }[]
-            /** Format: int32 */
-            page: number
-            /** Format: int32 */
-            per_page: number
-            /** Format: int64 */
-            total: number
-            /** Format: int32 */
-            total_pages: number
-          }
-        }
-      }
-    }
-  }
-  create_production_record: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["CreateProductionRecordRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: double */
-              batch_size: number
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              materials: unknown
-              notes?: string | null
-              /** Format: date-time */
-              produced_at: string
-              /** Format: uuid */
-              produced_by: string
-              /** Format: uuid */
-              product_id: string
-              /** Format: double */
-              quantity: number
-              unit: string
-              /** Format: date-time */
-              updated_at: string
-              variant_name?: string | null
-            }
-          }
-        }
-      }
-    }
-  }
-  get_production_record: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Production record ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: double */
-              batch_size: number
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              materials: unknown
-              notes?: string | null
-              /** Format: date-time */
-              produced_at: string
-              /** Format: uuid */
-              produced_by: string
-              /** Format: uuid */
-              product_id: string
-              /** Format: double */
-              quantity: number
-              unit: string
-              /** Format: date-time */
-              updated_at: string
-              variant_name?: string | null
-            }
-          }
-        }
-      }
-    }
-  }
-  update_production_record: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Production record ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UpdateProductionRecordRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: double */
-              batch_size: number
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              materials: unknown
-              notes?: string | null
-              /** Format: date-time */
-              produced_at: string
-              /** Format: uuid */
-              produced_by: string
-              /** Format: uuid */
-              product_id: string
-              /** Format: double */
-              quantity: number
-              unit: string
-              /** Format: date-time */
-              updated_at: string
-              variant_name?: string | null
-            }
-          }
-        }
-      }
-    }
-  }
-  delete_production_record: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Production record ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-    }
-  }
-  list_production_sessions: {
-    parameters: {
-      query?: {
-        /** @description Filter by status */
-        status?: string
-        /** @description Page number */
-        page?: number
-        /** @description Items per page */
-        per_page?: number
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              completed_at?: string | null
-              /** Format: uuid */
-              completed_by?: string | null
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              items: unknown
-              name?: string | null
-              status: string
-              /** Format: date-time */
-              updated_at: string
-            }[]
-            /** Format: int32 */
-            page: number
-            /** Format: int32 */
-            per_page: number
-            /** Format: int64 */
-            total: number
-            /** Format: int32 */
-            total_pages: number
-          }
-        }
-      }
-    }
-  }
-  create_production_session: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["CreateProductionSessionRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              completed_at?: string | null
-              /** Format: uuid */
-              completed_by?: string | null
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              items: unknown
-              name?: string | null
-              status: string
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  delete_production_session: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Production session ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-    }
-  }
-  complete_production_session: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Production session ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              completed_at?: string | null
-              /** Format: uuid */
-              completed_by?: string | null
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              items: unknown
-              name?: string | null
-              status: string
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  add_session_item: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Production session ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["AddSessionItemRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              completed_at?: string | null
-              /** Format: uuid */
-              completed_by?: string | null
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              items: unknown
-              name?: string | null
-              status: string
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  list_products: {
-    parameters: {
-      query?: {
-        /** @description Filter by product type */
-        product_type?: string
-        /** @description Filter by status */
-        status?: string
-        /** @description Filter by category */
-        category_id?: string
-        /** @description Search by name, code, or barcode */
-        search?: string
-        /** @description Page number */
-        page?: number
-        /** @description Items per page */
-        per_page?: number
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              barcode?: string | null
-              /** Format: double */
-              calculated_cost?: number | null
-              /** Format: uuid */
-              category_id?: string | null
-              code?: string | null
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              image_url?: string | null
-              /** Format: double */
-              last_purchase_price?: number | null
-              /** Format: double */
-              min_stock_level?: number | null
-              name: string
-              plu_code?: string | null
-              plu_type?: string | null
-              product_type: string
-              purchase_options?: unknown
-              recipe?: unknown
-              sale_unit_type?: string | null
-              scale_enabled: boolean
-              status: string
-              stock_status: string
-              stock_tracking: boolean
-              /** Format: double */
-              tax_rate?: number | null
-              unit_of_measure: string
-              /** Format: date-time */
-              updated_at: string
-            }[]
-            /** Format: int32 */
-            page: number
-            /** Format: int32 */
-            per_page: number
-            /** Format: int64 */
-            total: number
-            /** Format: int32 */
-            total_pages: number
-          }
-        }
-      }
-    }
-  }
-  create_product: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["CreateProductRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              barcode?: string | null
-              /** Format: double */
-              calculated_cost?: number | null
-              /** Format: uuid */
-              category_id?: string | null
-              code?: string | null
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              image_url?: string | null
-              /** Format: double */
-              last_purchase_price?: number | null
-              /** Format: double */
-              min_stock_level?: number | null
-              name: string
-              plu_code?: string | null
-              plu_type?: string | null
-              product_type: string
-              purchase_options?: unknown
-              recipe?: unknown
-              sale_unit_type?: string | null
-              scale_enabled: boolean
-              status: string
-              stock_status: string
-              stock_tracking: boolean
-              /** Format: double */
-              tax_rate?: number | null
-              unit_of_measure: string
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  bulk_activate: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["BulkIdsRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: int64 */
-              affected: number
-            }
-          }
-        }
-      }
-    }
-  }
-  bulk_category: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["BulkCategoryRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: int64 */
-              affected: number
-            }
-          }
-        }
-      }
-    }
-  }
-  bulk_deactivate: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["BulkIdsRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: int64 */
-              affected: number
-            }
-          }
-        }
-      }
-    }
-  }
-  get_product: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Product ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              barcode?: string | null
-              /** Format: double */
-              calculated_cost?: number | null
-              /** Format: uuid */
-              category_id?: string | null
-              code?: string | null
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              image_url?: string | null
-              /** Format: double */
-              last_purchase_price?: number | null
-              /** Format: double */
-              min_stock_level?: number | null
-              name: string
-              plu_code?: string | null
-              plu_type?: string | null
-              product_type: string
-              purchase_options?: unknown
-              recipe?: unknown
-              sale_unit_type?: string | null
-              scale_enabled: boolean
-              status: string
-              stock_status: string
-              stock_tracking: boolean
-              /** Format: double */
-              tax_rate?: number | null
-              unit_of_measure: string
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  update_product: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Product ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UpdateProductRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              barcode?: string | null
-              /** Format: double */
-              calculated_cost?: number | null
-              /** Format: uuid */
-              category_id?: string | null
-              code?: string | null
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              image_url?: string | null
-              /** Format: double */
-              last_purchase_price?: number | null
-              /** Format: double */
-              min_stock_level?: number | null
-              name: string
-              plu_code?: string | null
-              plu_type?: string | null
-              product_type: string
-              purchase_options?: unknown
-              recipe?: unknown
-              sale_unit_type?: string | null
-              scale_enabled: boolean
-              status: string
-              stock_status: string
-              stock_tracking: boolean
-              /** Format: double */
-              tax_rate?: number | null
-              unit_of_measure: string
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  delete_product: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Product ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-    }
-  }
-  list_shifts: {
-    parameters: {
-      query?: {
-        /** @description Filter by status */
-        status?: string
-        /** @description Page number */
-        page?: number
-        /** @description Items per page */
-        per_page?: number
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: uuid */
-              cashier_id: string
-              /** Format: date-time */
-              closed_at?: string | null
-              /** Format: double */
-              closing_balance?: number | null
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: double */
-              expected_balance?: number | null
-              /** Format: uuid */
-              id: string
-              notes?: string | null
-              /** Format: date-time */
-              opened_at: string
-              /** Format: double */
-              opening_balance: number
-              status: string
-              /** Format: uuid */
-              terminal_id?: string | null
-              /** Format: date-time */
-              updated_at: string
-            }[]
-            /** Format: int32 */
-            page: number
-            /** Format: int32 */
-            per_page: number
-            /** Format: int64 */
-            total: number
-            /** Format: int32 */
-            total_pages: number
-          }
-        }
-      }
-    }
-  }
-  get_current_shift: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: null | {
-              /** Format: uuid */
-              cashier_id: string
-              /** Format: date-time */
-              closed_at?: string | null
-              /** Format: double */
-              closing_balance?: number | null
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: double */
-              expected_balance?: number | null
-              /** Format: uuid */
-              id: string
-              notes?: string | null
-              /** Format: date-time */
-              opened_at: string
-              /** Format: double */
-              opening_balance: number
-              status: string
-              /** Format: uuid */
-              terminal_id?: string | null
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  open_shift: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["OpenShiftRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: uuid */
-              cashier_id: string
-              /** Format: date-time */
-              closed_at?: string | null
-              /** Format: double */
-              closing_balance?: number | null
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: double */
-              expected_balance?: number | null
-              /** Format: uuid */
-              id: string
-              notes?: string | null
-              /** Format: date-time */
-              opened_at: string
-              /** Format: double */
-              opening_balance: number
-              status: string
-              /** Format: uuid */
-              terminal_id?: string | null
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  close_shift: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Shift ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["CloseShiftRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: uuid */
-              cashier_id: string
-              /** Format: date-time */
-              closed_at?: string | null
-              /** Format: double */
-              closing_balance?: number | null
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: double */
-              expected_balance?: number | null
-              /** Format: uuid */
-              id: string
-              notes?: string | null
-              /** Format: date-time */
-              opened_at: string
-              /** Format: double */
-              opening_balance: number
-              status: string
-              /** Format: uuid */
-              terminal_id?: string | null
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  list_stock: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              /** Format: date-time */
-              last_movement_at?: string | null
-              location?: string | null
-              /** Format: double */
-              max_level?: number | null
-              /** Format: double */
-              min_level?: number | null
-              /** Format: uuid */
-              product_id: string
-              /** Format: double */
-              quantity: number
-              /** Format: double */
-              reserved_quantity: number
-              /** Format: date-time */
-              updated_at: string
-            }[]
-          }
-        }
-      }
-    }
-  }
-  list_stock_counts: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              counted_at: string
-              /** Format: uuid */
-              counted_by: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              items: unknown
-              notes?: string | null
-              status: string
-              /** Format: date-time */
-              updated_at: string
-            }[]
-          }
-        }
-      }
-    }
-  }
-  create_stock_count: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["CreateStockCountRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              counted_at: string
-              /** Format: uuid */
-              counted_by: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              items: unknown
-              notes?: string | null
-              status: string
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  complete_stock_count: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Stock count ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              counted_at: string
-              /** Format: uuid */
-              counted_by: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              items: unknown
-              notes?: string | null
-              status: string
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  list_low_stock: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              /** Format: date-time */
-              last_movement_at?: string | null
-              location?: string | null
-              /** Format: double */
-              max_level?: number | null
-              /** Format: double */
-              min_level?: number | null
-              /** Format: uuid */
-              product_id: string
-              /** Format: double */
-              quantity: number
-              /** Format: double */
-              reserved_quantity: number
-              /** Format: date-time */
-              updated_at: string
-            }[]
-          }
-        }
-      }
-    }
-  }
-  list_movements: {
-    parameters: {
-      query?: {
-        /** @description Filter by product */
-        product_id?: string
-        /** @description Filter by movement type */
-        movement_type?: string
-        /** @description Filter by source */
-        source?: string
-        /** @description Page number */
-        page?: number
-        /** @description Items per page */
-        per_page?: number
-      }
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              created_by: string
-              description?: string | null
-              /** Format: uuid */
-              id: string
-              movement_type: string
-              /** Format: uuid */
-              product_id: string
-              /** Format: double */
-              quantity: number
-              /** Format: uuid */
-              reference_id?: string | null
-              reference_type?: string | null
-              source: string
-              /** Format: double */
-              total_price?: number | null
-              /** Format: double */
-              unit_price?: number | null
-              /** Format: double */
-              vat_rate?: number | null
-            }[]
-            /** Format: int32 */
-            page: number
-            /** Format: int32 */
-            per_page: number
-            /** Format: int64 */
-            total: number
-            /** Format: int32 */
-            total_pages: number
-          }
-        }
-      }
-    }
-  }
-  create_movement: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["CreateMovementRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              created_by: string
-              description?: string | null
-              /** Format: uuid */
-              id: string
-              movement_type: string
-              /** Format: uuid */
-              product_id: string
-              /** Format: double */
-              quantity: number
-              /** Format: uuid */
-              reference_id?: string | null
-              reference_type?: string | null
-              source: string
-              /** Format: double */
-              total_price?: number | null
-              /** Format: double */
-              unit_price?: number | null
-              /** Format: double */
-              vat_rate?: number | null
-            }
-          }
-        }
-      }
-    }
-  }
-  get_stock: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Product ID */
-        product_id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              /** Format: date-time */
-              last_movement_at?: string | null
-              location?: string | null
-              /** Format: double */
-              max_level?: number | null
-              /** Format: double */
-              min_level?: number | null
-              /** Format: uuid */
-              product_id: string
-              /** Format: double */
-              quantity: number
-              /** Format: double */
-              reserved_quantity: number
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  update_stock_levels: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description Product ID */
-        product_id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UpdateStockLevelsRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              /** Format: date-time */
-              last_movement_at?: string | null
-              location?: string | null
-              /** Format: double */
-              max_level?: number | null
-              /** Format: double */
-              min_level?: number | null
-              /** Format: uuid */
-              product_id: string
-              /** Format: double */
-              quantity: number
-              /** Format: double */
-              reserved_quantity: number
-              /** Format: date-time */
-              updated_at: string
-            }
-          }
-        }
-      }
-    }
-  }
-  list_users: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              email: string
-              is_active: boolean
-              /** Format: date-time */
-              joined_at: string
-              name: string
-              permissions: unknown
-              role: string
-              /** Format: uuid */
-              user_id: string
-            }[]
-          }
-        }
-      }
-    }
-  }
-  create_user: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["CreateUserRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              email: string
-              is_active: boolean
-              /** Format: date-time */
-              joined_at: string
-              name: string
-              permissions: unknown
-              role: string
-              /** Format: uuid */
-              user_id: string
-            }
-          }
-        }
-      }
-    }
-  }
-  get_user: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description User ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              email: string
-              is_active: boolean
-              /** Format: date-time */
-              joined_at: string
-              name: string
-              permissions: unknown
-              role: string
-              /** Format: uuid */
-              user_id: string
-            }
-          }
-        }
-      }
-    }
-  }
-  remove_user: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description User ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody?: never
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content?: never
-      }
-    }
-  }
-  update_user_permissions: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description User ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UpdatePermissionsRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              is_active: boolean
-              permissions: unknown
-              role: string
-              /** Format: date-time */
-              updated_at: string
-              /** Format: uuid */
-              user_id: string
-            }
-          }
-        }
-      }
-    }
-  }
-  update_user_role: {
-    parameters: {
-      query?: never
-      header?: never
-      path: {
-        /** @description User ID */
-        id: string
-      }
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["UpdateRoleRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              /** Format: uuid */
-              company_id: string
-              /** Format: date-time */
-              created_at: string
-              /** Format: uuid */
-              id: string
-              is_active: boolean
-              permissions: unknown
-              role: string
-              /** Format: date-time */
-              updated_at: string
-              /** Format: uuid */
-              user_id: string
-            }
-          }
-        }
-      }
-    }
-  }
-  login: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["LoginRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              access_token: string
-              company?: null | components["schemas"]["LoginCompany"]
-              /** Format: int64 */
-              expires_in: number
-              refresh_token: string
-              token_type: string
-              user: components["schemas"]["LoginUser"]
-            }
-          }
-        }
-      }
-    }
-  }
-  refresh: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["RefreshRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              access_token: string
-              /** Format: int64 */
-              expires_in: number
-              refresh_token: string
-              token_type: string
-            }
-          }
-        }
-      }
-    }
-  }
-  register: {
-    parameters: {
-      query?: never
-      header?: never
-      path?: never
-      cookie?: never
-    }
-    requestBody: {
-      content: {
-        "application/json": components["schemas"]["RegisterRequest"]
-      }
-    }
-    responses: {
-      200: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            data: {
-              access_token: string
-              /** Format: int64 */
-              expires_in: number
-              refresh_token: string
-              token_type: string
-            }
-          }
-        }
-      }
-    }
-  }
+    list_audit_logs: {
+        parameters: {
+            query?: {
+                /** @description Filter by entity type */
+                entity_type?: string;
+                /** @description Filter by entity ID */
+                entity_id?: string;
+                /** @description Filter by action */
+                action?: string;
+                /** @description Filter by user ID */
+                user_id?: string;
+                /** @description Page number */
+                page?: number;
+                /** @description Items per page */
+                per_page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            action: string;
+                            changes?: unknown;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            entity_id: string;
+                            entity_type: string;
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: uuid */
+                            user_id: string;
+                        }[];
+                        /** Format: int32 */
+                        page: number;
+                        /** Format: int32 */
+                        per_page: number;
+                        /** Format: int64 */
+                        total: number;
+                        /** Format: int32 */
+                        total_pages: number;
+                    };
+                };
+            };
+        };
+    };
+    logout: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    switch_company: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["SwitchCompanyRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            access_token: string;
+                            /** Format: int64 */
+                            expires_in: number;
+                            refresh_token: string;
+                            token_type: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    list_categories: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: int32 */
+                            depth: number;
+                            description?: string | null;
+                            /** Format: int32 */
+                            display_order: number;
+                            /** Format: uuid */
+                            id: string;
+                            name: string;
+                            /** Format: uuid */
+                            parent_id?: string | null;
+                            pos_visible: boolean;
+                            status: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                        }[];
+                    };
+                };
+            };
+        };
+    };
+    create_category: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCategoryRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: int32 */
+                            depth: number;
+                            description?: string | null;
+                            /** Format: int32 */
+                            display_order: number;
+                            /** Format: uuid */
+                            id: string;
+                            name: string;
+                            /** Format: uuid */
+                            parent_id?: string | null;
+                            pos_visible: boolean;
+                            status: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    get_category: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Category ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: int32 */
+                            depth: number;
+                            description?: string | null;
+                            /** Format: int32 */
+                            display_order: number;
+                            /** Format: uuid */
+                            id: string;
+                            name: string;
+                            /** Format: uuid */
+                            parent_id?: string | null;
+                            pos_visible: boolean;
+                            status: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    update_category: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Category ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCategoryRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: int32 */
+                            depth: number;
+                            description?: string | null;
+                            /** Format: int32 */
+                            display_order: number;
+                            /** Format: uuid */
+                            id: string;
+                            name: string;
+                            /** Format: uuid */
+                            parent_id?: string | null;
+                            pos_visible: boolean;
+                            status: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    delete_category: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Category ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_company: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            address?: string | null;
+                            /** Format: date-time */
+                            created_at: string;
+                            default_currency: string;
+                            default_language: string;
+                            /** Format: double */
+                            default_tax_rate: number;
+                            email?: string | null;
+                            /** Format: uuid */
+                            id: string;
+                            logo_url?: string | null;
+                            name: string;
+                            phone?: string | null;
+                            settings: unknown;
+                            tax_number?: string | null;
+                            tax_office?: string | null;
+                            timezone: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                            website?: string | null;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    update_company: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCompanyRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            address?: string | null;
+                            /** Format: date-time */
+                            created_at: string;
+                            default_currency: string;
+                            default_language: string;
+                            /** Format: double */
+                            default_tax_rate: number;
+                            email?: string | null;
+                            /** Format: uuid */
+                            id: string;
+                            logo_url?: string | null;
+                            name: string;
+                            phone?: string | null;
+                            settings: unknown;
+                            tax_number?: string | null;
+                            tax_office?: string | null;
+                            timezone: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                            website?: string | null;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    list_contacts: {
+        parameters: {
+            query?: {
+                /** @description Filter by contact type */
+                contact_type?: string;
+                /** @description Filter by status */
+                status?: string;
+                /** @description Search by name, contact person, phone, or email */
+                search?: string;
+                /** @description Page number */
+                page?: number;
+                /** @description Items per page */
+                per_page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            address?: string | null;
+                            /** Format: double */
+                            balance: number;
+                            /** Format: uuid */
+                            company_id: string;
+                            contact_person?: string | null;
+                            contact_type: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: double */
+                            credit_limit?: number | null;
+                            email?: string | null;
+                            /** Format: uuid */
+                            id: string;
+                            name: string;
+                            notes?: string | null;
+                            phone?: string | null;
+                            status: string;
+                            tax_number?: string | null;
+                            tax_office?: string | null;
+                            /** Format: date-time */
+                            updated_at: string;
+                        }[];
+                        /** Format: int32 */
+                        page: number;
+                        /** Format: int32 */
+                        per_page: number;
+                        /** Format: int64 */
+                        total: number;
+                        /** Format: int32 */
+                        total_pages: number;
+                    };
+                };
+            };
+        };
+    };
+    create_contact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateContactRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            address?: string | null;
+                            /** Format: double */
+                            balance: number;
+                            /** Format: uuid */
+                            company_id: string;
+                            contact_person?: string | null;
+                            contact_type: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: double */
+                            credit_limit?: number | null;
+                            email?: string | null;
+                            /** Format: uuid */
+                            id: string;
+                            name: string;
+                            notes?: string | null;
+                            phone?: string | null;
+                            status: string;
+                            tax_number?: string | null;
+                            tax_office?: string | null;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    get_contact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Contact ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            address?: string | null;
+                            /** Format: double */
+                            balance: number;
+                            /** Format: uuid */
+                            company_id: string;
+                            contact_person?: string | null;
+                            contact_type: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: double */
+                            credit_limit?: number | null;
+                            email?: string | null;
+                            /** Format: uuid */
+                            id: string;
+                            name: string;
+                            notes?: string | null;
+                            phone?: string | null;
+                            status: string;
+                            tax_number?: string | null;
+                            tax_office?: string | null;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    update_contact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Contact ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateContactRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            address?: string | null;
+                            /** Format: double */
+                            balance: number;
+                            /** Format: uuid */
+                            company_id: string;
+                            contact_person?: string | null;
+                            contact_type: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: double */
+                            credit_limit?: number | null;
+                            email?: string | null;
+                            /** Format: uuid */
+                            id: string;
+                            name: string;
+                            notes?: string | null;
+                            phone?: string | null;
+                            status: string;
+                            tax_number?: string | null;
+                            tax_office?: string | null;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    delete_contact: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Contact ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    record_payment: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Contact ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RecordPaymentRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: double */
+                            amount: number;
+                            /** Format: double */
+                            balance_after: number;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: uuid */
+                            contact_id?: string | null;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: date */
+                            date: string;
+                            description?: string | null;
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: uuid */
+                            payment_method_id?: string | null;
+                            /** Format: uuid */
+                            reference_id?: string | null;
+                            reference_type?: string | null;
+                            transaction_type: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    list_contact_transactions: {
+        parameters: {
+            query?: {
+                /** @description Filter by transaction type */
+                transaction_type?: string;
+                /** @description Filter by start date */
+                date_from?: string;
+                /** @description Filter by end date */
+                date_to?: string;
+                /** @description Page number */
+                page?: number;
+                /** @description Items per page */
+                per_page?: number;
+            };
+            header?: never;
+            path: {
+                /** @description Contact ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: double */
+                            amount: number;
+                            /** Format: double */
+                            balance_after: number;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: uuid */
+                            contact_id?: string | null;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: date */
+                            date: string;
+                            description?: string | null;
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: uuid */
+                            payment_method_id?: string | null;
+                            /** Format: uuid */
+                            reference_id?: string | null;
+                            reference_type?: string | null;
+                            transaction_type: string;
+                        }[];
+                        /** Format: int32 */
+                        page: number;
+                        /** Format: int32 */
+                        per_page: number;
+                        /** Format: int64 */
+                        total: number;
+                        /** Format: int32 */
+                        total_pages: number;
+                    };
+                };
+            };
+        };
+    };
+    list_currencies: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            code: string;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: double */
+                            exchange_rate: number;
+                            /** Format: uuid */
+                            id: string;
+                            is_active: boolean;
+                            is_base: boolean;
+                            name: string;
+                            symbol: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                        }[];
+                    };
+                };
+            };
+        };
+    };
+    create_currency: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCurrencyRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            code: string;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: double */
+                            exchange_rate: number;
+                            /** Format: uuid */
+                            id: string;
+                            is_active: boolean;
+                            is_base: boolean;
+                            name: string;
+                            symbol: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    get_currency: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Currency ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            code: string;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: double */
+                            exchange_rate: number;
+                            /** Format: uuid */
+                            id: string;
+                            is_active: boolean;
+                            is_base: boolean;
+                            name: string;
+                            symbol: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    update_currency: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Currency ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateCurrencyRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            code: string;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: double */
+                            exchange_rate: number;
+                            /** Format: uuid */
+                            id: string;
+                            is_active: boolean;
+                            is_base: boolean;
+                            name: string;
+                            symbol: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    delete_currency: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Currency ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_dashboard: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: int64 */
+                            low_stock_count: number;
+                            /** Format: double */
+                            outstanding_payables: number;
+                            /** Format: double */
+                            outstanding_receivables: number;
+                            /** Format: int64 */
+                            today_production_count: number;
+                            /** Format: int64 */
+                            today_sales_count: number;
+                            /** Format: double */
+                            today_sales_total: number;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    list_invoices: {
+        parameters: {
+            query?: {
+                /** @description Filter by invoice type */
+                invoice_type?: string;
+                /** @description Filter by status */
+                status?: string;
+                /** @description Filter by start date */
+                date_from?: string;
+                /** @description Filter by end date */
+                date_to?: string;
+                /** @description Page number */
+                page?: number;
+                /** @description Items per page */
+                per_page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: double */
+                            base_currency_total: number;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: uuid */
+                            contact_id?: string | null;
+                            /** Format: date-time */
+                            created_at: string;
+                            currency_code: string;
+                            /** Format: date */
+                            date: string;
+                            /** Format: date */
+                            due_date?: string | null;
+                            /** Format: double */
+                            exchange_rate: number;
+                            /** Format: double */
+                            grand_total: number;
+                            /** Format: uuid */
+                            id: string;
+                            invoice_number: string;
+                            invoice_type: string;
+                            line_items: unknown;
+                            notes?: string | null;
+                            status: string;
+                            /** Format: double */
+                            subtotal: number;
+                            tax_number?: string | null;
+                            tax_office?: string | null;
+                            /** Format: double */
+                            tax_total: number;
+                            /** Format: date-time */
+                            updated_at: string;
+                        }[];
+                        /** Format: int32 */
+                        page: number;
+                        /** Format: int32 */
+                        per_page: number;
+                        /** Format: int64 */
+                        total: number;
+                        /** Format: int32 */
+                        total_pages: number;
+                    };
+                };
+            };
+        };
+    };
+    create_invoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateInvoiceRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: double */
+                            base_currency_total: number;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: uuid */
+                            contact_id?: string | null;
+                            /** Format: date-time */
+                            created_at: string;
+                            currency_code: string;
+                            /** Format: date */
+                            date: string;
+                            /** Format: date */
+                            due_date?: string | null;
+                            /** Format: double */
+                            exchange_rate: number;
+                            /** Format: double */
+                            grand_total: number;
+                            /** Format: uuid */
+                            id: string;
+                            invoice_number: string;
+                            invoice_type: string;
+                            line_items: unknown;
+                            notes?: string | null;
+                            status: string;
+                            /** Format: double */
+                            subtotal: number;
+                            tax_number?: string | null;
+                            tax_office?: string | null;
+                            /** Format: double */
+                            tax_total: number;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    get_invoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Invoice ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: double */
+                            base_currency_total: number;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: uuid */
+                            contact_id?: string | null;
+                            /** Format: date-time */
+                            created_at: string;
+                            currency_code: string;
+                            /** Format: date */
+                            date: string;
+                            /** Format: date */
+                            due_date?: string | null;
+                            /** Format: double */
+                            exchange_rate: number;
+                            /** Format: double */
+                            grand_total: number;
+                            /** Format: uuid */
+                            id: string;
+                            invoice_number: string;
+                            invoice_type: string;
+                            line_items: unknown;
+                            notes?: string | null;
+                            status: string;
+                            /** Format: double */
+                            subtotal: number;
+                            tax_number?: string | null;
+                            tax_office?: string | null;
+                            /** Format: double */
+                            tax_total: number;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    update_invoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Invoice ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateInvoiceRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: double */
+                            base_currency_total: number;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: uuid */
+                            contact_id?: string | null;
+                            /** Format: date-time */
+                            created_at: string;
+                            currency_code: string;
+                            /** Format: date */
+                            date: string;
+                            /** Format: date */
+                            due_date?: string | null;
+                            /** Format: double */
+                            exchange_rate: number;
+                            /** Format: double */
+                            grand_total: number;
+                            /** Format: uuid */
+                            id: string;
+                            invoice_number: string;
+                            invoice_type: string;
+                            line_items: unknown;
+                            notes?: string | null;
+                            status: string;
+                            /** Format: double */
+                            subtotal: number;
+                            tax_number?: string | null;
+                            tax_office?: string | null;
+                            /** Format: double */
+                            tax_total: number;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    delete_invoice: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Invoice ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_invoice_status: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Invoice ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateInvoiceStatusRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: double */
+                            base_currency_total: number;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: uuid */
+                            contact_id?: string | null;
+                            /** Format: date-time */
+                            created_at: string;
+                            currency_code: string;
+                            /** Format: date */
+                            date: string;
+                            /** Format: date */
+                            due_date?: string | null;
+                            /** Format: double */
+                            exchange_rate: number;
+                            /** Format: double */
+                            grand_total: number;
+                            /** Format: uuid */
+                            id: string;
+                            invoice_number: string;
+                            invoice_type: string;
+                            line_items: unknown;
+                            notes?: string | null;
+                            status: string;
+                            /** Format: double */
+                            subtotal: number;
+                            tax_number?: string | null;
+                            tax_office?: string | null;
+                            /** Format: double */
+                            tax_total: number;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    list_marketplace_channels: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            code: string;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            is_active: boolean;
+                            name: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                        }[];
+                    };
+                };
+            };
+        };
+    };
+    create_marketplace_channel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateMarketplaceChannelRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            code: string;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            is_active: boolean;
+                            name: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    get_marketplace_channel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Marketplace channel ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            code: string;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            is_active: boolean;
+                            name: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    update_marketplace_channel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Marketplace channel ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateMarketplaceChannelRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            code: string;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            is_active: boolean;
+                            name: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    delete_marketplace_channel: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Marketplace channel ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_notifications: {
+        parameters: {
+            query?: {
+                /** @description Filter by read status */
+                is_read?: boolean;
+                /** @description Page number */
+                page?: number;
+                /** @description Items per page */
+                per_page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            entity_id?: string | null;
+                            entity_type?: string | null;
+                            /** Format: uuid */
+                            id: string;
+                            is_read: boolean;
+                            message: string;
+                            notification_type: string;
+                            title: string;
+                            /** Format: uuid */
+                            user_id?: string | null;
+                        }[];
+                        /** Format: int32 */
+                        page: number;
+                        /** Format: int32 */
+                        per_page: number;
+                        /** Format: int64 */
+                        total: number;
+                        /** Format: int32 */
+                        total_pages: number;
+                    };
+                };
+            };
+        };
+    };
+    mark_all_read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: int64 */
+                            affected: number;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    unread_count: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: int64 */
+                            count: number;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    mark_read: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Notification ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_orders: {
+        parameters: {
+            query?: {
+                /** @description Filter by status */
+                status?: string;
+                /** @description Filter by cashier */
+                cashier_id?: string;
+                /** @description Filter from date */
+                date_from?: string;
+                /** @description Filter to date */
+                date_to?: string;
+                /** @description Page number */
+                page?: number;
+                /** @description Items per page */
+                per_page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            cashier_id: string;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            notes?: string | null;
+                            order_number: string;
+                            /** Format: uuid */
+                            payment_method_id?: string | null;
+                            /** Format: uuid */
+                            shift_id?: string | null;
+                            status: string;
+                            /** Format: double */
+                            subtotal: number;
+                            /** Format: double */
+                            tax_total: number;
+                            /** Format: uuid */
+                            terminal_id?: string | null;
+                            /** Format: double */
+                            total: number;
+                            /** Format: date-time */
+                            updated_at: string;
+                        }[];
+                        /** Format: int32 */
+                        page: number;
+                        /** Format: int32 */
+                        per_page: number;
+                        /** Format: int64 */
+                        total: number;
+                        /** Format: int32 */
+                        total_pages: number;
+                    };
+                };
+            };
+        };
+    };
+    create_order: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateOrderRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Order"] & {
+                            items: components["schemas"]["OrderItem"][];
+                        };
+                    };
+                };
+            };
+        };
+    };
+    get_order: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Order ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: components["schemas"]["Order"] & {
+                            items: components["schemas"]["OrderItem"][];
+                        };
+                    };
+                };
+            };
+        };
+    };
+    return_order: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Order ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["ReturnOrderRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            cashier_id: string;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            notes?: string | null;
+                            order_number: string;
+                            /** Format: uuid */
+                            payment_method_id?: string | null;
+                            /** Format: uuid */
+                            shift_id?: string | null;
+                            status: string;
+                            /** Format: double */
+                            subtotal: number;
+                            /** Format: double */
+                            tax_total: number;
+                            /** Format: uuid */
+                            terminal_id?: string | null;
+                            /** Format: double */
+                            total: number;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    void_order: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Order ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OrderReasonRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            cashier_id: string;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            notes?: string | null;
+                            order_number: string;
+                            /** Format: uuid */
+                            payment_method_id?: string | null;
+                            /** Format: uuid */
+                            shift_id?: string | null;
+                            status: string;
+                            /** Format: double */
+                            subtotal: number;
+                            /** Format: double */
+                            tax_total: number;
+                            /** Format: uuid */
+                            terminal_id?: string | null;
+                            /** Format: double */
+                            total: number;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    list_payment_methods: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: int32 */
+                            display_order: number;
+                            /** Format: uuid */
+                            id: string;
+                            is_active: boolean;
+                            is_default: boolean;
+                            name: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                        }[];
+                    };
+                };
+            };
+        };
+    };
+    create_payment_method: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePaymentMethodRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: int32 */
+                            display_order: number;
+                            /** Format: uuid */
+                            id: string;
+                            is_active: boolean;
+                            is_default: boolean;
+                            name: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    update_payment_method: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Payment method ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePaymentMethodRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: int32 */
+                            display_order: number;
+                            /** Format: uuid */
+                            id: string;
+                            is_active: boolean;
+                            is_default: boolean;
+                            name: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    delete_payment_method: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Payment method ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    set_default_payment_method: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Payment method ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: int32 */
+                            display_order: number;
+                            /** Format: uuid */
+                            id: string;
+                            is_active: boolean;
+                            is_default: boolean;
+                            name: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    list_pos_terminals: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            is_active: boolean;
+                            name: string;
+                            /** Format: uuid */
+                            price_list_id?: string | null;
+                            /** Format: date-time */
+                            updated_at: string;
+                        }[];
+                    };
+                };
+            };
+        };
+    };
+    create_pos_terminal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePosTerminalRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            is_active: boolean;
+                            name: string;
+                            /** Format: uuid */
+                            price_list_id?: string | null;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    update_pos_terminal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description POS terminal ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePosTerminalRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            is_active: boolean;
+                            name: string;
+                            /** Format: uuid */
+                            price_list_id?: string | null;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    delete_pos_terminal: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description POS terminal ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_price_lists: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            channel_type: string;
+                            city?: string | null;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            is_active: boolean;
+                            is_default: boolean;
+                            /** Format: uuid */
+                            marketplace_channel_id?: string | null;
+                            name: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                        }[];
+                    };
+                };
+            };
+        };
+    };
+    create_price_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreatePriceListRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            channel_type: string;
+                            city?: string | null;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            is_active: boolean;
+                            is_default: boolean;
+                            /** Format: uuid */
+                            marketplace_channel_id?: string | null;
+                            name: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    delete_price_list_item: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Price list item ID */
+                item_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    get_price_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Price list ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            channel_type: string;
+                            city?: string | null;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            is_active: boolean;
+                            is_default: boolean;
+                            /** Format: uuid */
+                            marketplace_channel_id?: string | null;
+                            name: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    update_price_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Price list ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePriceListRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            channel_type: string;
+                            city?: string | null;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            is_active: boolean;
+                            is_default: boolean;
+                            /** Format: uuid */
+                            marketplace_channel_id?: string | null;
+                            name: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    delete_price_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Price list ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    set_default_price_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Price list ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            channel_type: string;
+                            city?: string | null;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            is_active: boolean;
+                            is_default: boolean;
+                            /** Format: uuid */
+                            marketplace_channel_id?: string | null;
+                            name: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    list_price_list_items: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Price list ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            is_active: boolean;
+                            /** Format: double */
+                            price: number;
+                            /** Format: uuid */
+                            price_list_id: string;
+                            /** Format: uuid */
+                            product_id: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                            /** Format: double */
+                            vat_rate?: number | null;
+                        }[];
+                    };
+                };
+            };
+        };
+    };
+    upsert_price_list_items: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Price list ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpsertPriceListItemRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            is_active: boolean;
+                            /** Format: double */
+                            price: number;
+                            /** Format: uuid */
+                            price_list_id: string;
+                            /** Format: uuid */
+                            product_id: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                            /** Format: double */
+                            vat_rate?: number | null;
+                        }[];
+                    };
+                };
+            };
+        };
+    };
+    list_production_records: {
+        parameters: {
+            query?: {
+                /** @description Filter by product */
+                product_id?: string;
+                /** @description Filter from date */
+                date_from?: string;
+                /** @description Filter to date */
+                date_to?: string;
+                /** @description Page number */
+                page?: number;
+                /** @description Items per page */
+                per_page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: double */
+                            batch_size: number;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            materials: unknown;
+                            notes?: string | null;
+                            /** Format: date-time */
+                            produced_at: string;
+                            /** Format: uuid */
+                            produced_by: string;
+                            /** Format: uuid */
+                            product_id: string;
+                            /** Format: double */
+                            quantity: number;
+                            unit: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                            variant_name?: string | null;
+                        }[];
+                        /** Format: int32 */
+                        page: number;
+                        /** Format: int32 */
+                        per_page: number;
+                        /** Format: int64 */
+                        total: number;
+                        /** Format: int32 */
+                        total_pages: number;
+                    };
+                };
+            };
+        };
+    };
+    create_production_record: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateProductionRecordRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: double */
+                            batch_size: number;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            materials: unknown;
+                            notes?: string | null;
+                            /** Format: date-time */
+                            produced_at: string;
+                            /** Format: uuid */
+                            produced_by: string;
+                            /** Format: uuid */
+                            product_id: string;
+                            /** Format: double */
+                            quantity: number;
+                            unit: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                            variant_name?: string | null;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    get_production_record: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Production record ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: double */
+                            batch_size: number;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            materials: unknown;
+                            notes?: string | null;
+                            /** Format: date-time */
+                            produced_at: string;
+                            /** Format: uuid */
+                            produced_by: string;
+                            /** Format: uuid */
+                            product_id: string;
+                            /** Format: double */
+                            quantity: number;
+                            unit: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                            variant_name?: string | null;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    update_production_record: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Production record ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProductionRecordRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: double */
+                            batch_size: number;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            materials: unknown;
+                            notes?: string | null;
+                            /** Format: date-time */
+                            produced_at: string;
+                            /** Format: uuid */
+                            produced_by: string;
+                            /** Format: uuid */
+                            product_id: string;
+                            /** Format: double */
+                            quantity: number;
+                            unit: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                            variant_name?: string | null;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    delete_production_record: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Production record ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    list_production_sessions: {
+        parameters: {
+            query?: {
+                /** @description Filter by status */
+                status?: string;
+                /** @description Page number */
+                page?: number;
+                /** @description Items per page */
+                per_page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            completed_at?: string | null;
+                            /** Format: uuid */
+                            completed_by?: string | null;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            items: unknown;
+                            name?: string | null;
+                            status: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                        }[];
+                        /** Format: int32 */
+                        page: number;
+                        /** Format: int32 */
+                        per_page: number;
+                        /** Format: int64 */
+                        total: number;
+                        /** Format: int32 */
+                        total_pages: number;
+                    };
+                };
+            };
+        };
+    };
+    create_production_session: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateProductionSessionRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            completed_at?: string | null;
+                            /** Format: uuid */
+                            completed_by?: string | null;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            items: unknown;
+                            name?: string | null;
+                            status: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    delete_production_session: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Production session ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    complete_production_session: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Production session ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            completed_at?: string | null;
+                            /** Format: uuid */
+                            completed_by?: string | null;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            items: unknown;
+                            name?: string | null;
+                            status: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    add_session_item: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Production session ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["AddSessionItemRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            completed_at?: string | null;
+                            /** Format: uuid */
+                            completed_by?: string | null;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            items: unknown;
+                            name?: string | null;
+                            status: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    list_products: {
+        parameters: {
+            query?: {
+                /** @description Filter by product type */
+                product_type?: string;
+                /** @description Filter by status */
+                status?: string;
+                /** @description Filter by category */
+                category_id?: string;
+                /** @description Search by name, code, or barcode */
+                search?: string;
+                /** @description Page number */
+                page?: number;
+                /** @description Items per page */
+                per_page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            barcode?: string | null;
+                            /** Format: double */
+                            calculated_cost?: number | null;
+                            /** Format: uuid */
+                            category_id?: string | null;
+                            code?: string | null;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            image_url?: string | null;
+                            /** Format: double */
+                            last_purchase_price?: number | null;
+                            /** Format: double */
+                            min_stock_level?: number | null;
+                            name: string;
+                            plu_code?: string | null;
+                            plu_type?: string | null;
+                            product_type: string;
+                            purchase_options?: unknown;
+                            recipe?: unknown;
+                            sale_unit_type?: string | null;
+                            scale_enabled: boolean;
+                            status: string;
+                            stock_status: string;
+                            stock_tracking: boolean;
+                            /** Format: double */
+                            tax_rate?: number | null;
+                            unit_of_measure: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                        }[];
+                        /** Format: int32 */
+                        page: number;
+                        /** Format: int32 */
+                        per_page: number;
+                        /** Format: int64 */
+                        total: number;
+                        /** Format: int32 */
+                        total_pages: number;
+                    };
+                };
+            };
+        };
+    };
+    create_product: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateProductRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            barcode?: string | null;
+                            /** Format: double */
+                            calculated_cost?: number | null;
+                            /** Format: uuid */
+                            category_id?: string | null;
+                            code?: string | null;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            image_url?: string | null;
+                            /** Format: double */
+                            last_purchase_price?: number | null;
+                            /** Format: double */
+                            min_stock_level?: number | null;
+                            name: string;
+                            plu_code?: string | null;
+                            plu_type?: string | null;
+                            product_type: string;
+                            purchase_options?: unknown;
+                            recipe?: unknown;
+                            sale_unit_type?: string | null;
+                            scale_enabled: boolean;
+                            status: string;
+                            stock_status: string;
+                            stock_tracking: boolean;
+                            /** Format: double */
+                            tax_rate?: number | null;
+                            unit_of_measure: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    bulk_activate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkIdsRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: int64 */
+                            affected: number;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    bulk_category: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkCategoryRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: int64 */
+                            affected: number;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    bulk_deactivate: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkIdsRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: int64 */
+                            affected: number;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    bulk_price_list: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["BulkPriceListRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: int64 */
+                            affected: number;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    get_product: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Product ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            barcode?: string | null;
+                            /** Format: double */
+                            calculated_cost?: number | null;
+                            /** Format: uuid */
+                            category_id?: string | null;
+                            code?: string | null;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            image_url?: string | null;
+                            /** Format: double */
+                            last_purchase_price?: number | null;
+                            /** Format: double */
+                            min_stock_level?: number | null;
+                            name: string;
+                            plu_code?: string | null;
+                            plu_type?: string | null;
+                            product_type: string;
+                            purchase_options?: unknown;
+                            recipe?: unknown;
+                            sale_unit_type?: string | null;
+                            scale_enabled: boolean;
+                            status: string;
+                            stock_status: string;
+                            stock_tracking: boolean;
+                            /** Format: double */
+                            tax_rate?: number | null;
+                            unit_of_measure: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    update_product: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Product ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateProductRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            barcode?: string | null;
+                            /** Format: double */
+                            calculated_cost?: number | null;
+                            /** Format: uuid */
+                            category_id?: string | null;
+                            code?: string | null;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            image_url?: string | null;
+                            /** Format: double */
+                            last_purchase_price?: number | null;
+                            /** Format: double */
+                            min_stock_level?: number | null;
+                            name: string;
+                            plu_code?: string | null;
+                            plu_type?: string | null;
+                            product_type: string;
+                            purchase_options?: unknown;
+                            recipe?: unknown;
+                            sale_unit_type?: string | null;
+                            scale_enabled: boolean;
+                            status: string;
+                            stock_status: string;
+                            stock_tracking: boolean;
+                            /** Format: double */
+                            tax_rate?: number | null;
+                            unit_of_measure: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    delete_product: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Product ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_purchase_options: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Product ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePurchaseOptionsRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            barcode?: string | null;
+                            /** Format: double */
+                            calculated_cost?: number | null;
+                            /** Format: uuid */
+                            category_id?: string | null;
+                            code?: string | null;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            image_url?: string | null;
+                            /** Format: double */
+                            last_purchase_price?: number | null;
+                            /** Format: double */
+                            min_stock_level?: number | null;
+                            name: string;
+                            plu_code?: string | null;
+                            plu_type?: string | null;
+                            product_type: string;
+                            purchase_options?: unknown;
+                            recipe?: unknown;
+                            sale_unit_type?: string | null;
+                            scale_enabled: boolean;
+                            status: string;
+                            stock_status: string;
+                            stock_tracking: boolean;
+                            /** Format: double */
+                            tax_rate?: number | null;
+                            unit_of_measure: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    get_recipe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Product ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: unknown;
+                    };
+                };
+            };
+        };
+    };
+    update_recipe: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Product ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateRecipeRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: unknown;
+                    };
+                };
+            };
+        };
+    };
+    get_recipe_cost: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Product ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: double */
+                            batch_size: number;
+                            materials: components["schemas"]["MaterialCostLine"][];
+                            /** Format: double */
+                            total_cost: number;
+                            /** Format: double */
+                            unit_cost: number;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    hourly_sales: {
+        parameters: {
+            query: {
+                /** @description Date in YYYY-MM-DD format */
+                date: string;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: int64 */
+                            count: number;
+                            /** Format: double */
+                            hour: number;
+                            /** Format: double */
+                            total: number;
+                        }[];
+                    };
+                };
+            };
+        };
+    };
+    profit_margins: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: double */
+                            cost: number;
+                            /** Format: double */
+                            margin_percent: number;
+                            /** Format: uuid */
+                            product_id: string;
+                            product_name: string;
+                            /** Format: double */
+                            selling_price: number;
+                        }[];
+                    };
+                };
+            };
+        };
+    };
+    stock_turnover: {
+        parameters: {
+            query?: {
+                /** @description Number of days (default 30) */
+                days?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            product_id: string;
+                            product_name: string;
+                            /** Format: double */
+                            turnover_rate: number;
+                        }[];
+                    };
+                };
+            };
+        };
+    };
+    list_shifts: {
+        parameters: {
+            query?: {
+                /** @description Filter by status */
+                status?: string;
+                /** @description Page number */
+                page?: number;
+                /** @description Items per page */
+                per_page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            cashier_id: string;
+                            /** Format: date-time */
+                            closed_at?: string | null;
+                            /** Format: double */
+                            closing_balance?: number | null;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: double */
+                            expected_balance?: number | null;
+                            /** Format: uuid */
+                            id: string;
+                            notes?: string | null;
+                            /** Format: date-time */
+                            opened_at: string;
+                            /** Format: double */
+                            opening_balance: number;
+                            status: string;
+                            /** Format: uuid */
+                            terminal_id?: string | null;
+                            /** Format: date-time */
+                            updated_at: string;
+                        }[];
+                        /** Format: int32 */
+                        page: number;
+                        /** Format: int32 */
+                        per_page: number;
+                        /** Format: int64 */
+                        total: number;
+                        /** Format: int32 */
+                        total_pages: number;
+                    };
+                };
+            };
+        };
+    };
+    get_current_shift: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: null | {
+                            /** Format: uuid */
+                            cashier_id: string;
+                            /** Format: date-time */
+                            closed_at?: string | null;
+                            /** Format: double */
+                            closing_balance?: number | null;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: double */
+                            expected_balance?: number | null;
+                            /** Format: uuid */
+                            id: string;
+                            notes?: string | null;
+                            /** Format: date-time */
+                            opened_at: string;
+                            /** Format: double */
+                            opening_balance: number;
+                            status: string;
+                            /** Format: uuid */
+                            terminal_id?: string | null;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    open_shift: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["OpenShiftRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            cashier_id: string;
+                            /** Format: date-time */
+                            closed_at?: string | null;
+                            /** Format: double */
+                            closing_balance?: number | null;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: double */
+                            expected_balance?: number | null;
+                            /** Format: uuid */
+                            id: string;
+                            notes?: string | null;
+                            /** Format: date-time */
+                            opened_at: string;
+                            /** Format: double */
+                            opening_balance: number;
+                            status: string;
+                            /** Format: uuid */
+                            terminal_id?: string | null;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    close_shift: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Shift ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CloseShiftRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            cashier_id: string;
+                            /** Format: date-time */
+                            closed_at?: string | null;
+                            /** Format: double */
+                            closing_balance?: number | null;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: double */
+                            expected_balance?: number | null;
+                            /** Format: uuid */
+                            id: string;
+                            notes?: string | null;
+                            /** Format: date-time */
+                            opened_at: string;
+                            /** Format: double */
+                            opening_balance: number;
+                            status: string;
+                            /** Format: uuid */
+                            terminal_id?: string | null;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    get_z_report: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Shift ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: double */
+                            actual_cash?: number | null;
+                            cashier_name: string;
+                            /** Format: date-time */
+                            closed_at?: string | null;
+                            /** Format: double */
+                            closing_balance?: number | null;
+                            /** Format: double */
+                            discrepancy?: number | null;
+                            /** Format: double */
+                            expected_cash: number;
+                            /** Format: date-time */
+                            opened_at: string;
+                            /** Format: double */
+                            opening_balance: number;
+                            payment_method_breakdown: components["schemas"]["PaymentMethodSummary"][];
+                            /** Format: int64 */
+                            returned_orders: number;
+                            /** Format: uuid */
+                            shift_id: string;
+                            /** Format: int64 */
+                            total_items_sold: number;
+                            /** Format: int64 */
+                            total_orders: number;
+                            /** Format: double */
+                            total_sales: number;
+                            /** Format: int64 */
+                            voided_orders: number;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    list_stock: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: date-time */
+                            last_movement_at?: string | null;
+                            location?: string | null;
+                            /** Format: double */
+                            max_level?: number | null;
+                            /** Format: double */
+                            min_level?: number | null;
+                            /** Format: uuid */
+                            product_id: string;
+                            /** Format: double */
+                            quantity: number;
+                            /** Format: double */
+                            reserved_quantity: number;
+                            /** Format: date-time */
+                            updated_at: string;
+                        }[];
+                    };
+                };
+            };
+        };
+    };
+    list_stock_counts: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            counted_at: string;
+                            /** Format: uuid */
+                            counted_by: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            items: unknown;
+                            notes?: string | null;
+                            status: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                        }[];
+                    };
+                };
+            };
+        };
+    };
+    create_stock_count: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateStockCountRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            counted_at: string;
+                            /** Format: uuid */
+                            counted_by: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            items: unknown;
+                            notes?: string | null;
+                            status: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    complete_stock_count: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Stock count ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            counted_at: string;
+                            /** Format: uuid */
+                            counted_by: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            items: unknown;
+                            notes?: string | null;
+                            status: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    list_low_stock: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: date-time */
+                            last_movement_at?: string | null;
+                            location?: string | null;
+                            /** Format: double */
+                            max_level?: number | null;
+                            /** Format: double */
+                            min_level?: number | null;
+                            /** Format: uuid */
+                            product_id: string;
+                            /** Format: double */
+                            quantity: number;
+                            /** Format: double */
+                            reserved_quantity: number;
+                            /** Format: date-time */
+                            updated_at: string;
+                        }[];
+                    };
+                };
+            };
+        };
+    };
+    list_movements: {
+        parameters: {
+            query?: {
+                /** @description Filter by product */
+                product_id?: string;
+                /** @description Filter by movement type */
+                movement_type?: string;
+                /** @description Filter by source */
+                source?: string;
+                /** @description Page number */
+                page?: number;
+                /** @description Items per page */
+                per_page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            created_by: string;
+                            description?: string | null;
+                            /** Format: uuid */
+                            id: string;
+                            movement_type: string;
+                            /** Format: uuid */
+                            product_id: string;
+                            /** Format: double */
+                            quantity: number;
+                            /** Format: uuid */
+                            reference_id?: string | null;
+                            reference_type?: string | null;
+                            source: string;
+                            /** Format: double */
+                            total_price?: number | null;
+                            /** Format: double */
+                            unit_price?: number | null;
+                            /** Format: double */
+                            vat_rate?: number | null;
+                        }[];
+                        /** Format: int32 */
+                        page: number;
+                        /** Format: int32 */
+                        per_page: number;
+                        /** Format: int64 */
+                        total: number;
+                        /** Format: int32 */
+                        total_pages: number;
+                    };
+                };
+            };
+        };
+    };
+    create_movement: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateMovementRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            created_by: string;
+                            description?: string | null;
+                            /** Format: uuid */
+                            id: string;
+                            movement_type: string;
+                            /** Format: uuid */
+                            product_id: string;
+                            /** Format: double */
+                            quantity: number;
+                            /** Format: uuid */
+                            reference_id?: string | null;
+                            reference_type?: string | null;
+                            source: string;
+                            /** Format: double */
+                            total_price?: number | null;
+                            /** Format: double */
+                            unit_price?: number | null;
+                            /** Format: double */
+                            vat_rate?: number | null;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    get_stock: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Product ID */
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: date-time */
+                            last_movement_at?: string | null;
+                            location?: string | null;
+                            /** Format: double */
+                            max_level?: number | null;
+                            /** Format: double */
+                            min_level?: number | null;
+                            /** Format: uuid */
+                            product_id: string;
+                            /** Format: double */
+                            quantity: number;
+                            /** Format: double */
+                            reserved_quantity: number;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    update_stock_levels: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Product ID */
+                product_id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateStockLevelsRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: date-time */
+                            last_movement_at?: string | null;
+                            location?: string | null;
+                            /** Format: double */
+                            max_level?: number | null;
+                            /** Format: double */
+                            min_level?: number | null;
+                            /** Format: uuid */
+                            product_id: string;
+                            /** Format: double */
+                            quantity: number;
+                            /** Format: double */
+                            reserved_quantity: number;
+                            /** Format: date-time */
+                            updated_at: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    list_companies: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            is_active: boolean;
+                            name: string;
+                            /** Format: int64 */
+                            user_count: number;
+                        }[];
+                    };
+                };
+            };
+        };
+    };
+    create_company: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateCompanyRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            is_active: boolean;
+                            name: string;
+                            /** Format: int64 */
+                            user_count: number;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    deactivate_company: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description Company ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: unknown;
+                    };
+                };
+            };
+        };
+    };
+    list_all_users: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: int64 */
+                            company_count: number;
+                            /** Format: date-time */
+                            created_at: string;
+                            email: string;
+                            /** Format: uuid */
+                            id: string;
+                            is_super_admin: boolean;
+                            name: string;
+                        }[];
+                    };
+                };
+            };
+        };
+    };
+    list_transactions: {
+        parameters: {
+            query?: {
+                /** @description Filter by contact */
+                contact_id?: string;
+                /** @description Filter by transaction type */
+                type?: string;
+                /** @description Filter by payment method */
+                payment_method_id?: string;
+                /** @description Filter by start date */
+                date_from?: string;
+                /** @description Filter by end date */
+                date_to?: string;
+                /** @description Search by description */
+                search?: string;
+                /** @description Page number */
+                page?: number;
+                /** @description Items per page */
+                per_page?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: double */
+                            amount: number;
+                            /** Format: double */
+                            balance_after: number;
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: uuid */
+                            contact_id?: string | null;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: date */
+                            date: string;
+                            description?: string | null;
+                            /** Format: uuid */
+                            id: string;
+                            /** Format: uuid */
+                            payment_method_id?: string | null;
+                            /** Format: uuid */
+                            reference_id?: string | null;
+                            reference_type?: string | null;
+                            transaction_type: string;
+                        }[];
+                        /** Format: int32 */
+                        page: number;
+                        /** Format: int32 */
+                        per_page: number;
+                        /** Format: int64 */
+                        total: number;
+                        /** Format: int32 */
+                        total_pages: number;
+                    };
+                };
+            };
+        };
+    };
+    list_users: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            email: string;
+                            is_active: boolean;
+                            /** Format: date-time */
+                            joined_at: string;
+                            name: string;
+                            permissions: unknown;
+                            role: string;
+                            /** Format: uuid */
+                            user_id: string;
+                        }[];
+                    };
+                };
+            };
+        };
+    };
+    create_user: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["CreateUserRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            email: string;
+                            is_active: boolean;
+                            /** Format: date-time */
+                            joined_at: string;
+                            name: string;
+                            permissions: unknown;
+                            role: string;
+                            /** Format: uuid */
+                            user_id: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    get_user: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description User ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            email: string;
+                            is_active: boolean;
+                            /** Format: date-time */
+                            joined_at: string;
+                            name: string;
+                            permissions: unknown;
+                            role: string;
+                            /** Format: uuid */
+                            user_id: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    remove_user: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description User ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content?: never;
+            };
+        };
+    };
+    update_user_permissions: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description User ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePermissionsRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            is_active: boolean;
+                            permissions: unknown;
+                            role: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                            /** Format: uuid */
+                            user_id: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    update_preferences: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description User ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdatePreferencesRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            preferred_language: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    update_user_role: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path: {
+                /** @description User ID */
+                id: string;
+            };
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["UpdateRoleRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            /** Format: uuid */
+                            company_id: string;
+                            /** Format: date-time */
+                            created_at: string;
+                            /** Format: uuid */
+                            id: string;
+                            is_active: boolean;
+                            permissions: unknown;
+                            role: string;
+                            /** Format: date-time */
+                            updated_at: string;
+                            /** Format: uuid */
+                            user_id: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    login: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["LoginRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            access_token: string;
+                            company?: null | components["schemas"]["LoginCompany"];
+                            /** Format: int64 */
+                            expires_in: number;
+                            permissions: unknown;
+                            preferred_language?: string | null;
+                            refresh_token: string;
+                            role?: string | null;
+                            token_type: string;
+                            user: components["schemas"]["LoginUser"];
+                        };
+                    };
+                };
+            };
+        };
+    };
+    refresh: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RefreshRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            access_token: string;
+                            /** Format: int64 */
+                            expires_in: number;
+                            refresh_token: string;
+                            token_type: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
+    register: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody: {
+            content: {
+                "application/json": components["schemas"]["RegisterRequest"];
+            };
+        };
+        responses: {
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        data: {
+                            access_token: string;
+                            /** Format: int64 */
+                            expires_in: number;
+                            refresh_token: string;
+                            token_type: string;
+                        };
+                    };
+                };
+            };
+        };
+    };
 }

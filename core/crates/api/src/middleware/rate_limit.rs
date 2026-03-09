@@ -6,8 +6,14 @@ use std::sync::Arc;
 use tokio::sync::Mutex;
 use tokio::time::Instant;
 
-/// Shared bucket: maps IP -> (request count, window start).
-type RateBucket = Arc<Mutex<HashMap<IpAddr, (u32, Instant)>>>;
+/// Shared state: maps IP -> (request count, window start), plus a global request counter
+/// used to trigger periodic eviction of expired entries.
+struct RateBucketInner {
+    entries: HashMap<IpAddr, (u32, Instant)>,
+    request_count: u64,
+}
+
+type RateBucket = Arc<Mutex<RateBucketInner>>;
 
 /// Configuration for a rate limit rule.
 #[derive(Clone)]
@@ -23,7 +29,10 @@ impl RateLimitConfig {
         Self {
             max_requests,
             window_secs,
-            bucket: Arc::new(Mutex::new(HashMap::new())),
+            bucket: Arc::new(Mutex::new(RateBucketInner {
+                entries: HashMap::new(),
+                request_count: 0,
+            })),
         }
     }
 }
@@ -56,7 +65,15 @@ pub async fn rate_limit_middleware(
 
     let mut bucket = config.bucket.lock().await;
 
-    let entry = bucket.entry(ip).or_insert((0, now));
+    // Increment global counter and periodically evict expired entries
+    bucket.request_count = bucket.request_count.wrapping_add(1);
+    if bucket.request_count % 100 == 0 {
+        bucket
+            .entries
+            .retain(|_, (_, timestamp)| now.duration_since(*timestamp) < window);
+    }
+
+    let entry = bucket.entries.entry(ip).or_insert((0, now));
 
     // Reset window if expired
     if now.duration_since(entry.1) >= window {

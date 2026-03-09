@@ -112,6 +112,7 @@ impl ContactRepository {
     pub async fn update(
         pool: &PgPool,
         id: Uuid,
+        company_id: Uuid,
         name: &str,
         contact_person: Option<&str>,
         contact_type: &str,
@@ -130,7 +131,7 @@ impl ContactRepository {
                 tax_number = $5, tax_office = $6, phone = $7, email = $8,
                 address = $9, credit_limit = $10, notes = $11,
                 status = $12::contact_status
-            WHERE id = $1
+            WHERE id = $1 AND company_id = $13
             RETURNING {}",
             Self::SELECT
         );
@@ -147,6 +148,7 @@ impl ContactRepository {
             .bind(credit_limit)
             .bind(notes)
             .bind(status)
+            .bind(company_id)
             .fetch_one(pool)
             .await
     }
@@ -154,17 +156,19 @@ impl ContactRepository {
     pub async fn update_balance_with_executor<'e>(
         executor: impl sqlx::PgExecutor<'e>,
         id: Uuid,
+        company_id: Uuid,
         delta: f64,
     ) -> Result<Contact, sqlx::Error> {
         let sql = format!(
             r"UPDATE contacts SET balance = balance + $2
-            WHERE id = $1
+            WHERE id = $1 AND company_id = $3
             RETURNING {}",
             Self::SELECT
         );
         sqlx::query_as::<_, Contact>(&sql)
             .bind(id)
             .bind(delta)
+            .bind(company_id)
             .fetch_one(executor)
             .await
     }
@@ -172,14 +176,16 @@ impl ContactRepository {
     pub async fn update_balance(
         pool: &PgPool,
         id: Uuid,
+        company_id: Uuid,
         delta: f64,
     ) -> Result<Contact, sqlx::Error> {
-        Self::update_balance_with_executor(pool, id, delta).await
+        Self::update_balance_with_executor(pool, id, company_id, delta).await
     }
 
-    pub async fn delete(pool: &PgPool, id: Uuid) -> Result<(), sqlx::Error> {
-        sqlx::query("DELETE FROM contacts WHERE id = $1")
+    pub async fn delete(pool: &PgPool, id: Uuid, company_id: Uuid) -> Result<(), sqlx::Error> {
+        sqlx::query("DELETE FROM contacts WHERE id = $1 AND company_id = $2")
             .bind(id)
+            .bind(company_id)
             .execute(pool)
             .await?;
         Ok(())

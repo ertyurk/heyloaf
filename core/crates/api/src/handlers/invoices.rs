@@ -213,7 +213,7 @@ pub async fn create_invoice(
     record_invoice_stock_movements_tx(&mut tx, ctx.company_id, &invoice, auth.user_id).await?;
 
     // Contact balance update
-    let new_balance = apply_invoice_contact_balance_tx(&mut tx, &invoice).await?;
+    let new_balance = apply_invoice_contact_balance_tx(&mut tx, ctx.company_id, &invoice).await?;
 
     // Create transaction record for the invoice
     create_invoice_transaction_tx(&mut tx, ctx.company_id, &invoice, new_balance).await?;
@@ -261,19 +261,21 @@ pub async fn update_invoice(
     })?;
 
     // Reverse old stock movements
-    StockService::reverse_movements_tx(&mut tx, "invoice", id, auth.user_id).await?;
+    StockService::reverse_movements_tx(&mut tx, ctx.company_id, "invoice", id, auth.user_id)
+        .await?;
 
     // Reverse old contact balance
-    reverse_invoice_contact_balance_tx(&mut tx, &existing).await?;
+    reverse_invoice_contact_balance_tx(&mut tx, ctx.company_id, &existing).await?;
 
     // Remove old transaction record
-    TransactionRepository::delete_by_reference_with_executor(&mut *tx, "invoice", id)
+    TransactionRepository::delete_by_reference_with_executor(&mut *tx, ctx.company_id, "invoice", id)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
     let invoice = InvoiceRepository::update_with_executor(
         &mut *tx,
         id,
+        ctx.company_id,
         body.contact_id,
         body.date,
         body.due_date,
@@ -295,7 +297,7 @@ pub async fn update_invoice(
     record_invoice_stock_movements_tx(&mut tx, ctx.company_id, &invoice, auth.user_id).await?;
 
     // Re-apply contact balance
-    let new_balance = apply_invoice_contact_balance_tx(&mut tx, &invoice).await?;
+    let new_balance = apply_invoice_contact_balance_tx(&mut tx, ctx.company_id, &invoice).await?;
 
     // Create new transaction record
     create_invoice_transaction_tx(&mut tx, ctx.company_id, &invoice, new_balance).await?;
@@ -352,7 +354,7 @@ pub async fn update_invoice_status(
         )));
     }
 
-    let invoice = InvoiceRepository::update_status(&state.pool, id, &body.status)
+    let invoice = InvoiceRepository::update_status(&state.pool, id, ctx.company_id, &body.status)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
@@ -394,17 +396,18 @@ pub async fn delete_invoice(
     })?;
 
     // Reverse stock movements
-    StockService::reverse_movements_tx(&mut tx, "invoice", id, auth.user_id).await?;
+    StockService::reverse_movements_tx(&mut tx, ctx.company_id, "invoice", id, auth.user_id)
+        .await?;
 
     // Reverse contact balance
-    reverse_invoice_contact_balance_tx(&mut tx, &existing).await?;
+    reverse_invoice_contact_balance_tx(&mut tx, ctx.company_id, &existing).await?;
 
     // Remove transaction record
-    TransactionRepository::delete_by_reference_with_executor(&mut *tx, "invoice", id)
+    TransactionRepository::delete_by_reference_with_executor(&mut *tx, ctx.company_id, "invoice", id)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
-    InvoiceRepository::delete_with_executor(&mut *tx, id)
+    InvoiceRepository::delete_with_executor(&mut *tx, id, ctx.company_id)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
@@ -444,19 +447,25 @@ async fn record_invoice_stock_movements_tx(
         _ => return Ok(()),
     };
 
-    for item in items {
-        let Some(product_id) = item
+    for (idx, item) in items.iter().enumerate() {
+        let product_id = item
             .get("product_id")
             .and_then(serde_json::Value::as_str)
             .and_then(|s| s.parse::<Uuid>().ok())
-        else {
-            continue;
-        };
+            .ok_or_else(|| {
+                AppError::BadRequest(format!(
+                    "Invalid or missing product_id in invoice line item at index {idx}"
+                ))
+            })?;
 
         let quantity = item
             .get("quantity")
             .and_then(serde_json::Value::as_f64)
-            .unwrap_or(0.0);
+            .ok_or_else(|| {
+                AppError::BadRequest(format!(
+                    "Invalid or missing quantity in invoice line item at index {idx}"
+                ))
+            })?;
         let unit_price = item.get("unit_price").and_then(serde_json::Value::as_f64);
         let vat_rate = item.get("vat_rate").and_then(serde_json::Value::as_f64);
         let description = item
@@ -490,6 +499,7 @@ async fn record_invoice_stock_movements_tx(
 /// Returns the new balance if a contact was updated.
 async fn apply_invoice_contact_balance_tx(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    company_id: Uuid,
     invoice: &Invoice,
 ) -> Result<Option<f64>, AppError> {
     let Some(contact_id) = invoice.contact_id else {
@@ -502,9 +512,10 @@ async fn apply_invoice_contact_balance_tx(
         _ => return Ok(None),
     };
 
-    let updated = ContactRepository::update_balance_with_executor(&mut **tx, contact_id, delta)
-        .await
-        .map_err(|e| AppError::Database(e.to_string()))?;
+    let updated =
+        ContactRepository::update_balance_with_executor(&mut **tx, contact_id, company_id, delta)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?;
 
     Ok(Some(updated.balance))
 }
@@ -547,6 +558,7 @@ async fn create_invoice_transaction_tx(
 /// within a transaction.
 async fn reverse_invoice_contact_balance_tx(
     tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+    company_id: Uuid,
     invoice: &Invoice,
 ) -> Result<(), AppError> {
     let Some(contact_id) = invoice.contact_id else {
@@ -559,7 +571,7 @@ async fn reverse_invoice_contact_balance_tx(
         _ => return Ok(()),
     };
 
-    ContactRepository::update_balance_with_executor(&mut **tx, contact_id, delta)
+    ContactRepository::update_balance_with_executor(&mut **tx, contact_id, company_id, delta)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 

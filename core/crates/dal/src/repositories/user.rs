@@ -48,7 +48,7 @@ impl UserRepository {
         user_id: Uuid,
     ) -> Result<Vec<UserCompany>, sqlx::Error> {
         let sql = format!(
-            "SELECT {} FROM user_companies WHERE user_id = $1 AND is_active = true",
+            "SELECT {} FROM user_companies WHERE user_id = $1 AND is_active = true ORDER BY created_at ASC",
             Self::UC_SELECT
         );
         sqlx::query_as::<_, UserCompany>(&sql)
@@ -172,14 +172,14 @@ impl UserRepository {
         pool: &PgPool,
         user_id: Uuid,
         company_id: Uuid,
-    ) -> Result<(), sqlx::Error> {
-        sqlx::query(
+    ) -> Result<u64, sqlx::Error> {
+        let result = sqlx::query(
             "UPDATE user_companies SET is_active = false WHERE user_id = $1 AND company_id = $2",
         )
         .bind(user_id)
         .bind(company_id)
         .execute(pool)
         .await?;
-        Ok(())
+        Ok(result.rows_affected())
     }
 }

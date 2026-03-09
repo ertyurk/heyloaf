@@ -5,9 +5,38 @@ import ArrowUp01Icon from "@hugeicons/core-free-icons/ArrowUp01Icon"
 import Tick02Icon from "@hugeicons/core-free-icons/Tick02Icon"
 import UnfoldMoreIcon from "@hugeicons/core-free-icons/UnfoldMoreIcon"
 import { HugeiconsIcon } from "@hugeicons/react"
-import type * as React from "react"
+import * as React from "react"
 
-const Select = SelectPrimitive.Root
+/**
+ * Context for SelectItem to register value→label mappings
+ * so SelectValue can resolve display labels without the items prop.
+ */
+type SelectLabelsMap = Map<string, string>
+const SelectLabelsContext = React.createContext<{
+  labels: SelectLabelsMap
+  register: (value: string, label: string) => void
+} | null>(null)
+
+function Select<Value, Multiple extends boolean | undefined = false>({
+  children,
+  ...props
+}: SelectPrimitive.Root.Props<Value, Multiple>) {
+  const [labels] = React.useState<SelectLabelsMap>(() => new Map())
+  const ctx = React.useMemo(
+    () => ({
+      labels,
+      register: (value: string, label: string) => {
+        labels.set(value, label)
+      },
+    }),
+    [labels],
+  )
+  return (
+    <SelectLabelsContext.Provider value={ctx}>
+      <SelectPrimitive.Root {...(props as SelectPrimitive.Root.Props<Value, Multiple>)}>{children}</SelectPrimitive.Root>
+    </SelectLabelsContext.Provider>
+  )
+}
 
 function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   return (
@@ -19,13 +48,20 @@ function SelectGroup({ className, ...props }: SelectPrimitive.Group.Props) {
   )
 }
 
-function SelectValue({ className, ...props }: SelectPrimitive.Value.Props) {
+function SelectValue({ className, children, ...props }: SelectPrimitive.Value.Props) {
+  const labelsCtx = React.useContext(SelectLabelsContext)
   return (
     <SelectPrimitive.Value
       data-slot="select-value"
       className={cn("flex flex-1 text-start", className)}
       {...props}
-    />
+    >
+      {children ??
+        ((val: unknown) => {
+          if (val == null) return null
+          return labelsCtx?.labels.get(String(val)) ?? String(val)
+        })}
+    </SelectPrimitive.Value>
   )
 }
 
@@ -61,6 +97,23 @@ function SelectTrigger({
   )
 }
 
+function collectLabels(
+  children: React.ReactNode,
+  register: (value: string, label: string) => void,
+) {
+  React.Children.forEach(children, (child) => {
+    if (!React.isValidElement(child)) return
+    const props = child.props as Record<string, unknown>
+    if (props.value != null && typeof props.children === "string") {
+      register(String(props.value), props.children)
+    }
+    // Recurse into groups/fragments
+    if (props.children && typeof props.children !== "string") {
+      collectLabels(props.children as React.ReactNode, register)
+    }
+  })
+}
+
 function SelectContent({
   className,
   children,
@@ -75,6 +128,10 @@ function SelectContent({
     SelectPrimitive.Positioner.Props,
     "align" | "alignOffset" | "side" | "sideOffset" | "alignItemWithTrigger"
   >) {
+  const labelsCtx = React.useContext(SelectLabelsContext)
+  if (labelsCtx) {
+    collectLabels(children, labelsCtx.register)
+  }
   return (
     <SelectPrimitive.Portal>
       <SelectPrimitive.Positioner
@@ -113,10 +170,19 @@ function SelectLabel({ className, ...props }: SelectPrimitive.GroupLabel.Props) 
   )
 }
 
-function SelectItem({ className, children, ...props }: SelectPrimitive.Item.Props) {
+function SelectItem({ className, children, label, ...props }: SelectPrimitive.Item.Props) {
+  const labelsCtx = React.useContext(SelectLabelsContext)
+  const derivedLabel = label ?? (typeof children === "string" ? children : undefined)
+
+  // Register value→label so SelectValue can resolve display text
+  if (labelsCtx && props.value != null && derivedLabel) {
+    labelsCtx.register(String(props.value), derivedLabel)
+  }
+
   return (
     <SelectPrimitive.Item
       data-slot="select-item"
+      label={derivedLabel}
       className={cn(
         "relative flex w-full cursor-default items-center gap-1.5 rounded-md py-1 pe-8 ps-1.5 text-sm outline-hidden select-none focus:bg-accent focus:text-accent-foreground not-data-[variant=destructive]:focus:**:text-accent-foreground data-disabled:pointer-events-none data-disabled:opacity-50 [&_svg]:pointer-events-none [&_svg]:shrink-0 [&_svg:not([class*='size-'])]:size-4 *:[span]:last:flex *:[span]:last:items-center *:[span]:last:gap-2",
         className

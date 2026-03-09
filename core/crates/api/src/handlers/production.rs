@@ -252,11 +252,13 @@ pub async fn update_production_record(
     })?;
 
     // Reverse old stock movements before updating
-    StockService::reverse_movements_tx(&mut tx, "production", id, auth.user_id).await?;
+    StockService::reverse_movements_tx(&mut tx, ctx.company_id, "production", id, auth.user_id)
+        .await?;
 
     let record = ProductionRecordRepository::update_with_executor(
         &mut *tx,
         id,
+        ctx.company_id,
         body.quantity,
         &body.materials,
         body.notes.as_deref(),
@@ -333,9 +335,10 @@ pub async fn delete_production_record(
     })?;
 
     // Reverse stock movements before deleting
-    StockService::reverse_movements_tx(&mut tx, "production", id, auth.user_id).await?;
+    StockService::reverse_movements_tx(&mut tx, ctx.company_id, "production", id, auth.user_id)
+        .await?;
 
-    ProductionRecordRepository::delete_with_executor(&mut *tx, id)
+    ProductionRecordRepository::delete_with_executor(&mut *tx, id, ctx.company_id)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
@@ -453,7 +456,7 @@ pub async fn add_session_item(
     let item_json = serde_json::to_value(&body.item)
         .map_err(|e| AppError::BadRequest(format!("Failed to serialize item: {e}")))?;
 
-    let session = ProductionSessionRepository::add_item(&state.pool, id, &item_json)
+    let session = ProductionSessionRepository::add_item(&state.pool, id, ctx.company_id, &item_json)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
@@ -498,25 +501,31 @@ pub async fn complete_production_session(
         AppError::Database(format!("Failed to start transaction: {e}"))
     })?;
 
-    let session = ProductionSessionRepository::complete_with_executor(&mut *tx, id, auth.user_id)
+    let session = ProductionSessionRepository::complete_with_executor(&mut *tx, id, ctx.company_id, auth.user_id)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
     // Record stock movements for all session items
     if let Some(items) = session.items.as_array() {
-        for item in items {
-            let Some(product_id) = item
+        for (idx, item) in items.iter().enumerate() {
+            let product_id = item
                 .get("product_id")
                 .and_then(serde_json::Value::as_str)
                 .and_then(|s| s.parse::<Uuid>().ok())
-            else {
-                continue;
-            };
+                .ok_or_else(|| {
+                    AppError::BadRequest(format!(
+                        "Invalid or missing product_id in session item at index {idx}"
+                    ))
+                })?;
 
             let quantity = item
                 .get("quantity")
                 .and_then(serde_json::Value::as_f64)
-                .unwrap_or(0.0);
+                .ok_or_else(|| {
+                    AppError::BadRequest(format!(
+                        "Invalid or missing quantity in session item at index {idx}"
+                    ))
+                })?;
 
             // Stock-in for the finished product
             StockService::record_movement_tx(
@@ -594,10 +603,17 @@ pub async fn delete_production_session(
 
     // Reverse stock movements if the session was completed
     if existing.status == "completed" {
-        StockService::reverse_movements_tx(&mut tx, "production", id, auth.user_id).await?;
+        StockService::reverse_movements_tx(
+            &mut tx,
+            ctx.company_id,
+            "production",
+            id,
+            auth.user_id,
+        )
+        .await?;
     }
 
-    ProductionSessionRepository::delete_with_executor(&mut *tx, id)
+    ProductionSessionRepository::delete_with_executor(&mut *tx, id, ctx.company_id)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
@@ -633,19 +649,25 @@ async fn record_material_stock_movements_tx(
         None => return Ok(()),
     };
 
-    for mat in items {
-        let Some(product_id) = mat
+    for (idx, mat) in items.iter().enumerate() {
+        let product_id = mat
             .get("product_id")
             .and_then(serde_json::Value::as_str)
             .and_then(|s| s.parse::<Uuid>().ok())
-        else {
-            continue;
-        };
+            .ok_or_else(|| {
+                AppError::BadRequest(format!(
+                    "Invalid or missing product_id in material at index {idx}"
+                ))
+            })?;
 
         let quantity = mat
             .get("quantity")
             .and_then(serde_json::Value::as_f64)
-            .unwrap_or(0.0);
+            .ok_or_else(|| {
+                AppError::BadRequest(format!(
+                    "Invalid or missing quantity in material at index {idx}"
+                ))
+            })?;
 
         StockService::record_movement_tx(
             tx,

@@ -7,6 +7,7 @@ import { DataTable } from "@heyloaf/ui/components/data-table"
 import { DropdownMenuItem, DropdownMenuSeparator } from "@heyloaf/ui/components/dropdown-menu"
 import { Input } from "@heyloaf/ui/components/input"
 import { Label } from "@heyloaf/ui/components/label"
+import { Popover, PopoverContent, PopoverTrigger } from "@heyloaf/ui/components/popover"
 import {
   Select,
   SelectContent,
@@ -23,13 +24,19 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@heyloaf/ui/components/sheet"
+import Cancel01Icon from "@hugeicons/core-free-icons/Cancel01Icon"
+import Delete01Icon from "@hugeicons/core-free-icons/Delete01Icon"
+import Download01Icon from "@hugeicons/core-free-icons/Download01Icon"
+import EyeIcon from "@hugeicons/core-free-icons/EyeIcon"
 import Search01Icon from "@hugeicons/core-free-icons/Search01Icon"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { useMemo, useRef, useState } from "react"
+import QRCode from "qrcode"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
+import { AuditHistory } from "@/components/audit-history"
 import { ConfirmDialog } from "@/components/confirm-dialog"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
@@ -54,6 +61,17 @@ const PLU_TYPE_OPTIONS = [
   { value: "weight", label: "Weight" },
   { value: "piece", label: "Piece" },
 ]
+
+const PURCHASE_VARIANT_PRODUCT_TYPES = ["raw", "commercial", "consumable"]
+
+// --- Purchase Variant type ---
+interface PurchaseVariant {
+  name: string
+  purchase_unit: string
+  conversion_qty: number
+  barcode: string
+  is_default: boolean
+}
 
 // --- Shared form fields component ---
 interface ProductFormData {
@@ -355,6 +373,347 @@ function ProductFormFields({
   )
 }
 
+// --- QR Code Section ---
+function QRCodeSection({ product, t }: { product: Product; t: (key: string) => string }) {
+  const [qrUrl, setQrUrl] = useState<string>("")
+  const value = product.barcode || product.code || product.id
+
+  useEffect(() => {
+    QRCode.toDataURL(value, { width: 128, margin: 1 }).then(setQrUrl)
+  }, [value])
+
+  function downloadQR() {
+    const link = document.createElement("a")
+    link.download = `${product.name}-qr.png`
+    link.href = qrUrl
+    link.click()
+  }
+
+  return (
+    <div className="border-t pt-4 mt-2">
+      <p className="text-sm font-medium mb-3">{t("products.qrCode")}</p>
+      {value ? (
+        <div className="flex items-center gap-4">
+          {qrUrl && <img src={qrUrl} alt="QR Code" className="h-32 w-32 rounded border" />}
+          <Button type="button" variant="outline" size="sm" onClick={downloadQR} disabled={!qrUrl}>
+            <HugeiconsIcon icon={Download01Icon} size={14} className="mr-1" />
+            {t("products.downloadQR")}
+          </Button>
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">{t("products.noCodeForQR")}</p>
+      )}
+    </div>
+  )
+}
+
+// --- Purchase Variants Section ---
+function PurchaseVariantsSection({
+  variants,
+  setVariants,
+  t,
+}: {
+  variants: PurchaseVariant[]
+  setVariants: (v: PurchaseVariant[]) => void
+  t: (key: string) => string
+}) {
+  function addVariant() {
+    setVariants([
+      ...variants,
+      {
+        name: "",
+        purchase_unit: "",
+        conversion_qty: 1,
+        barcode: "",
+        is_default: variants.length === 0,
+      },
+    ])
+  }
+
+  function removeVariant(index: number) {
+    const next = variants.filter((_, i) => i !== index)
+    // ensure at least one default if any remain
+    if (next.length > 0 && !next.some((v) => v.is_default)) {
+      next[0].is_default = true
+    }
+    setVariants(next)
+  }
+
+  function updateVariant(index: number, patch: Partial<PurchaseVariant>) {
+    setVariants(
+      variants.map((v, i) => {
+        if (i !== index) {
+          // if the current patch sets is_default true, unset others
+          if (patch.is_default) return { ...v, is_default: false }
+          return v
+        }
+        return { ...v, ...patch }
+      })
+    )
+  }
+
+  return (
+    <div className="border-t pt-4 mt-2">
+      <div className="flex items-center justify-between mb-3">
+        <p className="text-sm font-medium">{t("products.purchaseVariants")}</p>
+        <Button type="button" variant="outline" size="sm" onClick={addVariant}>
+          {t("products.addVariant")}
+        </Button>
+      </div>
+      <div className="space-y-3">
+        {variants.map((variant, index) => (
+          <div key={`variant-${variant.name || index}`} className="rounded-lg border p-3 space-y-2">
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-muted-foreground">#{index + 1}</span>
+              <Button type="button" variant="ghost" size="sm" onClick={() => removeVariant(index)}>
+                <HugeiconsIcon icon={Delete01Icon} size={14} className="text-destructive" />
+                <span className="sr-only">{t("products.removeVariant")}</span>
+              </Button>
+            </div>
+            <div className="grid gap-2">
+              <Input
+                placeholder={t("products.variantName")}
+                value={variant.name}
+                onChange={(e) => updateVariant(index, { name: e.target.value })}
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-2">
+              <Input
+                placeholder={t("products.purchaseUnit")}
+                value={variant.purchase_unit}
+                onChange={(e) => updateVariant(index, { purchase_unit: e.target.value })}
+              />
+              <Input
+                type="number"
+                step="0.01"
+                placeholder={t("products.conversionQty")}
+                value={variant.conversion_qty}
+                onChange={(e) =>
+                  updateVariant(index, {
+                    conversion_qty: Number(e.target.value),
+                  })
+                }
+              />
+            </div>
+            <Input
+              placeholder={t("products.barcode")}
+              value={variant.barcode}
+              onChange={(e) => updateVariant(index, { barcode: e.target.value })}
+            />
+            <div className="flex items-center gap-2">
+              <Checkbox
+                id={`variant-default-${index}`}
+                checked={variant.is_default}
+                onCheckedChange={(checked) =>
+                  updateVariant(index, { is_default: checked === true })
+                }
+              />
+              <Label htmlFor={`variant-default-${index}`}>{t("products.defaultVariant")}</Label>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
+// --- Product Preview Sheet ---
+function ProductPreviewSheet({
+  product,
+  categories,
+  open,
+  onOpenChange,
+  onEdit,
+  t,
+}: {
+  product: Product | null
+  categories: Category[]
+  open: boolean
+  onOpenChange: (open: boolean) => void
+  onEdit: () => void
+  t: (key: string) => string
+}) {
+  const [qrUrl, setQrUrl] = useState<string>("")
+
+  useEffect(() => {
+    if (!product) return
+    const value = product.barcode || product.code || product.id
+    QRCode.toDataURL(value, { width: 128, margin: 1 }).then(setQrUrl)
+  }, [product])
+
+  if (!product) return null
+
+  const categoryName = categories.find((c) => c.id === product.category_id)?.name ?? "-"
+
+  return (
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent side="right" className="sm:max-w-sm">
+        <SheetHeader>
+          <SheetTitle>{t("products.quickPreview")}</SheetTitle>
+        </SheetHeader>
+        <SheetBody className="space-y-4">
+          {/* Image */}
+          {product.image_url && (
+            <div className="flex justify-center">
+              <img
+                src={`${API_BASE_URL}${product.image_url}`}
+                alt={product.name}
+                className="h-32 w-32 rounded-lg border object-cover"
+              />
+            </div>
+          )}
+
+          {/* Info card */}
+          <div className="space-y-3">
+            <div>
+              <p className="text-lg font-semibold">{product.name}</p>
+              {product.code && (
+                <p className="text-sm text-muted-foreground">
+                  {t("common.code")}: {product.code}
+                </p>
+              )}
+              {product.barcode && (
+                <p className="text-sm text-muted-foreground">
+                  {t("products.barcode")}: {product.barcode}
+                </p>
+              )}
+            </div>
+
+            <div className="grid grid-cols-2 gap-2 text-sm">
+              <div>
+                <span className="text-muted-foreground">{t("common.type")}</span>
+                <p className="capitalize">{product.product_type}</p>
+              </div>
+              <div>
+                <span className="text-muted-foreground">{t("common.status")}</span>
+                <div className="mt-0.5">
+                  <Badge variant={product.status === "active" ? "default" : "secondary"}>
+                    {product.status === "active"
+                      ? t("common.active")
+                      : product.status === "draft"
+                        ? t("common.draft")
+                        : t("common.inactive")}
+                  </Badge>
+                </div>
+              </div>
+              <div>
+                <span className="text-muted-foreground">{t("common.category")}</span>
+                <p>{categoryName}</p>
+              </div>
+              <div>
+                <span className="text-muted-foreground">{t("products.taxRate")}</span>
+                <p>{product.tax_rate ?? "-"}%</p>
+              </div>
+              <div>
+                <span className="text-muted-foreground">{t("products.stockTracking")}</span>
+                <p>{product.stock_tracking ? t("common.active") : t("common.inactive")}</p>
+              </div>
+              <div>
+                <span className="text-muted-foreground">{t("products.unitOfMeasure")}</span>
+                <p className="capitalize">{product.unit_of_measure}</p>
+              </div>
+            </div>
+          </div>
+
+          {/* QR Code */}
+          {qrUrl && (
+            <div className="border-t pt-4">
+              <p className="text-sm font-medium mb-2">{t("products.qrCode")}</p>
+              <div className="flex justify-center">
+                <img src={qrUrl} alt="QR Code" className="h-32 w-32 rounded border" />
+              </div>
+            </div>
+          )}
+        </SheetBody>
+        <SheetFooter>
+          <SheetClose render={<Button variant="outline" />}>{t("common.close")}</SheetClose>
+          <Button
+            onClick={() => {
+              onOpenChange(false)
+              onEdit()
+            }}
+          >
+            {t("common.edit")}
+          </Button>
+        </SheetFooter>
+      </SheetContent>
+    </Sheet>
+  )
+}
+
+// --- Bulk Action Bar ---
+function BulkActionBar({
+  selectedCount,
+  categories,
+  onActivate,
+  onDeactivate,
+  onSetCategory,
+  onClear,
+  isLoading,
+  t,
+}: {
+  selectedCount: number
+  categories: Category[]
+  onActivate: () => void
+  onDeactivate: () => void
+  onSetCategory: (categoryId: string | null) => void
+  onClear: () => void
+  isLoading: boolean
+  t: (key: string, options?: Record<string, unknown>) => string
+}) {
+  if (selectedCount === 0) return null
+
+  return (
+    <div className="fixed bottom-6 left-1/2 z-50 -translate-x-1/2">
+      <div className="flex items-center gap-2 rounded-lg border bg-background p-2 shadow-lg">
+        <span className="px-2 text-sm font-medium">
+          {t("products.selectedCount", { count: selectedCount })}
+        </span>
+        <Button size="sm" variant="outline" disabled={isLoading} onClick={onActivate}>
+          {t("products.bulkActivate")}
+        </Button>
+        <Button size="sm" variant="outline" disabled={isLoading} onClick={onDeactivate}>
+          {t("products.bulkDeactivate")}
+        </Button>
+        <Popover>
+          <PopoverTrigger
+            render={
+              <Button size="sm" variant="outline" disabled={isLoading}>
+                {t("products.bulkSetCategory")}
+              </Button>
+            }
+          />
+          <PopoverContent className="w-48 p-1" side="top">
+            <div className="max-h-60 overflow-y-auto">
+              <button
+                type="button"
+                className="w-full rounded px-2 py-1.5 text-left text-sm hover:bg-muted"
+                onClick={() => onSetCategory(null)}
+              >
+                {t("common.none")}
+              </button>
+              {categories.map((cat) => (
+                <button
+                  key={cat.id}
+                  type="button"
+                  className="w-full rounded px-2 py-1.5 text-left text-sm hover:bg-muted"
+                  onClick={() => onSetCategory(cat.id)}
+                >
+                  {cat.name}
+                </button>
+              ))}
+            </div>
+          </PopoverContent>
+        </Popover>
+        <Button size="sm" variant="ghost" onClick={onClear}>
+          <HugeiconsIcon icon={Cancel01Icon} size={14} className="mr-1" />
+          {t("products.bulkClearSelection")}
+        </Button>
+      </div>
+    </div>
+  )
+}
+
 function ProductsPage() {
   const { t } = useTranslation()
   const client = useApi()
@@ -364,8 +723,16 @@ function ProductsPage() {
   const [createOpen, setCreateOpen] = useState(false)
   const [editOpen, setEditOpen] = useState(false)
   const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  const [previewOpen, setPreviewOpen] = useState(false)
+  const [previewProduct, setPreviewProduct] = useState<Product | null>(null)
 
-  // Confirmation state for delete (replaces window.confirm)
+  // Bulk selection
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set())
+
+  // Purchase variants for edit sheet
+  const [editVariants, setEditVariants] = useState<PurchaseVariant[]>([])
+
+  // Confirmation state for delete
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
   const createImageInputRef = useRef<HTMLInputElement>(null)
@@ -626,6 +993,24 @@ function ProductsPage() {
       })
       if (error)
         throw new Error((error as { message?: string }).message ?? t("products.uploadFailed"))
+
+      // Save purchase variants if applicable
+      if (PURCHASE_VARIANT_PRODUCT_TYPES.includes(editingProduct.product_type ?? "")) {
+        const variantsRes = await fetch(
+          `${API_BASE_URL}/api/products/${editingProduct.id}/purchase-options`,
+          {
+            method: "PUT",
+            headers: {
+              Authorization: `Bearer ${token}`,
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ variants: editVariants }),
+          }
+        )
+        if (!variantsRes.ok) {
+          toast.error(t("products.uploadFailed"))
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["products"] })
@@ -654,6 +1039,96 @@ function ProductsPage() {
       toast.error(err.message)
     },
   })
+
+  // Bulk mutations
+  const bulkActivateMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const res = await fetch(`${API_BASE_URL}/api/products/bulk/activate`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ids }),
+      })
+      if (!res.ok) throw new Error("Bulk activate failed")
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] })
+      setSelectedIds(new Set())
+      toast.success(t("products.productUpdated"))
+    },
+    onError: (err: Error) => {
+      toast.error(err.message)
+    },
+  })
+
+  const bulkDeactivateMutation = useMutation({
+    mutationFn: async (ids: string[]) => {
+      const res = await fetch(`${API_BASE_URL}/api/products/bulk/deactivate`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ids }),
+      })
+      if (!res.ok) throw new Error("Bulk deactivate failed")
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] })
+      setSelectedIds(new Set())
+      toast.success(t("products.productUpdated"))
+    },
+    onError: (err: Error) => {
+      toast.error(err.message)
+    },
+  })
+
+  const bulkSetCategoryMutation = useMutation({
+    mutationFn: async ({ ids, category_id }: { ids: string[]; category_id: string | null }) => {
+      const res = await fetch(`${API_BASE_URL}/api/products/bulk/category`, {
+        method: "POST",
+        headers: {
+          Authorization: `Bearer ${token}`,
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ ids, category_id }),
+      })
+      if (!res.ok) throw new Error("Bulk set category failed")
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["products"] })
+      setSelectedIds(new Set())
+      toast.success(t("products.productUpdated"))
+    },
+    onError: (err: Error) => {
+      toast.error(err.message)
+    },
+  })
+
+  const isBulkLoading =
+    bulkActivateMutation.isPending ||
+    bulkDeactivateMutation.isPending ||
+    bulkSetCategoryMutation.isPending
+
+  const handleBulkActivate = useCallback(() => {
+    bulkActivateMutation.mutate([...selectedIds])
+  }, [selectedIds, bulkActivateMutation])
+
+  const handleBulkDeactivate = useCallback(() => {
+    bulkDeactivateMutation.mutate([...selectedIds])
+  }, [selectedIds, bulkDeactivateMutation])
+
+  const handleBulkSetCategory = useCallback(
+    (categoryId: string | null) => {
+      bulkSetCategoryMutation.mutate({
+        ids: [...selectedIds],
+        category_id: categoryId,
+      })
+    },
+    [selectedIds, bulkSetCategoryMutation]
+  )
 
   function resetCreateForm() {
     setCreateForm({
@@ -693,7 +1168,17 @@ function ProductsPage() {
       scale_enabled: product.scale_enabled ?? false,
       min_stock_level: product.min_stock_level?.toString() ?? "",
     })
+    // Load purchase variants from purchase_options
+    const purchaseOptions = (product as Record<string, unknown>).purchase_options as {
+      variants?: PurchaseVariant[]
+    } | null
+    setEditVariants(purchaseOptions?.variants ?? [])
     setEditOpen(true)
+  }
+
+  function openPreviewSheet(product: Product) {
+    setPreviewProduct(product)
+    setPreviewOpen(true)
   }
 
   function confirmDelete() {
@@ -771,9 +1256,16 @@ function ProductsPage() {
           getRowId={(row) => row.id}
           isLoading={isLoading}
           emptyMessage={t("products.noProductsFound")}
+          selectable
+          selectedIds={selectedIds}
+          onSelectionChange={setSelectedIds}
           onRowClick={openEditSheet}
           rowActions={(row) => (
             <>
+              <DropdownMenuItem onClick={() => openPreviewSheet(row)}>
+                <HugeiconsIcon icon={EyeIcon} size={14} className="mr-2" />
+                {t("products.quickPreview")}
+              </DropdownMenuItem>
               <DropdownMenuItem onClick={() => openEditSheet(row)}>
                 {t("common.edit")}
               </DropdownMenuItem>
@@ -785,6 +1277,30 @@ function ProductsPage() {
           )}
         />
       </div>
+
+      {/* Bulk Action Bar */}
+      <BulkActionBar
+        selectedCount={selectedIds.size}
+        categories={categories}
+        onActivate={handleBulkActivate}
+        onDeactivate={handleBulkDeactivate}
+        onSetCategory={handleBulkSetCategory}
+        onClear={() => setSelectedIds(new Set())}
+        isLoading={isBulkLoading}
+        t={t}
+      />
+
+      {/* Product Preview Sheet */}
+      <ProductPreviewSheet
+        product={previewProduct}
+        categories={categories}
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+        onEdit={() => {
+          if (previewProduct) openEditSheet(previewProduct)
+        }}
+        t={t}
+      />
 
       {/* Delete Confirmation */}
       <ConfirmDialog
@@ -873,8 +1389,22 @@ function ProductsPage() {
                 productTypeReadonly={editingProduct?.product_type ?? ""}
                 t={t}
               />
+
+              {/* Purchase Variants (only for applicable types) */}
+              {editingProduct &&
+                PURCHASE_VARIANT_PRODUCT_TYPES.includes(editingProduct.product_type ?? "") && (
+                  <PurchaseVariantsSection
+                    variants={editVariants}
+                    setVariants={setEditVariants}
+                    t={t}
+                  />
+                )}
+
+              {/* QR Code */}
+              {editingProduct && <QRCodeSection product={editingProduct} t={t} />}
             </SheetBody>
             <SheetFooter>
+              {editingProduct && <AuditHistory entityType="product" entityId={editingProduct.id} />}
               <SheetClose render={<Button variant="outline" />}>{t("common.cancel")}</SheetClose>
               <Button type="submit" disabled={updateMutation.isPending}>
                 {updateMutation.isPending ? t("common.saving") : t("common.save")}

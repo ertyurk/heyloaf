@@ -200,12 +200,14 @@ impl TransactionRepository {
 
     pub async fn delete_by_reference_with_executor<'e>(
         executor: impl sqlx::PgExecutor<'e>,
+        company_id: Uuid,
         reference_type: &str,
         reference_id: Uuid,
     ) -> Result<(), sqlx::Error> {
         sqlx::query(
-            "DELETE FROM transactions WHERE reference_type = $1 AND reference_id = $2",
+            "DELETE FROM transactions WHERE company_id = $1 AND reference_type = $2 AND reference_id = $3",
         )
+        .bind(company_id)
         .bind(reference_type)
         .bind(reference_id)
         .execute(executor)

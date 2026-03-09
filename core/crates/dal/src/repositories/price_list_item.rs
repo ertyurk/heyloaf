@@ -80,24 +80,31 @@ impl PriceListItemRepository {
     pub async fn update_active(
         pool: &PgPool,
         id: Uuid,
+        company_id: Uuid,
         is_active: bool,
     ) -> Result<PriceListItem, sqlx::Error> {
         let sql = format!(
             r"UPDATE price_list_items SET is_active = $2
-            WHERE id = $1
+            WHERE id = $1 AND company_id = $3
             RETURNING {}",
             Self::SELECT
         );
         sqlx::query_as::<_, PriceListItem>(&sql)
             .bind(id)
             .bind(is_active)
+            .bind(company_id)
             .fetch_one(pool)
             .await
     }
 
-    pub async fn delete(pool: &PgPool, id: Uuid) -> Result<(), sqlx::Error> {
-        sqlx::query("DELETE FROM price_list_items WHERE id = $1")
+    pub async fn delete(
+        pool: &PgPool,
+        id: Uuid,
+        company_id: Uuid,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query("DELETE FROM price_list_items WHERE id = $1 AND company_id = $2")
             .bind(id)
+            .bind(company_id)
             .execute(pool)
             .await?;
         Ok(())

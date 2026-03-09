@@ -94,11 +94,18 @@ impl NotificationRepository {
             .await
     }
 
-    pub async fn mark_read(pool: &PgPool, id: Uuid) -> Result<(), sqlx::Error> {
-        sqlx::query("UPDATE notifications SET is_read = true WHERE id = $1")
-            .bind(id)
-            .execute(pool)
-            .await?;
+    pub async fn mark_read(
+        pool: &PgPool,
+        id: Uuid,
+        user_id: Uuid,
+    ) -> Result<(), sqlx::Error> {
+        sqlx::query(
+            "UPDATE notifications SET is_read = true WHERE id = $1 AND (user_id = $2 OR user_id IS NULL)",
+        )
+        .bind(id)
+        .bind(user_id)
+        .execute(pool)
+        .await?;
         Ok(())
     }
 

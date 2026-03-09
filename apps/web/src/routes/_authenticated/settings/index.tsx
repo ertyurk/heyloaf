@@ -58,6 +58,11 @@ const sections = [
     descriptionKey: "settings.auditLogs.description",
     to: "/settings/audit",
   },
+  {
+    titleKey: "scale.title",
+    descriptionKey: "scale.configuration",
+    to: "/settings/scale",
+  },
 ] as const
 
 function SettingsIndexPage() {

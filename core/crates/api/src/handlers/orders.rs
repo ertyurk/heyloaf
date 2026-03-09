@@ -288,13 +288,14 @@ pub async fn void_order(
 
     let order =
         OrderRepository::update_status_with_notes_executor(
-            &mut *tx, id, "voided", &body.reason,
+            &mut *tx, id, ctx.company_id, "voided", &body.reason,
         )
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
     // Reverse stock movements for voided order
-    StockService::reverse_movements_tx(&mut tx, "order", id, auth.user_id).await?;
+    StockService::reverse_movements_tx(&mut tx, ctx.company_id, "order", id, auth.user_id)
+        .await?;
 
     tx.commit().await.map_err(|e| {
         AppError::Database(format!("Failed to commit transaction: {e}"))
@@ -418,6 +419,7 @@ pub async fn return_order(
         // Full return: reverse all stock movements
         StockService::reverse_movements_tx(
             &mut tx,
+            ctx.company_id,
             "order",
             id,
             auth.user_id,
@@ -429,6 +431,7 @@ pub async fn return_order(
     let order = OrderRepository::update_status_with_notes_executor(
         &mut *tx,
         id,
+        ctx.company_id,
         final_status,
         &body.reason,
     )

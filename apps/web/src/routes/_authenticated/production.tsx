@@ -1,6 +1,8 @@
 import { AdvancedSelect } from "@heyloaf/ui/components/advanced-select"
 import { Badge } from "@heyloaf/ui/components/badge"
 import { Button } from "@heyloaf/ui/components/button"
+import { Card, CardContent } from "@heyloaf/ui/components/card"
+import { Checkbox } from "@heyloaf/ui/components/checkbox"
 import { DataTable } from "@heyloaf/ui/components/data-table"
 import { DateRangeFilter } from "@heyloaf/ui/components/date-range-filter"
 import { DropdownMenuItem, DropdownMenuSeparator } from "@heyloaf/ui/components/dropdown-menu"
@@ -93,10 +95,14 @@ function ProductionPage() {
       <PageHeader title={t("production.title")} description={t("production.description")} />
 
       <Tabs defaultValue="records" className="flex flex-col">
-        <div className="px-6 pt-4">
+        <div className="px-4 pt-4 md:px-6">
           <TabsList>
-            <TabsTrigger value="records">{t("production.records")}</TabsTrigger>
-            <TabsTrigger value="sessions">{t("production.sessions")}</TabsTrigger>
+            <TabsTrigger value="records" className="h-12 text-lg md:h-10 md:text-sm">
+              {t("production.records")}
+            </TabsTrigger>
+            <TabsTrigger value="sessions" className="h-12 text-lg md:h-10 md:text-sm">
+              {t("production.sessions")}
+            </TabsTrigger>
           </TabsList>
         </div>
 
@@ -150,6 +156,9 @@ function RecordsTab({
   // Confirmation state for delete (replaces window.confirm)
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null)
 
+  // Ingredient checklist state (keyed by material row id)
+  const [checkedIngredients, setCheckedIngredients] = useState<Set<string>>(new Set())
+
   // Create form
   const [createForm, setCreateForm] = useState({
     product_id: "",
@@ -178,6 +187,7 @@ function RecordsTab({
       notes: "",
       materials: [emptyMaterial()],
     })
+    setCheckedIngredients(new Set())
   }
 
   // -- Fetch records --
@@ -371,10 +381,10 @@ function RecordsTab({
 
   return (
     <>
-      <div className="space-y-4 p-6">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-4">
-            <div className="relative max-w-xs flex-1">
+      <div className="space-y-4 p-4 md:p-6">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="flex flex-col gap-3 md:flex-row md:items-center md:gap-4">
+            <div className="relative w-full md:max-w-xs md:flex-1">
               <HugeiconsIcon
                 icon={Search01Icon}
                 size={16}
@@ -384,7 +394,7 @@ function RecordsTab({
                 placeholder={t("production.searchByProductName")}
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                className="pl-8"
+                className="h-12 pl-8 text-lg md:h-10 md:text-sm"
               />
             </div>
             <DateRangeFilter
@@ -396,7 +406,9 @@ function RecordsTab({
               }}
             />
           </div>
-          <Button onClick={() => setCreateOpen(true)}>{t("production.newRecord")}</Button>
+          <Button onClick={() => setCreateOpen(true)} className="h-12 text-lg md:h-10 md:text-sm">
+            {t("production.newRecord")}
+          </Button>
         </div>
 
         <DataTable
@@ -443,27 +455,52 @@ function RecordsTab({
             className="flex flex-col flex-1 overflow-hidden"
           >
             <SheetBody className="grid gap-4">
+              {/* Product selection — large touch-friendly cards on mobile */}
               <div className="grid gap-2">
-                <Label>{t("common.product")} *</Label>
-                <AdvancedSelect
-                  options={outputProducts}
-                  value={createForm.product_id}
-                  onValueChange={(v) => setCreateForm((f) => ({ ...f, product_id: v ?? "" }))}
-                  placeholder={t("stock.selectProduct")}
-                />
+                <Label className="text-base md:text-sm">{t("production.selectProduct")} *</Label>
+                {!createForm.product_id ? (
+                  <div className="grid grid-cols-1 gap-3 md:hidden">
+                    {outputProducts.map((p) => (
+                      <Card
+                        key={p.value}
+                        className="cursor-pointer transition-colors hover:bg-accent"
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setCreateForm((f) => ({ ...f, product_id: p.value }))}
+                      >
+                        <CardContent className="flex items-center p-4">
+                          <span className="text-base font-medium">{p.label}</span>
+                        </CardContent>
+                      </Card>
+                    ))}
+                  </div>
+                ) : null}
+                <div className={createForm.product_id ? "" : "hidden md:block"}>
+                  <AdvancedSelect
+                    options={outputProducts}
+                    value={createForm.product_id}
+                    onValueChange={(v) => setCreateForm((f) => ({ ...f, product_id: v ?? "" }))}
+                    placeholder={t("stock.selectProduct")}
+                  />
+                </div>
               </div>
               <div className="grid gap-2">
-                <Label htmlFor="rec-variant">{t("production.variantOptional")}</Label>
+                <Label htmlFor="rec-variant" className="text-base md:text-sm">
+                  {t("production.variantOptional")}
+                </Label>
                 <Input
                   id="rec-variant"
                   value={createForm.variant_name}
                   onChange={(e) => setCreateForm((f) => ({ ...f, variant_name: e.target.value }))}
                   placeholder="e.g. chocolate, vanilla"
+                  className="h-12 text-lg md:h-10 md:text-sm"
                 />
               </div>
-              <div className="grid grid-cols-3 gap-4">
+              <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
                 <div className="grid gap-2">
-                  <Label htmlFor="rec-qty">{t("common.quantity")} *</Label>
+                  <Label htmlFor="rec-qty" className="text-base md:text-sm">
+                    {t("common.quantity")} *
+                  </Label>
                   <Input
                     id="rec-qty"
                     type="number"
@@ -476,19 +513,25 @@ function RecordsTab({
                         quantity: Number(e.target.value) || 0,
                       }))
                     }
+                    className="h-12 text-lg md:h-10 md:text-sm"
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="rec-unit">{t("common.unit")}</Label>
+                  <Label htmlFor="rec-unit" className="text-base md:text-sm">
+                    {t("common.unit")}
+                  </Label>
                   <Input
                     id="rec-unit"
                     value={createForm.unit}
                     onChange={(e) => setCreateForm((f) => ({ ...f, unit: e.target.value }))}
                     placeholder="pcs"
+                    className="h-12 text-lg md:h-10 md:text-sm"
                   />
                 </div>
                 <div className="grid gap-2">
-                  <Label htmlFor="rec-batch">{t("production.batchSize")}</Label>
+                  <Label htmlFor="rec-batch" className="text-base md:text-sm">
+                    {t("production.batchSize")}
+                  </Label>
                   <Input
                     id="rec-batch"
                     type="number"
@@ -500,76 +543,131 @@ function RecordsTab({
                         batch_size: Number(e.target.value) || 1,
                       }))
                     }
+                    className="h-12 text-lg md:h-10 md:text-sm"
                   />
                 </div>
               </div>
 
-              {/* Materials */}
+              {/* Materials with ingredient checklist */}
               <div className="grid gap-2">
-                <Label>{t("production.materials")}</Label>
+                <Label className="text-base md:text-sm">
+                  {t("production.ingredientChecklist")}
+                </Label>
                 <div className="space-y-2">
-                  {createForm.materials.map((mat, idx) => (
-                    <div
-                      key={mat.id}
-                      className="grid grid-cols-[1fr_5rem_2rem] items-end gap-2 rounded-md border p-2"
-                    >
-                      <div className="grid gap-1">
-                        <span className="text-xs text-muted-foreground">
-                          {t("production.ingredient")}
-                        </span>
-                        <AdvancedSelect
-                          options={ingredientProducts}
-                          value={mat.product_id}
-                          onValueChange={(v) =>
-                            setCreateForm((f) => {
-                              const mats = [...f.materials]
-                              mats[idx] = { ...mats[idx], product_id: v ?? "" }
-                              return { ...f, materials: mats }
-                            })
-                          }
-                          placeholder={t("common.search")}
-                          size="sm"
-                        />
-                      </div>
-                      <div className="grid gap-1">
-                        <span className="text-xs text-muted-foreground">{t("orders.qty")}</span>
-                        <Input
-                          type="number"
-                          min={0}
-                          value={mat.quantity || ""}
-                          onChange={(e) =>
-                            setCreateForm((f) => {
-                              const mats = [...f.materials]
-                              mats[idx] = {
-                                ...mats[idx],
-                                quantity: Number(e.target.value) || 0,
-                              }
-                              return { ...f, materials: mats }
-                            })
-                          }
-                        />
-                      </div>
-                      <Button
-                        type="button"
-                        variant="ghost"
-                        size="icon-sm"
-                        disabled={createForm.materials.length <= 1}
-                        onClick={() =>
-                          setCreateForm((f) => ({
-                            ...f,
-                            materials: f.materials.filter((_, i) => i !== idx),
-                          }))
-                        }
+                  {createForm.materials.map((mat, idx) => {
+                    const isChecked = checkedIngredients.has(mat.id)
+                    return (
+                      <div
+                        key={mat.id}
+                        className={`grid grid-cols-[auto_1fr_5rem_2rem] items-end gap-2 rounded-md border p-3 md:p-2 ${
+                          isChecked ? "bg-muted/50" : ""
+                        }`}
                       >
-                        &times;
-                      </Button>
-                    </div>
-                  ))}
+                        <div className="flex items-center pt-5">
+                          <Checkbox
+                            checked={isChecked}
+                            onCheckedChange={(checked) => {
+                              setCheckedIngredients((prev) => {
+                                const next = new Set(prev)
+                                if (checked) {
+                                  next.add(mat.id)
+                                } else {
+                                  next.delete(mat.id)
+                                }
+                                return next
+                              })
+                            }}
+                            aria-label={t("production.markAsUsed")}
+                          />
+                        </div>
+                        <div className="grid gap-1">
+                          <span
+                            className={`text-xs text-muted-foreground ${
+                              isChecked ? "line-through" : ""
+                            }`}
+                          >
+                            {t("production.ingredient")}
+                          </span>
+                          <AdvancedSelect
+                            options={ingredientProducts}
+                            value={mat.product_id}
+                            onValueChange={(v) =>
+                              setCreateForm((f) => {
+                                const mats = [...f.materials]
+                                mats[idx] = {
+                                  ...mats[idx],
+                                  product_id: v ?? "",
+                                }
+                                return { ...f, materials: mats }
+                              })
+                            }
+                            placeholder={t("common.search")}
+                            size="sm"
+                          />
+                        </div>
+                        <div className="grid gap-1">
+                          <span
+                            className={`text-xs text-muted-foreground ${
+                              isChecked ? "line-through" : ""
+                            }`}
+                          >
+                            {t("orders.qty")}
+                          </span>
+                          <Input
+                            type="number"
+                            min={0}
+                            value={mat.quantity || ""}
+                            onChange={(e) =>
+                              setCreateForm((f) => {
+                                const mats = [...f.materials]
+                                mats[idx] = {
+                                  ...mats[idx],
+                                  quantity: Number(e.target.value) || 0,
+                                }
+                                return { ...f, materials: mats }
+                              })
+                            }
+                            className="h-12 md:h-10"
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="icon-sm"
+                          disabled={createForm.materials.length <= 1}
+                          className="h-12 w-8 md:h-auto md:w-auto"
+                          onClick={() =>
+                            setCreateForm((f) => ({
+                              ...f,
+                              materials: f.materials.filter((_, i) => i !== idx),
+                            }))
+                          }
+                        >
+                          &times;
+                        </Button>
+                      </div>
+                    )
+                  })}
                 </div>
+                {/* Checklist summary */}
+                {createForm.materials.filter((m) => m.product_id).length > 0 && (
+                  <p className="text-xs text-muted-foreground">
+                    {checkedIngredients.size}/
+                    {createForm.materials.filter((m) => m.product_id).length}
+                    {checkedIngredients.size >=
+                      createForm.materials.filter((m) => m.product_id).length &&
+                      createForm.materials.filter((m) => m.product_id).length > 0 && (
+                        <span className="ml-1 text-green-600">
+                          — {t("production.allIngredientsUsed")}
+                        </span>
+                      )}
+                  </p>
+                )}
                 <Button
                   type="button"
                   variant="outline"
                   size="sm"
+                  className="h-12 text-lg md:h-10 md:text-sm"
                   onClick={() =>
                     setCreateForm((f) => ({
                       ...f,
@@ -582,7 +680,9 @@ function RecordsTab({
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="rec-notes">{t("production.notesOptional")}</Label>
+                <Label htmlFor="rec-notes" className="text-base md:text-sm">
+                  {t("production.notesOptional")}
+                </Label>
                 <Textarea
                   id="rec-notes"
                   value={createForm.notes}
@@ -591,9 +691,14 @@ function RecordsTab({
               </div>
             </SheetBody>
             <SheetFooter>
-              <SheetClose render={<Button variant="outline" />}>{t("common.cancel")}</SheetClose>
+              <SheetClose
+                render={<Button variant="outline" className="h-12 text-lg md:h-10 md:text-sm" />}
+              >
+                {t("common.cancel")}
+              </SheetClose>
               <Button
                 type="submit"
+                className="h-12 text-lg md:h-10 md:text-sm"
                 disabled={
                   !createForm.product_id || createForm.quantity <= 0 || createRecord.isPending
                 }
@@ -620,7 +725,9 @@ function RecordsTab({
           >
             <SheetBody className="grid gap-4">
               <div className="grid gap-2">
-                <Label htmlFor="edit-qty">{t("common.quantity")}</Label>
+                <Label htmlFor="edit-qty" className="text-base md:text-sm">
+                  {t("common.quantity")}
+                </Label>
                 <Input
                   id="edit-qty"
                   type="number"
@@ -633,17 +740,18 @@ function RecordsTab({
                       quantity: Number(e.target.value) || 0,
                     }))
                   }
+                  className="h-12 text-lg md:h-10 md:text-sm"
                 />
               </div>
 
               {/* Materials */}
               <div className="grid gap-2">
-                <Label>{t("production.materials")}</Label>
+                <Label className="text-base md:text-sm">{t("production.materials")}</Label>
                 <div className="space-y-2">
                   {editForm.materials.map((mat, idx) => (
                     <div
                       key={mat.id}
-                      className="grid grid-cols-[1fr_5rem_2rem] items-end gap-2 rounded-md border p-2"
+                      className="grid grid-cols-[1fr_5rem_2rem] items-end gap-2 rounded-md border p-3 md:p-2"
                     >
                       <div className="grid gap-1">
                         <span className="text-xs text-muted-foreground">
@@ -679,6 +787,7 @@ function RecordsTab({
                               return { ...f, materials: mats }
                             })
                           }
+                          className="h-12 md:h-10"
                         />
                       </div>
                       <Button
@@ -686,6 +795,7 @@ function RecordsTab({
                         variant="ghost"
                         size="icon-sm"
                         disabled={editForm.materials.length <= 1}
+                        className="h-12 w-8 md:h-auto md:w-auto"
                         onClick={() =>
                           setEditForm((f) => ({
                             ...f,
@@ -702,6 +812,7 @@ function RecordsTab({
                   type="button"
                   variant="outline"
                   size="sm"
+                  className="h-12 text-lg md:h-10 md:text-sm"
                   onClick={() =>
                     setEditForm((f) => ({
                       ...f,
@@ -714,7 +825,9 @@ function RecordsTab({
               </div>
 
               <div className="grid gap-2">
-                <Label htmlFor="edit-notes">{t("production.notesOptional")}</Label>
+                <Label htmlFor="edit-notes" className="text-base md:text-sm">
+                  {t("production.notesOptional")}
+                </Label>
                 <Textarea
                   id="edit-notes"
                   value={editForm.notes}
@@ -723,8 +836,16 @@ function RecordsTab({
               </div>
             </SheetBody>
             <SheetFooter>
-              <SheetClose render={<Button variant="outline" />}>{t("common.cancel")}</SheetClose>
-              <Button type="submit" disabled={editForm.quantity <= 0 || updateRecord.isPending}>
+              <SheetClose
+                render={<Button variant="outline" className="h-12 text-lg md:h-10 md:text-sm" />}
+              >
+                {t("common.cancel")}
+              </SheetClose>
+              <Button
+                type="submit"
+                className="h-12 text-lg md:h-10 md:text-sm"
+                disabled={editForm.quantity <= 0 || updateRecord.isPending}
+              >
                 {updateRecord.isPending ? t("common.saving") : t("common.save")}
               </Button>
             </SheetFooter>
@@ -864,9 +985,9 @@ function SessionsTab({ client, queryClient }: SessionsTabProps) {
 
   return (
     <>
-      <div className="space-y-4 p-6">
-        <div className="flex items-center justify-between">
-          <div className="relative max-w-sm flex-1">
+      <div className="space-y-4 p-4 md:p-6">
+        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
+          <div className="relative w-full md:max-w-sm md:flex-1">
             <HugeiconsIcon
               icon={Search01Icon}
               size={16}
@@ -876,10 +997,12 @@ function SessionsTab({ client, queryClient }: SessionsTabProps) {
               placeholder={t("production.searchBySessionName")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="pl-9"
+              className="h-12 pl-9 text-lg md:h-10 md:text-sm"
             />
           </div>
-          <Button onClick={() => setCreateOpen(true)}>{t("production.newSession")}</Button>
+          <Button onClick={() => setCreateOpen(true)} className="h-12 text-lg md:h-10 md:text-sm">
+            {t("production.newSession")}
+          </Button>
         </div>
 
         <DataTable
@@ -918,20 +1041,32 @@ function SessionsTab({ client, queryClient }: SessionsTabProps) {
           >
             <SheetBody className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="session-name">{t("production.nameOptional")}</Label>
+                <Label htmlFor="session-name" className="text-base md:text-sm">
+                  {t("production.nameOptional")}
+                </Label>
                 <Input
                   id="session-name"
                   value={newSessionName}
                   onChange={(e) => setNewSessionName(e.target.value)}
                   placeholder={t("production.sessionName")}
+                  className="h-12 text-lg md:h-10 md:text-sm"
                 />
               </div>
             </SheetBody>
             <SheetFooter>
-              <Button variant="outline" type="button" onClick={() => setCreateOpen(false)}>
+              <Button
+                variant="outline"
+                type="button"
+                className="h-12 text-lg md:h-10 md:text-sm"
+                onClick={() => setCreateOpen(false)}
+              >
                 {t("common.cancel")}
               </Button>
-              <Button type="submit" disabled={createSession.isPending}>
+              <Button
+                type="submit"
+                className="h-12 text-lg md:h-10 md:text-sm"
+                disabled={createSession.isPending}
+              >
                 {createSession.isPending ? t("common.creating") : t("common.create")}
               </Button>
             </SheetFooter>

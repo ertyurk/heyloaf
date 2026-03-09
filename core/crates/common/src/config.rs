@@ -49,9 +49,6 @@ impl Config {
             .parse::<u64>()
             .map_err(|e| anyhow!("JWT_REFRESH_TOKEN_TTL_SECS must be a valid u64: {e}"))?;
 
-        let refresh_jwt_secret = std::env::var("REFRESH_JWT_SECRET")
-            .unwrap_or_else(|_| format!("{jwt_secret}-refresh"));
-
         let cors_origins =
             std::env::var("CORS_ORIGINS").unwrap_or_else(|_| "http://localhost:3000".to_string());
 
@@ -60,6 +57,16 @@ impl Config {
         let log_format = std::env::var("LOG_FORMAT").unwrap_or_else(|_| "pretty".to_string());
 
         let app_env = std::env::var("APP_ENV").unwrap_or_else(|_| "development".to_string());
+
+        let refresh_jwt_secret = std::env::var("REFRESH_JWT_SECRET").unwrap_or_else(|_| {
+            if app_env.eq_ignore_ascii_case("production") {
+                warn!(
+                    "REFRESH_JWT_SECRET is not set — deriving from JWT_SECRET. \
+                     Set a separate REFRESH_JWT_SECRET in production!"
+                );
+            }
+            format!("{jwt_secret}-refresh")
+        });
 
         if jwt_secret.len() < 32 {
             let is_production = app_env.eq_ignore_ascii_case("production");

@@ -2,8 +2,13 @@ import { Badge } from "@heyloaf/ui/components/badge"
 import { Button } from "@heyloaf/ui/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@heyloaf/ui/components/card"
 import { DataTable } from "@heyloaf/ui/components/data-table"
+import Bread01Icon from "@hugeicons/core-free-icons/Bread01Icon"
+import Cash01Icon from "@hugeicons/core-free-icons/Cash01Icon"
+import Invoice01Icon from "@hugeicons/core-free-icons/Invoice01Icon"
+import Package01Icon from "@hugeicons/core-free-icons/Package01Icon"
+import { HugeiconsIcon } from "@hugeicons/react"
 import { useQuery } from "@tanstack/react-query"
-import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router"
 import { useCallback, useMemo } from "react"
 import { useTranslation } from "react-i18next"
 import {
@@ -37,7 +42,8 @@ function DashboardPage() {
   } = useQuery({
     queryKey: ["dashboard"],
     queryFn: async () => {
-      const { data } = await client.GET("/api/dashboard")
+      const { data, error } = await client.GET("/api/dashboard")
+      if (error) throw new Error("Failed to load dashboard data")
       return data
     },
   })
@@ -50,10 +56,11 @@ function DashboardPage() {
   } = useQuery({
     queryKey: ["orders", "recent"],
     queryFn: async () => {
-      const res = await client.GET("/api/orders", {
+      const { data, error } = await client.GET("/api/orders", {
         params: { query: { page: 1, per_page: 5 } },
       })
-      return res.data
+      if (error) throw new Error("Failed to load recent orders")
+      return data
     },
   })
 
@@ -166,8 +173,8 @@ function DashboardPage() {
       <PageHeader title={t("dashboard.title")} description={t("dashboard.description")} />
       <div className="space-y-6 p-6">
         {(dashboardError || ordersError) && (
-          <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-center">
-            <p className="text-sm text-destructive">{t("common.failedToLoadData")}</p>
+          <div className="rounded-lg border border-border bg-muted/50 p-4 text-center">
+            <p className="text-sm text-muted-foreground">{t("common.failedToLoadData")}</p>
             <Button
               variant="outline"
               size="sm"
@@ -310,28 +317,40 @@ function DashboardPage() {
         </div>
 
         {/* Quick Actions */}
-        <div className="grid gap-4 md:grid-cols-3">
-          <Button
-            variant="outline"
-            className="h-16 text-sm"
-            onClick={() => navigate({ to: "/pos" })}
-          >
-            {t("dashboard.newSale")}
-          </Button>
-          <Button
-            variant="outline"
-            className="h-16 text-sm"
-            onClick={() => navigate({ to: "/invoices" })}
-          >
-            {t("dashboard.newInvoice")}
-          </Button>
-          <Button
-            variant="outline"
-            className="h-16 text-sm"
-            onClick={() => navigate({ to: "/production" })}
-          >
-            {t("dashboard.newProduction")}
-          </Button>
+        <div className="space-y-2">
+          <h2 className="text-sm font-medium text-muted-foreground">
+            {t("dashboard.quickActions")}
+          </h2>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+            <Link
+              to="/pos"
+              className="flex flex-col items-center gap-2 rounded-lg border p-4 hover:bg-accent transition-colors"
+            >
+              <HugeiconsIcon icon={Cash01Icon} size={24} />
+              <span className="text-sm font-medium">{t("dashboard.newSale")}</span>
+            </Link>
+            <Link
+              to="/invoices"
+              className="flex flex-col items-center gap-2 rounded-lg border p-4 hover:bg-accent transition-colors"
+            >
+              <HugeiconsIcon icon={Invoice01Icon} size={24} />
+              <span className="text-sm font-medium">{t("dashboard.newInvoice")}</span>
+            </Link>
+            <Link
+              to="/production"
+              className="flex flex-col items-center gap-2 rounded-lg border p-4 hover:bg-accent transition-colors"
+            >
+              <HugeiconsIcon icon={Bread01Icon} size={24} />
+              <span className="text-sm font-medium">{t("dashboard.newProduction")}</span>
+            </Link>
+            <Link
+              to="/products"
+              className="flex flex-col items-center gap-2 rounded-lg border p-4 hover:bg-accent transition-colors"
+            >
+              <HugeiconsIcon icon={Package01Icon} size={24} />
+              <span className="text-sm font-medium">{t("dashboard.newProduct")}</span>
+            </Link>
+          </div>
         </div>
       </div>
     </>

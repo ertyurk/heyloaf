@@ -16,6 +16,7 @@
     "reports": "Raporlar",
     "notifications": "Bildirimler",
     "settings": "Ayarlar",
+    "superAdmin": "Super Admin",
     "selectCompany": "Sirket secin"
   },
   "common": {
@@ -95,15 +96,43 @@
     "salesTrend": "Satis Trendi (Son 7 Gun)",
     "recentOrders": "Son Siparisler",
     "noOrdersYet": "Henuz siparis yok.",
+    "quickActions": "Hizli Islemler",
     "newSale": "Yeni Satis",
     "newInvoice": "Yeni Fatura",
     "newProduction": "Yeni Uretim",
+    "newProduct": "Yeni Urun",
     "orderNumber": "Siparis #",
     "paymentMethod": "Odeme Yontemi",
     "completed": "Tamamlandi",
     "pending": "Beklemede",
     "voided": "Iptal Edildi",
     "returned": "Iade Edildi"
+  },
+  "audit": {
+    "history": "Gecmis",
+    "entityHistory": "Degisiklik Gecmisi",
+    "noChanges": "Kaydedilmis degisiklik yok",
+    "action": "Islem",
+    "changedBy": "Degistiren",
+    "changedAt": "Degistirilme Zamani",
+    "fieldChanged": "Degisen Alan",
+    "oldValue": "Eski Deger",
+    "newValue": "Yeni Deger"
+  },
+  "scale": {
+    "title": "Terazi Entegrasyonu",
+    "connect": "Teraziyi Bagla",
+    "disconnect": "Baglantıyi Kes",
+    "connected": "Bagli",
+    "disconnected": "Bagli Degil",
+    "weight": "Agirlik",
+    "stable": "Sabit",
+    "unstable": "Dengesiz",
+    "unsupported": "Web Serial API bu tarayicida desteklenmiyor",
+    "baudRate": "Baud Hizi",
+    "protocol": "Protokol",
+    "testReading": "Test Okumasi",
+    "configuration": "Yapilandirma"
   },
   "products": {
     "title": "Urunler",
@@ -149,7 +178,23 @@
     "uploadImage": "Gorsel Yukle",
     "uploading": "Yukleniyor...",
     "imageUploaded": "Gorsel yuklendi",
-    "uploadFailed": "Yukleme basarisiz"
+    "uploadFailed": "Yukleme basarisiz",
+    "bulkActivate": "Aktif Et",
+    "bulkDeactivate": "Pasif Et",
+    "bulkSetCategory": "Kategori Ata",
+    "bulkClearSelection": "Temizle",
+    "selectedCount": "{{count}} secili",
+    "qrCode": "QR Kod",
+    "downloadQR": "QR Indir",
+    "noCodeForQR": "Barkod veya kod mevcut degil",
+    "quickPreview": "Hizli Onizleme",
+    "purchaseVariants": "Alis Varyantlari",
+    "addVariant": "Varyant Ekle",
+    "variantName": "Varyant Adi",
+    "purchaseUnit": "Alis Birimi",
+    "conversionQty": "Donusum Miktari",
+    "defaultVariant": "Varsayilan",
+    "removeVariant": "Kaldir"
   },
   "categories": {
     "title": "Kategoriler",
@@ -249,6 +294,7 @@
     "allCategories": "Tumu",
     "searchProducts": "Urunlerde ara...",
     "noProductsFound": "Urun bulunamadi",
+    "noProductsHint": "Urunlerin Aktif durumda oldugundan emin olun",
     "cart": "Sepet",
     "park": "Beklet",
     "parked": "Bekleyenler",
@@ -278,7 +324,13 @@
     "shortcutExit": "POS'tan cik",
     "shortcutQuantity": "Miktar ayarla",
     "shortcutBarcode": "Barkod odagi",
-    "confirmDeleteParkedCart": "Bu bekleyen sepeti silmek istediginizden emin misiniz?"
+    "confirmDeleteParkedCart": "Bu bekleyen sepeti silmek istediginizden emin misiniz?",
+    "scanBarcode": "Barkod Tara",
+    "cameraScanner": "Kamera Tarayici",
+    "cameraScannerUnsupported": "Bu tarayicide kamera tarama desteklenmiyor. Donanim tarayici kullanin.",
+    "selectVariant": "Varyant Sec",
+    "basePrice": "Temel Fiyat",
+    "priceModifier": "Fiyat Degistirici"
   },
   "contacts": {
     "title": "Kisiler",
@@ -462,7 +514,12 @@
     "sessionCompleted": "Oturum tamamlandi",
     "failedToCompleteSession": "Oturum tamamlanamadi",
     "sessionDeleted": "Oturum silindi",
-    "failedToDeleteSession": "Oturum silinemedi"
+    "failedToDeleteSession": "Oturum silinemedi",
+    "ingredientChecklist": "Malzeme Kontrol Listesi",
+    "markAsUsed": "Kullanildi olarak isaretle",
+    "allIngredientsUsed": "Tum malzemeler kontrol edildi",
+    "quickProduction": "Hizli Uretim",
+    "selectProduct": "Urun Sec"
   },
   "channels": {
     "title": "Kanallar",
@@ -536,7 +593,43 @@
     "noSalesData": "Secilen donem icin satis verisi yok.",
     "noPaymentData": "Secilen donem icin odeme verisi yok.",
     "averageOrderValue": "Ortalama Siparis Degeri",
-    "salesByDay": "Gune Gore Satis"
+    "salesByDay": "Gune Gore Satis",
+    "hourlySalesHeatmap": "Saatlik Satis Isitma Haritasi",
+    "orders": "siparis",
+    "less": "Az",
+    "more": "Cok",
+    "stockTurnoverRate": "Stok Devir Hizi",
+    "turnoverRate": "Devir Hizi",
+    "profitMarginByProduct": "Urune Gore Kar Marji",
+    "cost": "Maliyet",
+    "sellingPrice": "Satis Fiyati",
+    "marginPercent": "Marj %",
+    "noProfitData": "Kar marji verisi bulunamadi."
+  },
+  "superAdmin": {
+    "title": "Super Admin",
+    "description": "Platform genelinde sirketleri ve kullanicilari yonetin",
+    "companies": "Sirketler",
+    "users": "Kullanicilar",
+    "createCompany": "Sirket Olustur",
+    "allCompanies": "Tum Sirketler",
+    "allUsers": "Tum Kullanicilar",
+    "noCompanies": "Sirket bulunamadi.",
+    "noUsers": "Kullanici bulunamadi.",
+    "companyName": "Sirket Adi",
+    "companyNamePlaceholder": "Sirket adini girin",
+    "userCount": "Kullanicilar",
+    "companyCount": "Sirketler",
+    "email": "E-posta",
+    "role": "Rol",
+    "superAdmin": "Super Admin",
+    "user": "Kullanici",
+    "createdAt": "Olusturulma",
+    "deactivate": "Devre Disi Birak",
+    "companyCreated": "Sirket basariyla olusturuldu",
+    "companyDeactivated": "Sirket devre disi birakildi",
+    "failedToCreate": "Sirket olusturulamadi",
+    "failedToDeactivate": "Sirket devre disi birakilamadi"
   },
   "notifications": {
     "title": "Bildirimler",
@@ -593,6 +686,10 @@
   "settings": {
     "title": "Ayarlar",
     "description": "Calisma alani yapilandirmanizi yonetin",
+    "preferredLanguage": "Tercih Edilen Dil",
+    "languageDescription": "Hesabiniz icin sirket varsayilan dilini gecersiz kilin",
+    "terminalPriceList": "Fiyat Listesi",
+    "selectPriceList": "Fiyat listesi secin",
     "general": {
       "title": "Genel Ayarlar",
       "description": "Calisma alaniniz icin varsayilan tercihler",
@@ -618,7 +715,16 @@
     },
     "posTerminals": {
       "title": "POS Terminalleri",
-      "description": "Satis noktasi terminallerini yapilandirin"
+      "description": "Satis noktasi terminallerini yapilandirin",
+      "addTerminal": "Terminal Ekle",
+      "editTerminal": "Terminal Duzenle",
+      "noTerminals": "Henuz POS terminali yapilandirilmadi.",
+      "terminalCreated": "Terminal olusturuldu",
+      "terminalUpdated": "Terminal guncellendi",
+      "terminalDeleted": "Terminal silindi",
+      "failedToCreate": "Terminal olusturulamadi",
+      "failedToUpdate": "Terminal guncellenemedi",
+      "failedToDelete": "Terminal silinemedi"
     },
     "auditLogs": {
       "title": "Denetim Kayitlari",
@@ -666,9 +772,9 @@
       "stockDefaults": "Stok Varsayilanlari",
       "defaultMinStockLevel": "Varsayilan Minimum Stok Seviyesi",
       "defaultMinStockLevelHint": "Stok bu miktarin altina dustugunde uyari esigi.",
-      "stockPrecisionKg": "Stok Hassasiyeti \u2014 KG",
+      "stockPrecisionKg": "Stok Hassasiyeti — KG",
       "stockPrecisionKgHint": "Agirlik bazli kalemler icin ondalik basamak.",
-      "stockPrecisionPieces": "Stok Hassasiyeti \u2014 Adet",
+      "stockPrecisionPieces": "Stok Hassasiyeti — Adet",
       "stockPrecisionPiecesHint": "Adet bazli kalemler icin ondalik basamak.",
       "saved": "Stok ayarlari kaydedildi",
       "failedToSave": "Stok ayarlari kaydedilemedi"
@@ -717,8 +823,8 @@
       "failedToRemove": "Kullanici kaldirilamadi"
     },
     "priceLists": {
-      "title": "Fiyat Listesi Kalemleri",
-      "description": "Bu fiyat listesinin fiyatlarini yonetin",
+      "title": "Fiyat Listeleri",
+      "description": "Fiyatlandirma listelerini ve kurallarini yonetin",
       "addItem": "Kalem Ekle",
       "editItem": "Kalem Duzenle",
       "productName": "Urun Adi",

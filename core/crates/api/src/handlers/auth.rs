@@ -1,7 +1,7 @@
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use axum::extract::State;
 use axum::http::header::SET_COOKIE;
-use axum::http::HeaderMap;
+use axum::http::{HeaderMap, StatusCode};
 use axum::{Extension, Json};
 use heyloaf_common::crypto::hash_password;
 use heyloaf_common::errors::AppError;
@@ -70,6 +70,8 @@ pub struct LoginResponse {
     pub company: Option<LoginCompany>,
     pub role: Option<String>,
     pub permissions: serde_json::Value,
+    pub preferred_language: Option<String>,
+    pub is_super_admin: bool,
 }
 
 #[derive(Debug, Serialize, ToSchema)]
@@ -254,9 +256,16 @@ pub async fn login(
     );
 
     let mut headers = HeaderMap::new();
-    if let Ok(val) = cookie.parse() {
-        headers.insert(SET_COOKIE, val);
+    match cookie.parse() {
+        Ok(val) => { headers.insert(SET_COOKIE, val); }
+        Err(e) => { tracing::warn!(error = %e, "Failed to parse Set-Cookie header"); }
     }
+
+    let preferred_language = user
+        .metadata
+        .get("preferred_language")
+        .and_then(serde_json::Value::as_str)
+        .map(String::from);
 
     Ok((
         headers,
@@ -273,6 +282,8 @@ pub async fn login(
             company: login_company,
             role: role.clone(),
             permissions,
+            preferred_language,
+            is_super_admin: user.is_super_admin,
         })),
     ))
 }
@@ -282,12 +293,12 @@ pub async fn login(
     path = "/auth/register",
     tag = "auth",
     request_body = RegisterRequest,
-    responses((status = 200, body = inline(ApiResponse<TokenResponse>)))
+    responses((status = 201, body = inline(ApiResponse<TokenResponse>)))
 )]
 pub async fn register(
     State(state): State<AppState>,
     ValidatedJson(body): ValidatedJson<RegisterRequest>,
-) -> Result<(HeaderMap, Json<ApiResponse<TokenResponse>>), AppError> {
+) -> Result<(StatusCode, HeaderMap, Json<ApiResponse<TokenResponse>>), AppError> {
     // Check if email is already taken
     let existing = UserRepository::find_by_email(&state.pool, &body.email)
         .await
@@ -326,11 +337,13 @@ pub async fn register(
     );
 
     let mut headers = HeaderMap::new();
-    if let Ok(val) = cookie.parse() {
-        headers.insert(SET_COOKIE, val);
+    match cookie.parse() {
+        Ok(val) => { headers.insert(SET_COOKIE, val); }
+        Err(e) => { tracing::warn!(error = %e, "Failed to parse Set-Cookie header"); }
     }
 
     Ok((
+        StatusCode::CREATED,
         headers,
         Json(ApiResponse::new(TokenResponse {
             access_token,
@@ -417,8 +430,9 @@ pub async fn refresh(
     );
 
     let mut headers = HeaderMap::new();
-    if let Ok(val) = cookie.parse() {
-        headers.insert(SET_COOKIE, val);
+    match cookie.parse() {
+        Ok(val) => { headers.insert(SET_COOKIE, val); }
+        Err(e) => { tracing::warn!(error = %e, "Failed to parse Set-Cookie header"); }
     }
 
     Ok((
@@ -446,8 +460,9 @@ pub async fn logout(
     let cookie = clear_refresh_cookie(is_production);
 
     let mut headers = HeaderMap::new();
-    if let Ok(val) = cookie.parse() {
-        headers.insert(SET_COOKIE, val);
+    match cookie.parse() {
+        Ok(val) => { headers.insert(SET_COOKIE, val); }
+        Err(e) => { tracing::warn!(error = %e, "Failed to parse Set-Cookie header"); }
     }
 
     Ok((
@@ -501,8 +516,9 @@ pub async fn switch_company(
     );
 
     let mut headers = HeaderMap::new();
-    if let Ok(val) = cookie.parse() {
-        headers.insert(SET_COOKIE, val);
+    match cookie.parse() {
+        Ok(val) => { headers.insert(SET_COOKIE, val); }
+        Err(e) => { tracing::warn!(error = %e, "Failed to parse Set-Cookie header"); }
     }
 
     Ok((

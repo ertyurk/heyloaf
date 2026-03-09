@@ -377,7 +377,7 @@ pub async fn delete_price_list_item(
         return Err(AppError::NotFound("Price list item not found".into()));
     }
 
-    PriceListItemRepository::delete(&state.pool, item_id)
+    PriceListItemRepository::delete(&state.pool, item_id, ctx.company_id)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 

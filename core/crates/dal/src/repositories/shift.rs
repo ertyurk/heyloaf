@@ -122,6 +122,7 @@ impl ShiftRepository {
     pub async fn close(
         pool: &PgPool,
         id: Uuid,
+        company_id: Uuid,
         closing_balance: f64,
         expected_balance: Option<f64>,
         notes: Option<&str>,
@@ -133,7 +134,7 @@ impl ShiftRepository {
                 expected_balance = $3,
                 notes = $4,
                 closed_at = now()
-            WHERE id = $1
+            WHERE id = $1 AND company_id = $5
             RETURNING {}",
             Self::SELECT
         );
@@ -142,6 +143,7 @@ impl ShiftRepository {
             .bind(closing_balance)
             .bind(expected_balance)
             .bind(notes)
+            .bind(company_id)
             .fetch_one(pool)
             .await
     }

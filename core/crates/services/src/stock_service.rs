@@ -35,12 +35,44 @@ impl StockService {
     ) -> Result<StockMovement, AppError> {
         let total_price = unit_price.map(|up| up * quantity);
 
+        if !matches!(movement_type, "in" | "out" | "adjustment") {
+            return Err(AppError::BadRequest(format!(
+                "Invalid movement type: '{movement_type}'. Must be 'in', 'out', or 'adjustment'"
+            )));
+        }
+
+        if quantity <= 0.0 {
+            return Err(AppError::BadRequest(
+                "Quantity must be greater than zero".into(),
+            ));
+        }
+
         let quantity_delta = match movement_type {
             "in" => quantity,
             "out" => -quantity,
             "adjustment" => quantity,
-            _ => quantity,
+            // Unreachable: validation above rejects unknown types
+            _ => unreachable!(),
         };
+
+        // Prevent stock from going negative on "out" movements
+        if movement_type == "out" {
+            let current_stock: f64 = sqlx::query_scalar(
+                "SELECT COALESCE(quantity, 0) FROM stock WHERE product_id = $1 AND company_id = $2",
+            )
+            .bind(product_id)
+            .bind(company_id)
+            .fetch_optional(&mut **tx)
+            .await
+            .map_err(|e| AppError::Database(e.to_string()))?
+            .unwrap_or(0.0);
+
+            if current_stock < quantity {
+                return Err(AppError::BadRequest(format!(
+                    "Insufficient stock: available {current_stock}, requested {quantity}"
+                )));
+            }
+        }
 
         let movement = StockMovementRepository::create_with_executor(
             &mut **tx,
@@ -116,12 +148,14 @@ impl StockService {
     /// creating opposite movements, then delete the original movements.
     pub async fn reverse_movements_tx(
         tx: &mut sqlx::Transaction<'_, sqlx::Postgres>,
+        company_id: Uuid,
         reference_type: &str,
         reference_id: Uuid,
         user_id: Uuid,
     ) -> Result<u64, AppError> {
         let movements = StockMovementRepository::list_by_reference_with_executor(
             &mut **tx,
+            company_id,
             reference_type,
             reference_id,
         )
@@ -134,12 +168,18 @@ impl StockService {
             let reverse_type = match m.movement_type.as_str() {
                 "in" => "out",
                 "out" => "in",
-                other => other,
+                "adjustment" => "adjustment",
+                other => {
+                    return Err(AppError::BadRequest(format!(
+                        "Cannot reverse unknown movement type: '{other}'"
+                    )));
+                }
             };
 
             let reverse_delta = match reverse_type {
                 "in" => m.quantity,
                 "out" => -m.quantity,
+                // Reversing an adjustment negates the original delta
                 _ => -m.quantity,
             };
 
@@ -173,6 +213,7 @@ impl StockService {
 
         StockMovementRepository::delete_by_reference_with_executor(
             &mut **tx,
+            company_id,
             reference_type,
             reference_id,
         )
@@ -186,6 +227,7 @@ impl StockService {
     /// then delete the original movements. Wraps everything in a single transaction.
     pub async fn reverse_movements(
         &self,
+        company_id: Uuid,
         reference_type: &str,
         reference_id: Uuid,
         user_id: Uuid,
@@ -194,8 +236,9 @@ impl StockService {
             AppError::Database(format!("Failed to start transaction: {e}"))
         })?;
 
-        let count = Self::reverse_movements_tx(&mut tx, reference_type, reference_id, user_id)
-            .await?;
+        let count =
+            Self::reverse_movements_tx(&mut tx, company_id, reference_type, reference_id, user_id)
+                .await?;
 
         tx.commit().await.map_err(|e| {
             AppError::Database(format!("Failed to commit transaction: {e}"))

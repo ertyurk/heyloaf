@@ -6,7 +6,7 @@ use heyloaf_common::types::ApiResponse;
 use heyloaf_dal::models::user::{CompanyUser, UserCompany};
 use heyloaf_dal::repositories::user::UserRepository;
 use heyloaf_services::audit_service::AuditBuilder;
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use utoipa::ToSchema;
 use uuid::Uuid;
 use validator::Validate;
@@ -43,6 +43,17 @@ pub struct UpdateRoleRequest {
 #[derive(Debug, Deserialize, ToSchema)]
 pub struct UpdatePermissionsRequest {
     pub permissions: serde_json::Value,
+}
+
+#[derive(Debug, Deserialize, Validate, ToSchema)]
+pub struct UpdatePreferencesRequest {
+    #[validate(length(min = 2, max = 5, message = "Language code must be 2-5 characters"))]
+    pub preferred_language: String,
+}
+
+#[derive(Debug, Serialize, ToSchema)]
+pub struct UserPreferencesResponse {
+    pub preferred_language: String,
 }
 
 // --- Handlers ---
@@ -238,9 +249,13 @@ pub async fn remove_user(
         .map_err(|e| AppError::Database(e.to_string()))?
         .ok_or_else(|| AppError::NotFound("User not found in this company".into()))?;
 
-    UserRepository::deactivate_from_company(&state.pool, id, ctx.company_id)
+    let affected = UserRepository::deactivate_from_company(&state.pool, id, ctx.company_id)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
+
+    if affected == 0 {
+        return Err(AppError::NotFound("User not found in this company".into()));
+    }
 
     AuditBuilder::new(state.audit.clone(), ctx.company_id, auth.user_id)
         .entity("user_company", uc.id)
@@ -251,4 +266,51 @@ pub async fn remove_user(
     Ok(Json(ApiResponse::new(serde_json::json!({
         "message": "User removed from company"
     }))))
+}
+
+#[utoipa::path(
+    put,
+    path = "/api/users/{id}/preferences",
+    tag = "users",
+    security(("bearer" = [])),
+    params(("id" = Uuid, Path, description = "User ID")),
+    request_body = UpdatePreferencesRequest,
+    responses((status = 200, body = inline(ApiResponse<UserPreferencesResponse>)))
+)]
+pub async fn update_preferences(
+    State(state): State<AppState>,
+    Extension(auth): Extension<AuthUser>,
+    Path(id): Path<Uuid>,
+    ValidatedJson(body): ValidatedJson<UpdatePreferencesRequest>,
+) -> Result<Json<ApiResponse<UserPreferencesResponse>>, AppError> {
+    // Users can only update their own preferences.
+    if auth.user_id != id {
+        return Err(AppError::Forbidden(
+            "You can only update your own preferences".into(),
+        ));
+    }
+
+    // Update the metadata JSONB: merge preferred_language into existing metadata.
+    let result = sqlx::query(
+        r"UPDATE users
+        SET metadata = jsonb_set(
+            COALESCE(metadata, '{}'::jsonb),
+            '{preferred_language}',
+            to_jsonb($2::text)
+        )
+        WHERE id = $1",
+    )
+    .bind(id)
+    .bind(&body.preferred_language)
+    .execute(&state.pool)
+    .await
+    .map_err(|e| AppError::Database(e.to_string()))?;
+
+    if result.rows_affected() == 0 {
+        return Err(AppError::NotFound("User not found".into()));
+    }
+
+    Ok(Json(ApiResponse::new(UserPreferencesResponse {
+        preferred_language: body.preferred_language,
+    })))
 }

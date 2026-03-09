@@ -2,20 +2,30 @@ import { Button } from "@heyloaf/ui/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@heyloaf/ui/components/card"
 import { Input } from "@heyloaf/ui/components/input"
 import { Label } from "@heyloaf/ui/components/label"
-import { createFileRoute, redirect, useNavigate } from "@tanstack/react-router"
-import { type FormEvent, useState } from "react"
+import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { type FormEvent, useEffect, useState } from "react"
 import { getApiClient } from "@/lib/api"
 import { useAuthStore } from "@/lib/auth"
 
 export const Route = createFileRoute("/login")({
-  beforeLoad: () => {
-    const { isAuthenticated } = useAuthStore.getState()
-    if (isAuthenticated()) {
-      throw redirect({ to: "/dashboard" })
-    }
-  },
-  component: LoginPage,
+  component: LoginGuard,
 })
+
+function LoginGuard() {
+  const navigate = useNavigate()
+  const token = useAuthStore((s) => s.token)
+  const hasHydrated = useAuthStore((s) => s._hasHydrated)
+
+  useEffect(() => {
+    if (hasHydrated && token) {
+      navigate({ to: "/dashboard" })
+    }
+  }, [hasHydrated, token, navigate])
+
+  if (!hasHydrated || token) return null
+
+  return <LoginPage />
+}
 
 function LoginPage() {
   const navigate = useNavigate()
@@ -48,6 +58,7 @@ function LoginPage() {
           company: { id: string; name: string }
           role?: string | null
           permissions?: Record<string, string>
+          is_super_admin?: boolean
         }
       }
 
@@ -57,6 +68,7 @@ function LoginPage() {
         company: loginData.data.company,
         role: loginData.data.role,
         permissions: loginData.data.permissions,
+        isSuperAdmin: loginData.data.is_super_admin,
       })
 
       navigate({ to: "/dashboard" })

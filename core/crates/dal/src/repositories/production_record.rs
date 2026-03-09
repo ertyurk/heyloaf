@@ -130,6 +130,7 @@ impl ProductionRecordRepository {
     pub async fn update_with_executor<'e>(
         executor: impl sqlx::PgExecutor<'e>,
         id: Uuid,
+        company_id: Uuid,
         quantity: f64,
         materials: &serde_json::Value,
         notes: Option<&str>,
@@ -137,7 +138,7 @@ impl ProductionRecordRepository {
         let sql = format!(
             r"UPDATE production_records SET
                 quantity = $2, materials = $3, notes = $4
-            WHERE id = $1
+            WHERE id = $1 AND company_id = $5
             RETURNING {}",
             Self::SELECT
         );
@@ -146,6 +147,7 @@ impl ProductionRecordRepository {
             .bind(quantity)
             .bind(materials)
             .bind(notes)
+            .bind(company_id)
             .fetch_one(executor)
             .await
     }
@@ -153,25 +155,35 @@ impl ProductionRecordRepository {
     pub async fn update(
         pool: &PgPool,
         id: Uuid,
+        company_id: Uuid,
         quantity: f64,
         materials: &serde_json::Value,
         notes: Option<&str>,
     ) -> Result<ProductionRecord, sqlx::Error> {
-        Self::update_with_executor(pool, id, quantity, materials, notes).await
+        Self::update_with_executor(pool, id, company_id, quantity, materials, notes)
+            .await
     }
 
     pub async fn delete_with_executor<'e>(
         executor: impl sqlx::PgExecutor<'e>,
         id: Uuid,
+        company_id: Uuid,
     ) -> Result<(), sqlx::Error> {
-        sqlx::query("DELETE FROM production_records WHERE id = $1")
-            .bind(id)
-            .execute(executor)
-            .await?;
+        sqlx::query(
+            "DELETE FROM production_records WHERE id = $1 AND company_id = $2",
+        )
+        .bind(id)
+        .bind(company_id)
+        .execute(executor)
+        .await?;
         Ok(())
     }
 
-    pub async fn delete(pool: &PgPool, id: Uuid) -> Result<(), sqlx::Error> {
-        Self::delete_with_executor(pool, id).await
+    pub async fn delete(
+        pool: &PgPool,
+        id: Uuid,
+        company_id: Uuid,
+    ) -> Result<(), sqlx::Error> {
+        Self::delete_with_executor(pool, id, company_id).await
     }
 }

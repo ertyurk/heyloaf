@@ -23,14 +23,18 @@ fn with_perm(router: Router<AppState>, module: Module, level: PermissionLevel) -
 // ---------------------------------------------------------------------------
 // Routes that require no module permission (auth, notifications, etc.)
 // ---------------------------------------------------------------------------
-fn common_routes() -> Router<AppState> {
+/// Routes that only need auth (no company_guard).
+fn auth_only_routes() -> Router<AppState> {
     Router::new()
-        // Auth
         .route("/auth/logout", routing::post(handlers::auth::logout))
         .route(
             "/auth/switch-company",
             routing::post(handlers::auth::switch_company),
         )
+}
+
+fn common_routes() -> Router<AppState> {
+    Router::new()
         // Company (read)
         .route("/company", routing::get(handlers::company::get_company))
         // Notifications
@@ -141,12 +145,20 @@ fn products_write_routes() -> Router<AppState> {
                 routing::post(handlers::products::bulk_category),
             )
             .route(
+                "/products/bulk/price-list",
+                routing::post(handlers::products::bulk_price_list),
+            )
+            .route(
                 "/products/{id}",
                 routing::put(handlers::products::update_product),
             )
             .route(
                 "/products/{id}",
                 routing::delete(handlers::products::delete_product),
+            )
+            .route(
+                "/products/{id}/purchase-options",
+                routing::put(handlers::products::update_purchase_options),
             )
             // Recipes (write)
             .route(
@@ -509,6 +521,18 @@ fn reports_routes() -> Router<AppState> {
             .route(
                 "/dashboard",
                 routing::get(handlers::dashboard::get_dashboard),
+            )
+            .route(
+                "/reports/hourly-sales",
+                routing::get(handlers::reports::hourly_sales),
+            )
+            .route(
+                "/reports/stock-turnover",
+                routing::get(handlers::reports::stock_turnover),
+            )
+            .route(
+                "/reports/profit-margins",
+                routing::get(handlers::reports::profit_margins),
             ),
         Module::Reports,
         PermissionLevel::Viewer,
@@ -533,6 +557,10 @@ fn settings_routes() -> Router<AppState> {
                 "/users/{id}/permissions",
                 routing::put(handlers::users::update_user_permissions),
             )
+            .route(
+                "/users/{id}/preferences",
+                routing::put(handlers::users::update_preferences),
+            )
             .route("/users/{id}", routing::delete(handlers::users::remove_user))
             .route(
                 "/audit-logs",
@@ -541,6 +569,29 @@ fn settings_routes() -> Router<AppState> {
         Module::Settings,
         PermissionLevel::Admin,
     )
+}
+
+// ---------------------------------------------------------------------------
+// Super Admin routes (no company_guard, require is_super_admin)
+// ---------------------------------------------------------------------------
+fn super_admin_routes() -> Router<AppState> {
+    Router::new()
+        .route(
+            "/super-admin/companies",
+            routing::get(handlers::super_admin::list_companies),
+        )
+        .route(
+            "/super-admin/companies",
+            routing::post(handlers::super_admin::create_company),
+        )
+        .route(
+            "/super-admin/companies/{id}/deactivate",
+            routing::put(handlers::super_admin::deactivate_company),
+        )
+        .route(
+            "/super-admin/users",
+            routing::get(handlers::super_admin::list_all_users),
+        )
 }
 
 // ---------------------------------------------------------------------------
@@ -600,10 +651,16 @@ async fn upload_company_guard(
     let segments: Vec<&str> = path.split('/').filter(|s| !s.is_empty()).collect();
 
     // segments: ["uploads", "<company_id>", "<filename>"]
-    if segments.len() >= 2
-        && let Ok(path_company_id) = segments[1].parse::<uuid::Uuid>()
-        && path_company_id != user_company_id
-    {
+    // Require at least the company_id segment and validate it matches the user's company
+    if segments.len() < 2 {
+        return Err(AppError::Forbidden("Invalid upload path".into()));
+    }
+
+    let path_company_id = segments[1]
+        .parse::<uuid::Uuid>()
+        .map_err(|_| AppError::Forbidden("Invalid upload path".into()))?;
+
+    if path_company_id != user_company_id {
         return Err(AppError::Forbidden(
             "You do not have access to this company's uploads".into(),
         ));
@@ -696,6 +753,31 @@ pub fn create_routes(state: AppState) -> Router {
             middleware::language::language_middleware,
         ));
 
+    // Auth-only routes: auth middleware, but NO company_guard (so users
+    // without an active company can still logout / switch company).
+    let auth_only = auth_only_routes()
+        .layer(axum_middleware::from_fn_with_state(
+            state.clone(),
+            middleware::auth::auth_middleware,
+        ))
+        .layer(axum_middleware::from_fn(
+            middleware::language::language_middleware,
+        ));
+
+    // Super-admin routes: auth + super_admin guard, but NO company_guard.
+    let super_admin = super_admin_routes()
+        .layer(axum_middleware::from_fn_with_state(
+            state.clone(),
+            middleware::super_admin::super_admin_middleware,
+        ))
+        .layer(axum_middleware::from_fn_with_state(
+            state.clone(),
+            middleware::auth::auth_middleware,
+        ))
+        .layer(axum_middleware::from_fn(
+            middleware::language::language_middleware,
+        ));
+
     let uploads_service = Router::new()
         .nest_service("/uploads", ServeDir::new("./uploads"))
         .layer(SetResponseHeaderLayer::overriding(
@@ -718,6 +800,8 @@ pub fn create_routes(state: AppState) -> Router {
     let mut app = Router::new()
         .merge(public_routes)
         .nest("/api", protected_routes)
+        .nest("/api", auth_only)
+        .nest("/api", super_admin)
         .merge(uploads_service);
 
     // Swagger UI: only mount when NOT in production

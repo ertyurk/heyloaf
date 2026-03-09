@@ -137,17 +137,19 @@ impl OrderRepository {
     pub async fn update_status_with_executor<'e>(
         executor: impl sqlx::PgExecutor<'e>,
         id: Uuid,
+        company_id: Uuid,
         status: &str,
     ) -> Result<Order, sqlx::Error> {
         let sql = format!(
             r"UPDATE orders SET status = $2::order_status
-            WHERE id = $1
+            WHERE id = $1 AND company_id = $3
             RETURNING {}",
             Self::SELECT
         );
         sqlx::query_as::<_, Order>(&sql)
             .bind(id)
             .bind(status)
+            .bind(company_id)
             .fetch_one(executor)
             .await
     }
@@ -155,20 +157,22 @@ impl OrderRepository {
     pub async fn update_status(
         pool: &PgPool,
         id: Uuid,
+        company_id: Uuid,
         status: &str,
     ) -> Result<Order, sqlx::Error> {
-        Self::update_status_with_executor(pool, id, status).await
+        Self::update_status_with_executor(pool, id, company_id, status).await
     }
 
     pub async fn update_status_with_notes_executor<'e>(
         executor: impl sqlx::PgExecutor<'e>,
         id: Uuid,
+        company_id: Uuid,
         status: &str,
         notes: &str,
     ) -> Result<Order, sqlx::Error> {
         let sql = format!(
             r"UPDATE orders SET status = $2::order_status, notes = $3
-            WHERE id = $1
+            WHERE id = $1 AND company_id = $4
             RETURNING {}",
             Self::SELECT
         );
@@ -176,6 +180,7 @@ impl OrderRepository {
             .bind(id)
             .bind(status)
             .bind(notes)
+            .bind(company_id)
             .fetch_one(executor)
             .await
     }
@@ -183,10 +188,11 @@ impl OrderRepository {
     pub async fn update_status_with_notes(
         pool: &PgPool,
         id: Uuid,
+        company_id: Uuid,
         status: &str,
         notes: &str,
     ) -> Result<Order, sqlx::Error> {
-        Self::update_status_with_notes_executor(pool, id, status, notes).await
+        Self::update_status_with_notes_executor(pool, id, company_id, status, notes).await
     }
 
     pub async fn next_number_with_executor<'e>(

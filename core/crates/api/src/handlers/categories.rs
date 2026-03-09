@@ -189,7 +189,7 @@ pub async fn delete_category(
         return Err(AppError::NotFound("Category not found".into()));
     }
 
-    let has_children = CategoryRepository::has_children(&state.pool, id)
+    let has_children = CategoryRepository::has_children(&state.pool, id, ctx.company_id)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
@@ -199,7 +199,7 @@ pub async fn delete_category(
         ));
     }
 
-    let has_products = CategoryRepository::has_products(&state.pool, id)
+    let has_products = CategoryRepository::has_products(&state.pool, id, ctx.company_id)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?;
 
