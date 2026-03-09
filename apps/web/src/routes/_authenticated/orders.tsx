@@ -26,11 +26,14 @@ import Search01Icon from "@hugeicons/core-free-icons/Search01Icon"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
+import { useDebounce } from "@/hooks/use-debounce"
+import { statusBadgeClass } from "@/lib/status-badge"
 
 export const Route = createFileRoute("/_authenticated/orders")({
   component: OrdersPage,
@@ -60,13 +63,6 @@ function computeLineTotal(item: Pick<OrderItem, "quantity" | "unit_price">): num
   return item.quantity * item.unit_price
 }
 
-const statusBadgeClass: Record<string, string> = {
-  completed: "bg-green-100 text-green-800",
-  pending: "bg-secondary text-secondary-foreground",
-  voided: "bg-destructive/10 text-destructive",
-  returned: "bg-destructive/10 text-destructive",
-}
-
 function OrdersPage() {
   const { t } = useTranslation()
   const client = useApi()
@@ -82,17 +78,10 @@ function OrdersPage() {
   } | null>(null)
 
   const [search, setSearch] = useState("")
-  const [debouncedSearch, setDebouncedSearch] = useState("")
-  const searchTimer = useRef<ReturnType<typeof setTimeout>>(null)
+  const debouncedSearch = useDebounce(search)
   const [statusFilter, setStatusFilter] = useState("all")
   const [dateFrom, setDateFrom] = useState("")
   const [dateTo, setDateTo] = useState("")
-
-  useEffect(() => {
-    return () => {
-      if (searchTimer.current) clearTimeout(searchTimer.current)
-    }
-  }, [])
 
   const statusOptions = useMemo(
     () => [
@@ -105,13 +94,7 @@ function OrdersPage() {
     [t]
   )
 
-  function handleSearchChange(value: string) {
-    setSearch(value)
-    if (searchTimer.current) clearTimeout(searchTimer.current)
-    searchTimer.current = setTimeout(() => setDebouncedSearch(value), 300)
-  }
-
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["orders"],
     queryFn: async () => {
       const res = await client.GET("/api/orders")
@@ -321,7 +304,7 @@ function OrdersPage() {
             <Input
               placeholder={t("orders.searchOrders")}
               value={search}
-              onChange={(e) => handleSearchChange(e.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
               className="pl-8"
             />
           </div>
@@ -342,6 +325,15 @@ function OrdersPage() {
             }}
           />
         </div>
+
+        {isError && (
+          <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-center">
+            <p className="text-sm text-destructive">{t("common.failedToLoadData")}</p>
+            <Button variant="outline" size="sm" className="mt-2" onClick={() => refetch()}>
+              {t("common.retry")}
+            </Button>
+          </div>
+        )}
 
         <DataTable
           columns={columns}
@@ -380,28 +372,17 @@ function OrdersPage() {
       </div>
 
       {/* Void/Return Confirmation */}
-      {confirmAction && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="rounded-lg border bg-background p-6 shadow-lg max-w-sm w-full mx-4">
-            <p className="text-sm mb-4">
-              {confirmAction.type === "void" ? t("orders.confirmVoid") : t("orders.confirmReturn")}
-            </p>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" size="sm" onClick={() => setConfirmAction(null)}>
-                {t("common.cancel")}
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={executeConfirmAction}
-                disabled={voidOrder.isPending || returnOrder.isPending}
-              >
-                {t("common.confirm")}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={!!confirmAction}
+        onConfirm={executeConfirmAction}
+        onCancel={() => setConfirmAction(null)}
+        title={confirmAction?.type === "void" ? t("orders.void") : t("orders.return")}
+        description={
+          confirmAction?.type === "void" ? t("orders.confirmVoid") : t("orders.confirmReturn")
+        }
+        confirmLabel={t("common.confirm")}
+        isPending={voidOrder.isPending || returnOrder.isPending}
+      />
 
       <Sheet open={createOpen} onOpenChange={setCreateOpen}>
         <SheetContent side="right" className="sm:max-w-lg">

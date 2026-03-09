@@ -31,6 +31,7 @@ import { toast } from "sonner"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
 import { formatCurrency } from "@/lib/format-currency"
+import { formatDate } from "@/lib/format-date"
 
 type Transaction = components["schemas"]["Transaction"]
 
@@ -38,13 +39,9 @@ export const Route = createFileRoute("/_authenticated/contacts/$contactId")({
   component: ContactDetailPage,
 })
 
-function formatDate(dateStr: string | null) {
+function formatDateOrDash(dateStr: string | null) {
   if (!dateStr) return "\u2014"
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  })
+  return formatDate(dateStr)
 }
 
 const typeBadgeClass: Record<string, string> = {
@@ -184,7 +181,7 @@ function ContactDetailPage() {
         id: "date",
         header: t("common.date"),
         cell: (row: Transaction) => (
-          <span className="text-muted-foreground">{formatDate(row.date)}</span>
+          <span className="text-muted-foreground">{formatDateOrDash(row.date)}</span>
         ),
       },
       {

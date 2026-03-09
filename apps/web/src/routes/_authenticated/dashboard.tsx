@@ -18,24 +18,23 @@ import {
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
 import { formatCurrency } from "@/lib/format-currency"
+import { statusBadgeClass } from "@/lib/status-badge"
 
 export const Route = createFileRoute("/_authenticated/dashboard")({
   component: DashboardPage,
 })
-
-const statusBadgeClass: Record<string, string> = {
-  completed: "bg-green-100 text-green-800",
-  pending: "bg-secondary text-secondary-foreground",
-  voided: "bg-destructive/10 text-destructive",
-  returned: "bg-destructive/10 text-destructive",
-}
 
 function DashboardPage() {
   const { t } = useTranslation()
   const client = useApi()
   const navigate = useNavigate()
 
-  const { data: dashboardData } = useQuery({
+  const {
+    data: dashboardData,
+    isLoading: dashboardLoading,
+    isError: dashboardError,
+    refetch: refetchDashboard,
+  } = useQuery({
     queryKey: ["dashboard"],
     queryFn: async () => {
       const { data } = await client.GET("/api/dashboard")
@@ -43,7 +42,12 @@ function DashboardPage() {
     },
   })
 
-  const { data: ordersData } = useQuery({
+  const {
+    data: ordersData,
+    isLoading: ordersLoading,
+    isError: ordersError,
+    refetch: refetchOrders,
+  } = useQuery({
     queryKey: ["orders", "recent"],
     queryFn: async () => {
       const res = await client.GET("/api/orders", {
@@ -161,6 +165,29 @@ function DashboardPage() {
     <>
       <PageHeader title={t("dashboard.title")} description={t("dashboard.description")} />
       <div className="space-y-6 p-6">
+        {(dashboardError || ordersError) && (
+          <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-center">
+            <p className="text-sm text-destructive">{t("common.failedToLoadData")}</p>
+            <Button
+              variant="outline"
+              size="sm"
+              className="mt-2"
+              onClick={() => {
+                if (dashboardError) refetchDashboard()
+                if (ordersError) refetchOrders()
+              }}
+            >
+              {t("common.retry")}
+            </Button>
+          </div>
+        )}
+
+        {(dashboardLoading || ordersLoading) && (
+          <div className="flex items-center justify-center py-12">
+            <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
+          </div>
+        )}
+
         {/* Stat cards */}
         <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-5">
           <Card>

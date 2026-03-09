@@ -8,11 +8,13 @@ import Search01Icon from "@hugeicons/core-free-icons/Search01Icon"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
+import { useDebounce } from "@/hooks/use-debounce"
 import { formatCurrency } from "@/lib/format-currency"
+import { formatDate } from "@/lib/format-date"
 
 type Transaction = components["schemas"]["Transaction"]
 
@@ -27,13 +29,9 @@ const typeBadgeClass: Record<string, string> = {
   purchase: "bg-orange-100 text-orange-800",
 }
 
-function formatDate(dateStr: string | null) {
+function formatDateOrDash(dateStr: string | null) {
   if (!dateStr) return "\u2014"
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  })
+  return formatDate(dateStr)
 }
 
 function TransactionsPage() {
@@ -41,24 +39,11 @@ function TransactionsPage() {
   const client = useApi()
 
   const [search, setSearch] = useState("")
-  const [debouncedSearch, setDebouncedSearch] = useState("")
-  const searchTimer = useRef<ReturnType<typeof setTimeout>>(null)
+  const debouncedSearch = useDebounce(search)
   const [typeFilter, setTypeFilter] = useState("all")
   const [paymentMethodFilter, setPaymentMethodFilter] = useState("all")
   const [dateFrom, setDateFrom] = useState("")
   const [dateTo, setDateTo] = useState("")
-
-  function handleSearchChange(value: string) {
-    setSearch(value)
-    if (searchTimer.current) clearTimeout(searchTimer.current)
-    searchTimer.current = setTimeout(() => setDebouncedSearch(value), 300)
-  }
-
-  useEffect(() => {
-    return () => {
-      if (searchTimer.current) clearTimeout(searchTimer.current)
-    }
-  }, [])
 
   const { data: contactsData } = useQuery({
     queryKey: ["contacts"],
@@ -124,7 +109,7 @@ function TransactionsPage() {
         id: "date",
         header: t("common.date"),
         cell: (row: Transaction) => (
-          <span className="text-muted-foreground">{formatDate(row.date)}</span>
+          <span className="text-muted-foreground">{formatDateOrDash(row.date)}</span>
         ),
       },
       {
@@ -209,7 +194,7 @@ function TransactionsPage() {
             <Input
               placeholder={t("transactions.searchByDescription")}
               value={search}
-              onChange={(e) => handleSearchChange(e.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
               className="pl-8"
             />
           </div>

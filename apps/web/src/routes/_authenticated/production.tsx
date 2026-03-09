@@ -22,11 +22,13 @@ import Search01Icon from "@hugeicons/core-free-icons/Search01Icon"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
+import { useDebounce } from "@/hooks/use-debounce"
 
 export const Route = createFileRoute("/_authenticated/production")({
   component: ProductionPage,
@@ -137,8 +139,7 @@ function RecordsTab({
 }: RecordsTabProps) {
   const { t } = useTranslation()
   const [search, setSearch] = useState("")
-  const [debouncedSearch, setDebouncedSearch] = useState("")
-  const searchTimer = useRef<ReturnType<typeof setTimeout>>(null)
+  const debouncedSearch = useDebounce(search)
   const [dateFrom, setDateFrom] = useState("")
   const [dateTo, setDateTo] = useState("")
 
@@ -166,19 +167,6 @@ function RecordsTab({
     notes: "",
     materials: [] as MaterialRow[],
   })
-
-  // Debounce cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (searchTimer.current) clearTimeout(searchTimer.current)
-    }
-  }, [])
-
-  function handleSearchChange(value: string) {
-    setSearch(value)
-    if (searchTimer.current) clearTimeout(searchTimer.current)
-    searchTimer.current = setTimeout(() => setDebouncedSearch(value), 300)
-  }
 
   function resetCreateForm() {
     setCreateForm({
@@ -395,7 +383,7 @@ function RecordsTab({
               <Input
                 placeholder={t("production.searchByProductName")}
                 value={search}
-                onChange={(e) => handleSearchChange(e.target.value)}
+                onChange={(e) => setSearch(e.target.value)}
                 className="pl-8"
               />
             </div>
@@ -432,21 +420,13 @@ function RecordsTab({
       </div>
 
       {/* Delete Confirmation */}
-      {confirmDeleteId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="mx-4 w-full max-w-sm rounded-lg bg-background p-6 shadow-lg">
-            <p className="mb-4 text-sm">{t("production.confirmDeleteRecord")}</p>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" size="sm" onClick={() => setConfirmDeleteId(null)}>
-                {t("common.cancel")}
-              </Button>
-              <Button variant="destructive" size="sm" onClick={confirmDelete}>
-                {t("common.delete")}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={!!confirmDeleteId}
+        onConfirm={confirmDelete}
+        onCancel={() => setConfirmDeleteId(null)}
+        description={t("production.confirmDeleteRecord")}
+        isPending={deleteRecord.isPending}
+      />
 
       {/* Create Record Sheet */}
       <Sheet open={createOpen} onOpenChange={setCreateOpen}>

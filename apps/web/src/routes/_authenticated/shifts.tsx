@@ -31,6 +31,7 @@ import { toast } from "sonner"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
 import { formatCurrency } from "@/lib/format-currency"
+import { formatDateTime } from "@/lib/format-date"
 
 type Shift = components["schemas"]["Shift"]
 
@@ -62,9 +63,9 @@ export const Route = createFileRoute("/_authenticated/shifts")({
   component: ShiftsPage,
 })
 
-function formatDateTime(iso: string | null | undefined) {
+function formatDateTimeOrDash(iso: string | null | undefined) {
   if (!iso) return "\u2014"
-  return new Date(iso).toLocaleString()
+  return formatDateTime(iso)
 }
 
 function formatCurrencyOrDash(val: number | null | undefined) {
@@ -175,12 +176,16 @@ function ShiftsPage() {
       {
         id: "opened_at",
         header: t("shifts.openedAt"),
-        cell: (row: Shift) => <span className="text-sm">{formatDateTime(row.opened_at)}</span>,
+        cell: (row: Shift) => (
+          <span className="text-sm">{formatDateTimeOrDash(row.opened_at)}</span>
+        ),
       },
       {
         id: "closed_at",
         header: t("shifts.closedAt"),
-        cell: (row: Shift) => <span className="text-sm">{formatDateTime(row.closed_at)}</span>,
+        cell: (row: Shift) => (
+          <span className="text-sm">{formatDateTimeOrDash(row.closed_at)}</span>
+        ),
       },
       {
         id: "opening_balance",
@@ -231,7 +236,7 @@ function ShiftsPage() {
                   {t("shifts.shiftCurrentlyOpen")}
                 </p>
                 <p className="mt-1 text-xs text-green-600 dark:text-green-400">
-                  {t("shifts.openedAtInfo", { time: formatDateTime(currentShift.opened_at) })}{" "}
+                  {t("shifts.openedAtInfo", { time: formatDateTimeOrDash(currentShift.opened_at) })}{" "}
                   &middot; {t("shifts.openingBalance")}:{" "}
                   {formatCurrencyOrDash(currentShift.opening_balance)}
                   {currentShift.expected_balance != null && (
@@ -268,7 +273,11 @@ function ShiftsPage() {
           emptyMessage={t("shifts.noShiftsFound")}
           rowActions={(row) => {
             if (row.status !== "closed") return null
-            return <DropdownMenuItem onClick={() => openZReport(row.id)}>Z-Report</DropdownMenuItem>
+            return (
+              <DropdownMenuItem onClick={() => openZReport(row.id)}>
+                {t("shifts.zReport")}
+              </DropdownMenuItem>
+            )
           }}
         />
       </div>
@@ -373,19 +382,19 @@ function ShiftsPage() {
       <Sheet open={!!zReportShiftId} onOpenChange={(open) => !open && setZReportShiftId(null)}>
         <SheetContent side="right" className="sm:max-w-lg">
           <SheetHeader>
-            <SheetTitle>Z-Report</SheetTitle>
-            <SheetDescription>Shift summary report</SheetDescription>
+            <SheetTitle>{t("shifts.zReport")}</SheetTitle>
+            <SheetDescription>{t("shifts.shiftSummaryReport")}</SheetDescription>
           </SheetHeader>
           <SheetBody>
             {zReportLoading ? (
               <div className="flex items-center justify-center py-8">
-                <p className="text-sm text-muted-foreground">Loading report...</p>
+                <p className="text-sm text-muted-foreground">{t("shifts.loadingReport")}</p>
               </div>
             ) : zReportData ? (
               <ZReportContent report={zReportData} />
             ) : (
               <div className="flex items-center justify-center py-8">
-                <p className="text-sm text-muted-foreground">No report data available.</p>
+                <p className="text-sm text-muted-foreground">{t("shifts.noReportData")}</p>
               </div>
             )}
           </SheetBody>
@@ -402,17 +411,20 @@ function ShiftsPage() {
 }
 
 function ZReportContent({ report }: { report: ZReport }) {
+  const { t } = useTranslation()
   const discrepancyNegative = report.discrepancy != null && report.discrepancy < 0
 
   return (
     <div className="space-y-6">
       {/* Shift Info Header */}
       <div className="space-y-1">
-        <p className="text-sm font-medium">{report.cashier_name}</p>
+        <p className="text-sm font-medium">
+          {t("shifts.cashier")}: {report.cashier_name}
+        </p>
         <p className="text-xs text-muted-foreground">
-          {formatDateTime(report.opened_at)}
+          {formatDateTimeOrDash(report.opened_at)}
           {" \u2014 "}
-          {formatDateTime(report.closed_at)}
+          {formatDateTimeOrDash(report.closed_at)}
         </p>
       </div>
 
@@ -420,25 +432,28 @@ function ZReportContent({ report }: { report: ZReport }) {
 
       {/* Summary Cards */}
       <div className="grid grid-cols-3 gap-3">
-        <SummaryCard label="Total Sales" value={formatCurrencyOrDash(report.total_sales)} />
-        <SummaryCard label="Total Orders" value={String(report.total_orders)} />
-        <SummaryCard label="Items Sold" value={String(report.total_items_sold)} />
+        <SummaryCard
+          label={t("shifts.totalSales")}
+          value={formatCurrencyOrDash(report.total_sales)}
+        />
+        <SummaryCard label={t("shifts.totalOrders")} value={String(report.total_orders)} />
+        <SummaryCard label={t("shifts.itemsSold")} value={String(report.total_items_sold)} />
       </div>
 
       <Separator />
 
       {/* Payment Method Breakdown */}
       <div className="space-y-2">
-        <h4 className="text-sm font-medium">Payment Breakdown</h4>
+        <h4 className="text-sm font-medium">{t("shifts.paymentBreakdown")}</h4>
         {report.payment_method_breakdown.length === 0 ? (
-          <p className="text-xs text-muted-foreground">No transactions in this shift.</p>
+          <p className="text-xs text-muted-foreground">{t("shifts.noTransactionsInShift")}</p>
         ) : (
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="text-xs">Method</TableHead>
-                <TableHead className="text-xs text-right">Count</TableHead>
-                <TableHead className="text-xs text-right">Total</TableHead>
+                <TableHead className="text-xs">{t("shifts.method")}</TableHead>
+                <TableHead className="text-xs text-right">{t("shifts.count")}</TableHead>
+                <TableHead className="text-xs text-right">{t("common.total")}</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -460,20 +475,23 @@ function ZReportContent({ report }: { report: ZReport }) {
 
       {/* Cash Reconciliation */}
       <div className="space-y-2">
-        <h4 className="text-sm font-medium">Cash Reconciliation</h4>
+        <h4 className="text-sm font-medium">{t("shifts.cashReconciliation")}</h4>
         <div className="space-y-1.5 rounded-md border p-3">
           <ReconciliationRow
-            label="Opening Balance"
+            label={t("shifts.openingBalance")}
             value={formatCurrencyOrDash(report.opening_balance)}
           />
           <ReconciliationRow
-            label="Expected Cash"
+            label={t("shifts.expectedCash")}
             value={formatCurrencyOrDash(report.expected_cash)}
           />
-          <ReconciliationRow label="Actual Cash" value={formatCurrencyOrDash(report.actual_cash)} />
+          <ReconciliationRow
+            label={t("shifts.actualCash")}
+            value={formatCurrencyOrDash(report.actual_cash)}
+          />
           <Separator />
           <div className="flex items-center justify-between pt-1">
-            <span className="text-sm font-medium">Discrepancy</span>
+            <span className="text-sm font-medium">{t("shifts.discrepancy")}</span>
             <span
               className={`text-sm font-semibold tabular-nums ${discrepancyNegative ? "text-red-600 dark:text-red-400" : ""}`}
             >
@@ -488,10 +506,13 @@ function ZReportContent({ report }: { report: ZReport }) {
         <>
           <Separator />
           <div className="space-y-2">
-            <h4 className="text-sm font-medium">Exceptions</h4>
+            <h4 className="text-sm font-medium">{t("shifts.exceptions")}</h4>
             <div className="grid grid-cols-2 gap-3">
-              <SummaryCard label="Voided Orders" value={String(report.voided_orders)} />
-              <SummaryCard label="Returned Orders" value={String(report.returned_orders)} />
+              <SummaryCard label={t("shifts.voidedOrders")} value={String(report.voided_orders)} />
+              <SummaryCard
+                label={t("shifts.returnedOrders")}
+                value={String(report.returned_orders)}
+              />
             </div>
           </div>
         </>

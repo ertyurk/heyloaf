@@ -1,6 +1,7 @@
 import { Button } from "@heyloaf/ui/components/button"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
@@ -9,7 +10,10 @@ export const Route = createFileRoute("/_authenticated/notifications")({
   component: NotificationsPage,
 })
 
-function getRelativeTime(dateStr: string): string {
+function getRelativeTime(
+  dateStr: string,
+  t: (key: string, opts?: Record<string, unknown>) => string
+): string {
   const now = new Date()
   const date = new Date(dateStr)
   const diffMs = now.getTime() - date.getTime()
@@ -18,14 +22,15 @@ function getRelativeTime(dateStr: string): string {
   const diffHours = Math.floor(diffMinutes / 60)
   const diffDays = Math.floor(diffHours / 24)
 
-  if (diffSeconds < 60) return "just now"
-  if (diffMinutes < 60) return `${diffMinutes}m ago`
-  if (diffHours < 24) return `${diffHours}h ago`
-  if (diffDays < 7) return `${diffDays}d ago`
+  if (diffSeconds < 60) return t("notifications.justNow")
+  if (diffMinutes < 60) return t("notifications.minutesAgo", { count: diffMinutes })
+  if (diffHours < 24) return t("notifications.hoursAgo", { count: diffHours })
+  if (diffDays < 7) return t("notifications.daysAgo", { count: diffDays })
   return date.toLocaleDateString()
 }
 
 function NotificationsPage() {
+  const { t } = useTranslation()
   const client = useApi()
   const queryClient = useQueryClient()
 
@@ -43,10 +48,10 @@ function NotificationsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["notifications"] })
-      toast.success("All notifications marked as read")
+      toast.success(t("notifications.allMarkedRead"))
     },
     onError: () => {
-      toast.error("Failed to mark all as read")
+      toast.error(t("notifications.failedToMarkAllRead"))
     },
   })
 
@@ -58,7 +63,7 @@ function NotificationsPage() {
       queryClient.invalidateQueries({ queryKey: ["notifications"] })
     },
     onError: () => {
-      toast.error("Failed to mark notification as read")
+      toast.error(t("notifications.failedToMarkRead"))
     },
   })
 
@@ -66,21 +71,21 @@ function NotificationsPage() {
 
   return (
     <>
-      <PageHeader title="Notifications" description="Stay up to date">
+      <PageHeader title={t("notifications.title")} description={t("notifications.description")}>
         <Button
           variant="outline"
           onClick={() => markAllRead.mutate()}
           disabled={markAllRead.isPending}
         >
-          Mark All Read
+          {t("notifications.markAllRead")}
         </Button>
       </PageHeader>
 
       <div className="space-y-4 p-6">
         {isLoading ? (
-          <p className="text-sm text-muted-foreground">Loading...</p>
+          <p className="text-sm text-muted-foreground">{t("notifications.loading")}</p>
         ) : notifications.length === 0 ? (
-          <p className="text-sm text-muted-foreground">No notifications.</p>
+          <p className="text-sm text-muted-foreground">{t("notifications.noNotifications")}</p>
         ) : (
           <div className="space-y-2">
             {notifications.map((notification) => (
@@ -109,7 +114,7 @@ function NotificationsPage() {
                     )}
                   </div>
                   <span className="shrink-0 text-xs text-muted-foreground">
-                    {getRelativeTime(notification.created_at)}
+                    {getRelativeTime(notification.created_at, t)}
                   </span>
                 </div>
               </button>

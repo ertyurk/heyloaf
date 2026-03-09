@@ -27,11 +27,13 @@ import Search01Icon from "@hugeicons/core-free-icons/Search01Icon"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
+import { useDebounce } from "@/hooks/use-debounce"
 
 type Category = components["schemas"]["Category"]
 
@@ -52,22 +54,7 @@ function CategoriesPage() {
   // Search and filters
   const [searchQuery, setSearchQuery] = useState("")
   const [posFilter, setPosFilter] = useState<string | undefined>("all")
-  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>(null)
-  const [debouncedSearch, setDebouncedSearch] = useState("")
-
-  useEffect(() => {
-    return () => {
-      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
-    }
-  }, [])
-
-  function handleSearchChange(value: string) {
-    setSearchQuery(value)
-    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
-    searchTimeoutRef.current = setTimeout(() => {
-      setDebouncedSearch(value)
-    }, 300)
-  }
+  const debouncedSearch = useDebounce(searchQuery)
 
   const POS_VISIBILITY_OPTIONS = useMemo(
     () => [
@@ -285,7 +272,7 @@ function CategoriesPage() {
               placeholder={t("categories.searchCategories")}
               className="pl-9"
               value={searchQuery}
-              onChange={(e) => handleSearchChange(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
           <AdvancedSelect
@@ -404,26 +391,13 @@ function CategoriesPage() {
       </Sheet>
 
       {/* Delete Confirmation */}
-      {confirmDeleteId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="rounded-lg border bg-background p-6 shadow-lg max-w-sm w-full mx-4">
-            <p className="text-sm mb-4">{t("categories.confirmDeleteCategory")}</p>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" size="sm" onClick={() => setConfirmDeleteId(null)}>
-                {t("common.cancel")}
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={confirmDelete}
-                disabled={deleteMutation.isPending}
-              >
-                {t("common.delete")}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={!!confirmDeleteId}
+        onConfirm={confirmDelete}
+        onCancel={() => setConfirmDeleteId(null)}
+        description={t("categories.confirmDeleteCategory")}
+        isPending={deleteMutation.isPending}
+      />
 
       {/* Edit Category Sheet */}
       <Sheet open={editOpen} onOpenChange={setEditOpen}>

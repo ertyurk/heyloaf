@@ -25,11 +25,12 @@ import Search01Icon from "@hugeicons/core-free-icons/Search01Icon"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
+import { useDebounce } from "@/hooks/use-debounce"
 
 export const Route = createFileRoute("/_authenticated/stock")({
   component: StockPage,
@@ -91,23 +92,7 @@ function StockPage() {
 
   // Search
   const [search, setSearch] = useState("")
-  const [debouncedSearch, setDebouncedSearch] = useState("")
-  const searchTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
-
-  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    setSearch(value)
-    clearTimeout(searchTimerRef.current)
-    searchTimerRef.current = setTimeout(() => {
-      setDebouncedSearch(value)
-    }, 300)
-  }, [])
-
-  useEffect(() => {
-    return () => {
-      clearTimeout(searchTimerRef.current)
-    }
-  }, [])
+  const debouncedSearch = useDebounce(search)
 
   const { data, isLoading } = useQuery({
     queryKey: ["stock"],
@@ -367,7 +352,7 @@ function StockPage() {
             <Input
               placeholder={t("stock.searchByProductName")}
               value={search}
-              onChange={handleSearchChange}
+              onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
             />
           </div>

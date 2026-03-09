@@ -164,7 +164,11 @@ function ReportsPage() {
 
   // ── Data fetching (conditional on active tab) ──
 
-  const { data: ordersData } = useQuery({
+  const {
+    data: ordersData,
+    isLoading: ordersLoading,
+    isError: ordersError,
+  } = useQuery({
     queryKey: ["orders"],
     queryFn: async () => {
       const res = await client.GET("/api/orders")
@@ -353,12 +357,24 @@ function ReportsPage() {
           </TabsList>
 
           <TabsContent value="sales">
-            <SalesTab
-              filteredOrders={filteredOrders}
-              productMap={productMap}
-              categoryNameMap={categoryNameMap}
-              paymentMethodNameMap={paymentMethodNameMap}
-            />
+            {ordersLoading && (
+              <div className="flex items-center justify-center py-12">
+                <p className="text-sm text-muted-foreground">{t("common.loading")}</p>
+              </div>
+            )}
+            {ordersError && (
+              <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-center">
+                <p className="text-sm text-destructive">{t("common.failedToLoadData")}</p>
+              </div>
+            )}
+            {!ordersLoading && !ordersError && (
+              <SalesTab
+                filteredOrders={filteredOrders}
+                productMap={productMap}
+                categoryNameMap={categoryNameMap}
+                paymentMethodNameMap={paymentMethodNameMap}
+              />
+            )}
           </TabsContent>
 
           <TabsContent value="stock">
@@ -562,7 +578,7 @@ function SalesTab({
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Revenue
+                {t("reports.totalRevenue")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -573,7 +589,7 @@ function SalesTab({
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Total Orders
+                {t("reports.totalOrders")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -584,7 +600,7 @@ function SalesTab({
           <Card>
             <CardHeader className="flex flex-row items-center justify-between pb-2">
               <CardTitle className="text-sm font-medium text-muted-foreground">
-                Average Order Value
+                {t("reports.averageOrderValue")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -596,13 +612,13 @@ function SalesTab({
         <Card>
           <CardHeader>
             <CardTitle className="text-sm font-medium text-muted-foreground">
-              Sales by Day
+              {t("reports.salesByDay")}
             </CardTitle>
           </CardHeader>
           <CardContent>
             {salesByDay.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-12">
-                No sales data for the selected period.
+                {t("reports.noSalesData")}
               </p>
             ) : (
               <ResponsiveContainer width="100%" height={300}>
@@ -683,7 +699,7 @@ function SalesTab({
           <CardContent className="pt-4">
             {salesByPaymentMethod.length === 0 ? (
               <p className="text-sm text-muted-foreground text-center py-12">
-                No payment data for the selected period.
+                {t("reports.noPaymentData")}
               </p>
             ) : (
               <ResponsiveContainer width="100%" height={300}>

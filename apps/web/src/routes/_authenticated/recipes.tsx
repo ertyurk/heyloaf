@@ -24,11 +24,12 @@ import Search01Icon from "@hugeicons/core-free-icons/Search01Icon"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
+import { useDebounce } from "@/hooks/use-debounce"
 
 type Product = components["schemas"]["Product"]
 
@@ -300,22 +301,7 @@ function RecipesPage() {
 
   // Search
   const [searchQuery, setSearchQuery] = useState("")
-  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>(null)
-  const [debouncedSearch, setDebouncedSearch] = useState("")
-
-  function handleSearchChange(value: string) {
-    setSearchQuery(value)
-    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
-    searchTimeoutRef.current = setTimeout(() => {
-      setDebouncedSearch(value)
-    }, 300)
-  }
-
-  useEffect(() => {
-    return () => {
-      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
-    }
-  }, [])
+  const debouncedSearch = useDebounce(searchQuery)
 
   // Recipe form state
   const [batchSize, setBatchSize] = useState(1)
@@ -888,7 +874,7 @@ function RecipesPage() {
               placeholder={t("recipes.searchProducts")}
               className="pl-9"
               value={searchQuery}
-              onChange={(e) => handleSearchChange(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
         </div>

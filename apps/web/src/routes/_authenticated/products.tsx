@@ -27,11 +27,13 @@ import Search01Icon from "@hugeicons/core-free-icons/Search01Icon"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
+import { useDebounce } from "@/hooks/use-debounce"
 import { API_BASE_URL } from "@/lib/api"
 import { useAuthStore } from "@/lib/auth"
 
@@ -407,23 +409,7 @@ function ProductsPage() {
   const [searchQuery, setSearchQuery] = useState("")
   const [typeFilter, setTypeFilter] = useState<string | undefined>("all")
   const [statusFilter, setStatusFilter] = useState<string | undefined>("all")
-  const searchTimeoutRef = useRef<ReturnType<typeof setTimeout>>(null)
-  const [debouncedSearch, setDebouncedSearch] = useState("")
-
-  // Debounce cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
-    }
-  }, [])
-
-  function handleSearchChange(value: string) {
-    setSearchQuery(value)
-    if (searchTimeoutRef.current) clearTimeout(searchTimeoutRef.current)
-    searchTimeoutRef.current = setTimeout(() => {
-      setDebouncedSearch(value)
-    }, 300)
-  }
+  const debouncedSearch = useDebounce(searchQuery)
 
   const TYPE_OPTIONS = useMemo(
     () => [
@@ -482,7 +468,7 @@ function ProductsPage() {
     min_stock_level: "",
   })
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["products"],
     queryFn: async () => {
       const { data } = await client.GET("/api/products")
@@ -746,7 +732,7 @@ function ProductsPage() {
               placeholder={t("products.searchProducts")}
               className="pl-9"
               value={searchQuery}
-              onChange={(e) => handleSearchChange(e.target.value)}
+              onChange={(e) => setSearchQuery(e.target.value)}
             />
           </div>
           <AdvancedSelect
@@ -768,6 +754,15 @@ function ProductsPage() {
             aria-label={t("products.allStatuses")}
           />
         </div>
+
+        {isError && (
+          <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-center">
+            <p className="text-sm text-destructive">{t("common.failedToLoadData")}</p>
+            <Button variant="outline" size="sm" className="mt-2" onClick={() => refetch()}>
+              {t("common.retry")}
+            </Button>
+          </div>
+        )}
 
         {/* DataTable */}
         <DataTable
@@ -792,21 +787,13 @@ function ProductsPage() {
       </div>
 
       {/* Delete Confirmation */}
-      {confirmDeleteId && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="mx-4 w-full max-w-sm rounded-lg bg-background p-6 shadow-lg">
-            <p className="mb-4 text-sm">{t("products.confirmDeleteProduct")}</p>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" size="sm" onClick={() => setConfirmDeleteId(null)}>
-                {t("common.cancel")}
-              </Button>
-              <Button variant="destructive" size="sm" onClick={confirmDelete}>
-                {t("common.delete")}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={!!confirmDeleteId}
+        onConfirm={confirmDelete}
+        onCancel={() => setConfirmDeleteId(null)}
+        description={t("products.confirmDeleteProduct")}
+        isPending={deleteMutation.isPending}
+      />
 
       {/* Create Product Sheet */}
       <Sheet open={createOpen} onOpenChange={setCreateOpen}>

@@ -35,7 +35,9 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 import { useApi } from "@/hooks/use-api"
+import { useDebounce } from "@/hooks/use-debounce"
 import { useAuthStore } from "@/lib/auth"
 import { formatCurrency } from "@/lib/format-currency"
 
@@ -354,8 +356,7 @@ function PosPage() {
   const [cart, setCart] = useState<CartItem[]>(loadSavedCart)
   const [selectedCategory, setSelectedCategory] = useState<string | null>(null)
   const [search, setSearch] = useState("")
-  const [debouncedSearch, setDebouncedSearch] = useState("")
-  const searchTimer = useRef<ReturnType<typeof setTimeout>>(null)
+  const debouncedSearch = useDebounce(search)
   const [paymentMethodId, setPaymentMethodId] = useState<string>("")
   const [selectedCartIndex, setSelectedCartIndex] = useState<number>(-1)
 
@@ -381,6 +382,9 @@ function PosPage() {
   const [parkLabelOpen, setParkLabelOpen] = useState(false)
   const [parkLabel, setParkLabel] = useState("")
 
+  // Parked cart delete confirmation
+  const [confirmDeleteParkedCartId, setConfirmDeleteParkedCartId] = useState<string | null>(null)
+
   // Barcode scanner state
   const barcodeBuffer = useRef("")
   const barcodeTimer = useRef<ReturnType<typeof setTimeout>>(null)
@@ -391,19 +395,6 @@ function PosPage() {
   useEffect(() => {
     localStorage.setItem("heyloaf-pos-cart", JSON.stringify(cart))
   }, [cart])
-
-  // Debounce cleanup on unmount
-  useEffect(() => {
-    return () => {
-      if (searchTimer.current) clearTimeout(searchTimer.current)
-    }
-  }, [])
-
-  function handleSearchChange(value: string) {
-    setSearch(value)
-    if (searchTimer.current) clearTimeout(searchTimer.current)
-    searchTimer.current = setTimeout(() => setDebouncedSearch(value), 300)
-  }
 
   // Fetch products
   const { data: productsData } = useQuery({
@@ -910,6 +901,33 @@ function PosPage() {
           )}
         </div>
         <div className="flex items-center gap-2">
+          <DropdownMenu>
+            <DropdownMenuTrigger
+              render={
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="text-background hover:bg-background/20 hover:text-background"
+                >
+                  {t("pos.keyboardShortcuts")}
+                </Button>
+              }
+            />
+            <DropdownMenuContent align="end" sideOffset={4} className="w-56">
+              {[
+                { key: "F1-F8", label: t("pos.shortcutPaymentMethod") },
+                { key: "Enter", label: t("pos.shortcutPlaceOrder") },
+                { key: "Escape", label: t("pos.shortcutExit") },
+                { key: "Numpad", label: t("pos.shortcutQuantity") },
+                { key: "/", label: t("pos.shortcutBarcode") },
+              ].map((s) => (
+                <div key={s.key} className="flex items-center justify-between px-2 py-1.5">
+                  <span className="text-sm text-muted-foreground">{s.label}</span>
+                  <kbd className="rounded bg-muted px-1.5 py-0.5 font-mono text-xs">{s.key}</kbd>
+                </div>
+              ))}
+            </DropdownMenuContent>
+          </DropdownMenu>
           <Button
             variant="ghost"
             size="sm"
@@ -971,7 +989,7 @@ function PosPage() {
               <Input
                 placeholder={t("pos.searchProducts")}
                 value={search}
-                onChange={(e) => handleSearchChange(e.target.value)}
+                onChange={(e) => setSearch(e.target.value)}
                 className="pl-8"
               />
             </div>
@@ -1066,7 +1084,7 @@ function PosPage() {
                           className="ml-2 text-xs text-destructive hover:underline"
                           onClick={(e) => {
                             e.stopPropagation()
-                            deleteParkedCart(pc.id)
+                            setConfirmDeleteParkedCartId(pc.id)
                           }}
                         >
                           {t("common.delete")}
@@ -1274,6 +1292,16 @@ function PosPage() {
           </form>
         </SheetContent>
       </Sheet>
+
+      <ConfirmDialog
+        open={!!confirmDeleteParkedCartId}
+        onConfirm={() => {
+          if (confirmDeleteParkedCartId) deleteParkedCart(confirmDeleteParkedCartId)
+          setConfirmDeleteParkedCartId(null)
+        }}
+        onCancel={() => setConfirmDeleteParkedCartId(null)}
+        description={t("pos.confirmDeleteParkedCart")}
+      />
     </div>
   )
 }

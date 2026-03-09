@@ -70,7 +70,11 @@
     "no": "No",
     "addItem": "Add Item",
     "saveChanges": "Save Changes",
-    "exportExcel": "Export Excel"
+    "exportExcel": "Export Excel",
+    "confirmDelete": "Confirm Delete",
+    "deleteConfirmation": "Are you sure you want to delete this item? This action cannot be undone.",
+    "failedToLoadData": "Failed to load data",
+    "retry": "Retry"
   },
   "auth": {
     "failedToSwitchCompany": "Failed to switch company"
@@ -267,7 +271,14 @@
     "addedProduct": "Added: {{name}}",
     "productNotFoundForBarcode": "Product not found for barcode: {{barcode}}",
     "parkCartLabel": "Label for parked cart",
-    "parkCartPlaceholder": "e.g. Table 5, Customer name"
+    "parkCartPlaceholder": "e.g. Table 5, Customer name",
+    "keyboardShortcuts": "Keyboard Shortcuts",
+    "shortcutPaymentMethod": "Payment method",
+    "shortcutPlaceOrder": "Place order",
+    "shortcutExit": "Exit POS",
+    "shortcutQuantity": "Set quantity",
+    "shortcutBarcode": "Barcode focus",
+    "confirmDeleteParkedCart": "Are you sure you want to delete this parked cart?"
   },
   "contacts": {
     "title": "Contacts",
@@ -389,7 +400,26 @@
     "shiftOpened": "Shift opened successfully",
     "failedToOpenShift": "Failed to open shift",
     "shiftClosed": "Shift closed successfully",
-    "failedToCloseShift": "Failed to close shift"
+    "failedToCloseShift": "Failed to close shift",
+    "zReport": "Z-Report",
+    "shiftSummaryReport": "Shift summary report",
+    "loadingReport": "Loading report...",
+    "noReportData": "No report data available.",
+    "totalSales": "Total Sales",
+    "totalOrders": "Total Orders",
+    "itemsSold": "Items Sold",
+    "paymentBreakdown": "Payment Breakdown",
+    "noTransactionsInShift": "No transactions in this shift.",
+    "method": "Method",
+    "count": "Count",
+    "cashReconciliation": "Cash Reconciliation",
+    "expectedCash": "Expected Cash",
+    "actualCash": "Actual Cash",
+    "discrepancy": "Discrepancy",
+    "exceptions": "Exceptions",
+    "voidedOrders": "Voided Orders",
+    "returnedOrders": "Returned Orders",
+    "cashier": "Cashier"
   },
   "production": {
     "title": "Production",
@@ -500,17 +530,27 @@
     "noOutstandingInvoices": "No outstanding invoices.",
     "noContactsWithBalance": "No contacts with outstanding balances.",
     "noProductionData": "No production data for the selected period.",
-    "noMaterialConsumption": "No material consumption data for the selected period."
+    "noMaterialConsumption": "No material consumption data for the selected period.",
+    "totalRevenue": "Total Revenue",
+    "totalOrders": "Total Orders",
+    "noSalesData": "No sales data for the selected period.",
+    "noPaymentData": "No payment data for the selected period.",
+    "averageOrderValue": "Average Order Value",
+    "salesByDay": "Sales by Day"
   },
   "notifications": {
     "title": "Notifications",
     "description": "Stay up to date",
     "markAllRead": "Mark All Read",
     "noNotifications": "No notifications.",
+    "loading": "Loading...",
     "allMarkedRead": "All notifications marked as read",
     "failedToMarkAllRead": "Failed to mark all as read",
     "failedToMarkRead": "Failed to mark notification as read",
-    "justNow": "just now"
+    "justNow": "just now",
+    "minutesAgo": "{{count}}m ago",
+    "hoursAgo": "{{count}}h ago",
+    "daysAgo": "{{count}}d ago"
   },
   "recipes": {
     "title": "Recipes",

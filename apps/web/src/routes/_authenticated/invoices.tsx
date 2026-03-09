@@ -27,13 +27,16 @@ import Search01Icon from "@hugeicons/core-free-icons/Search01Icon"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { useEffect, useMemo, useRef, useState } from "react"
+import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { z } from "zod"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
+import { useDebounce } from "@/hooks/use-debounce"
 import { formatCurrency } from "@/lib/format-currency"
+import { formatDate } from "@/lib/format-date"
 
 type Invoice = components["schemas"]["Invoice"]
 type Contact = components["schemas"]["Contact"]
@@ -53,13 +56,9 @@ const statusColor: Record<string, string> = {
 
 const invoiceStatuses = ["draft", "pending", "paid", "overdue", "cancelled"]
 
-function formatDate(dateStr: string | null) {
+function formatDateOrDash(dateStr: string | null) {
   if (!dateStr) return "\u2014"
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  })
+  return formatDate(dateStr)
 }
 
 function todayStr() {
@@ -127,22 +126,9 @@ function InvoicesPage() {
   const [confirmDeleteInvoice, setConfirmDeleteInvoice] = useState<Invoice | null>(null)
 
   const [search, setSearch] = useState("")
-  const [debouncedSearch, setDebouncedSearch] = useState("")
-  const searchTimer = useRef<ReturnType<typeof setTimeout>>(null)
+  const debouncedSearch = useDebounce(search)
   const [statusFilter, setStatusFilter] = useState("all")
   const [typeFilter, setTypeFilter] = useState("all")
-
-  useEffect(() => {
-    return () => {
-      if (searchTimer.current) clearTimeout(searchTimer.current)
-    }
-  }, [])
-
-  function handleSearchChange(value: string) {
-    setSearch(value)
-    if (searchTimer.current) clearTimeout(searchTimer.current)
-    searchTimer.current = setTimeout(() => setDebouncedSearch(value), 300)
-  }
 
   const statusOptions = useMemo(
     () => [
@@ -165,7 +151,7 @@ function InvoicesPage() {
     [t]
   )
 
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["invoices"],
     queryFn: async () => {
       const res = await client.GET("/api/invoices")
@@ -464,14 +450,14 @@ function InvoicesPage() {
         id: "date",
         header: t("common.date"),
         cell: (row: Invoice) => (
-          <span className="text-muted-foreground">{formatDate(row.date)}</span>
+          <span className="text-muted-foreground">{formatDateOrDash(row.date)}</span>
         ),
       },
       {
         id: "due_date",
         header: t("invoices.dueDate"),
         cell: (row: Invoice) => (
-          <span className="text-muted-foreground">{formatDate(row.due_date ?? null)}</span>
+          <span className="text-muted-foreground">{formatDateOrDash(row.due_date ?? null)}</span>
         ),
       },
       {
@@ -525,7 +511,7 @@ function InvoicesPage() {
             <Input
               placeholder={t("invoices.searchInvoices")}
               value={search}
-              onChange={(e) => handleSearchChange(e.target.value)}
+              onChange={(e) => setSearch(e.target.value)}
               className="pl-8"
             />
           </div>
@@ -546,6 +532,15 @@ function InvoicesPage() {
             className="w-36"
           />
         </div>
+
+        {isError && (
+          <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-center">
+            <p className="text-sm text-destructive">{t("common.failedToLoadData")}</p>
+            <Button variant="outline" size="sm" className="mt-2" onClick={() => refetch()}>
+              {t("common.retry")}
+            </Button>
+          </div>
+        )}
 
         <DataTable
           columns={columns}
@@ -581,30 +576,15 @@ function InvoicesPage() {
       </div>
 
       {/* Delete Confirmation */}
-      {confirmDeleteInvoice && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="rounded-lg border bg-background p-6 shadow-lg max-w-sm w-full mx-4">
-            <p className="text-sm mb-4">
-              {t("invoices.confirmDelete", {
-                number: confirmDeleteInvoice.invoice_number,
-              })}
-            </p>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" size="sm" onClick={() => setConfirmDeleteInvoice(null)}>
-                {t("common.cancel")}
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => deleteMutation.mutate(confirmDeleteInvoice.id)}
-                disabled={deleteMutation.isPending}
-              >
-                {t("common.delete")}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={!!confirmDeleteInvoice}
+        onConfirm={() => confirmDeleteInvoice && deleteMutation.mutate(confirmDeleteInvoice.id)}
+        onCancel={() => setConfirmDeleteInvoice(null)}
+        description={t("invoices.confirmDelete", {
+          number: confirmDeleteInvoice?.invoice_number,
+        })}
+        isPending={deleteMutation.isPending}
+      />
 
       <Sheet
         open={sheetMode !== null}

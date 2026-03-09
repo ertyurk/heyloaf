@@ -1,7 +1,14 @@
+import { Button } from "@heyloaf/ui/components/button"
 import appCss from "@heyloaf/ui/globals.css?url"
 import { QueryClientProvider } from "@tanstack/react-query"
 import { ReactQueryDevtools } from "@tanstack/react-query-devtools"
-import { createRootRoute, HeadContent, Outlet, Scripts } from "@tanstack/react-router"
+import {
+  createRootRoute,
+  type ErrorComponentProps,
+  HeadContent,
+  Outlet,
+  Scripts,
+} from "@tanstack/react-router"
 import { useEffect } from "react"
 import { useTranslation } from "react-i18next"
 import { Toaster } from "sonner"
@@ -29,6 +36,7 @@ export const Route = createRootRoute({
     ],
   }),
   component: RootComponent,
+  errorComponent: RootErrorComponent,
   shellComponent: RootDocument,
 })
 
@@ -43,6 +51,20 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <Scripts />
       </body>
     </html>
+  )
+}
+
+function RootErrorComponent({ error, reset }: ErrorComponentProps) {
+  return (
+    <div className="flex min-h-screen items-center justify-center p-6">
+      <div className="max-w-md space-y-4 text-center">
+        <h1 className="text-2xl font-bold">Something went wrong</h1>
+        <p className="text-sm text-muted-foreground">
+          {error instanceof Error ? error.message : "An unexpected error occurred."}
+        </p>
+        <Button onClick={reset}>Try again</Button>
+      </div>
+    </div>
   )
 }
 

@@ -29,11 +29,13 @@ import Search01Icon from "@hugeicons/core-free-icons/Search01Icon"
 import { HugeiconsIcon } from "@hugeicons/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
+import { useDebounce } from "@/hooks/use-debounce"
 import { formatCurrency } from "@/lib/format-currency"
 
 type Contact = components["schemas"]["Contact"]
@@ -257,14 +259,7 @@ function ContactsPage() {
   const [search, setSearch] = useState("")
   const [typeFilter, setTypeFilter] = useState("all")
   const [statusFilter, setStatusFilter] = useState("all")
-  const searchTimerRef = useRef<ReturnType<typeof setTimeout>>(undefined)
-  const [debouncedSearch, setDebouncedSearch] = useState("")
-
-  useEffect(() => {
-    return () => {
-      clearTimeout(searchTimerRef.current)
-    }
-  }, [])
+  const debouncedSearch = useDebounce(search)
 
   const typeFilterOptions = useMemo(
     () => [
@@ -285,16 +280,7 @@ function ContactsPage() {
     [t]
   )
 
-  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value
-    setSearch(value)
-    clearTimeout(searchTimerRef.current)
-    searchTimerRef.current = setTimeout(() => {
-      setDebouncedSearch(value)
-    }, 300)
-  }, [])
-
-  const { data, isLoading } = useQuery({
+  const { data, isLoading, isError, refetch } = useQuery({
     queryKey: ["contacts"],
     queryFn: async () => {
       const res = await client.GET("/api/contacts")
@@ -609,7 +595,7 @@ function ContactsPage() {
             <Input
               placeholder={t("contacts.searchByNameOrEmail")}
               value={search}
-              onChange={handleSearchChange}
+              onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
             />
           </div>
@@ -630,6 +616,15 @@ function ContactsPage() {
             className="w-36"
           />
         </div>
+
+        {isError && (
+          <div className="rounded-lg border border-destructive/50 bg-destructive/10 p-4 text-center">
+            <p className="text-sm text-destructive">{t("common.failedToLoadData")}</p>
+            <Button variant="outline" size="sm" className="mt-2" onClick={() => refetch()}>
+              {t("common.retry")}
+            </Button>
+          </div>
+        )}
 
         <DataTable
           columns={columns}
@@ -654,30 +649,13 @@ function ContactsPage() {
       </div>
 
       {/* Delete Confirmation */}
-      {confirmDeleteContact && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="rounded-lg border bg-background p-6 shadow-lg max-w-sm w-full mx-4">
-            <p className="text-sm mb-4">
-              {t("contacts.confirmDelete", {
-                name: confirmDeleteContact.name,
-              })}
-            </p>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" size="sm" onClick={() => setConfirmDeleteContact(null)}>
-                {t("common.cancel")}
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => deleteMutation.mutate(confirmDeleteContact.id)}
-                disabled={deleteMutation.isPending}
-              >
-                {t("common.delete")}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={!!confirmDeleteContact}
+        onConfirm={() => confirmDeleteContact && deleteMutation.mutate(confirmDeleteContact.id)}
+        onCancel={() => setConfirmDeleteContact(null)}
+        description={t("contacts.confirmDelete", { name: confirmDeleteContact?.name })}
+        isPending={deleteMutation.isPending}
+      />
 
       {/* Create / Edit Contact Sheet */}
       <Sheet

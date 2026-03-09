@@ -70,7 +70,11 @@
     "no": "Hayir",
     "addItem": "Kalem Ekle",
     "saveChanges": "Degisiklikleri Kaydet",
-    "exportExcel": "Excel'e Aktar"
+    "exportExcel": "Excel'e Aktar",
+    "confirmDelete": "Silmeyi Onayla",
+    "deleteConfirmation": "Bu ogesi silmek istediginizden emin misiniz? Bu islem geri alinamaz.",
+    "failedToLoadData": "Veri yuklenemedi",
+    "retry": "Tekrar Dene"
   },
   "auth": {
     "failedToSwitchCompany": "Sirket degistirilemedi"
@@ -267,7 +271,14 @@
     "addedProduct": "Eklendi: {{name}}",
     "productNotFoundForBarcode": "Barkod icin urun bulunamadi: {{barcode}}",
     "parkCartLabel": "Bekleyen sepet etiketi",
-    "parkCartPlaceholder": "orn. Masa 5, Musteri adi"
+    "parkCartPlaceholder": "orn. Masa 5, Musteri adi",
+    "keyboardShortcuts": "Klavye Kisayollari",
+    "shortcutPaymentMethod": "Odeme yontemi",
+    "shortcutPlaceOrder": "Siparis ver",
+    "shortcutExit": "POS'tan cik",
+    "shortcutQuantity": "Miktar ayarla",
+    "shortcutBarcode": "Barkod odagi",
+    "confirmDeleteParkedCart": "Bu bekleyen sepeti silmek istediginizden emin misiniz?"
   },
   "contacts": {
     "title": "Kisiler",
@@ -389,7 +400,26 @@
     "shiftOpened": "Vardiya basariyla acildi",
     "failedToOpenShift": "Vardiya acilamadi",
     "shiftClosed": "Vardiya basariyla kapatildi",
-    "failedToCloseShift": "Vardiya kapatilamadi"
+    "failedToCloseShift": "Vardiya kapatilamadi",
+    "zReport": "Z-Raporu",
+    "shiftSummaryReport": "Vardiya ozet raporu",
+    "loadingReport": "Rapor yukleniyor...",
+    "noReportData": "Rapor verisi mevcut degil.",
+    "totalSales": "Toplam Satis",
+    "totalOrders": "Toplam Siparis",
+    "itemsSold": "Satilan Kalem",
+    "paymentBreakdown": "Odeme Dokumu",
+    "noTransactionsInShift": "Bu vardiyada islem yok.",
+    "method": "Yontem",
+    "count": "Adet",
+    "cashReconciliation": "Kasa Mutabakati",
+    "expectedCash": "Beklenen Nakit",
+    "actualCash": "Gercek Nakit",
+    "discrepancy": "Fark",
+    "exceptions": "Istisnalar",
+    "voidedOrders": "Iptal Edilen Siparisler",
+    "returnedOrders": "Iade Edilen Siparisler",
+    "cashier": "Kasiyer"
   },
   "production": {
     "title": "Uretim",
@@ -500,7 +530,13 @@
     "noOutstandingInvoices": "Odenmemis fatura yok.",
     "noContactsWithBalance": "Bakiyesi olan kisi yok.",
     "noProductionData": "Secilen donem icin uretim verisi yok.",
-    "noMaterialConsumption": "Secilen donem icin malzeme tuketim verisi yok."
+    "noMaterialConsumption": "Secilen donem icin malzeme tuketim verisi yok.",
+    "totalRevenue": "Toplam Gelir",
+    "totalOrders": "Toplam Siparis",
+    "noSalesData": "Secilen donem icin satis verisi yok.",
+    "noPaymentData": "Secilen donem icin odeme verisi yok.",
+    "averageOrderValue": "Ortalama Siparis Degeri",
+    "salesByDay": "Gune Gore Satis"
   },
   "notifications": {
     "title": "Bildirimler",
@@ -510,7 +546,11 @@
     "allMarkedRead": "Tum bildirimler okundu olarak isaretlendi",
     "failedToMarkAllRead": "Tumunu okundu olarak isaretleme basarisiz",
     "failedToMarkRead": "Bildirimi okundu olarak isaretleme basarisiz",
-    "justNow": "az once"
+    "justNow": "az once",
+    "loading": "Yukleniyor...",
+    "minutesAgo": "{{count}}dk once",
+    "hoursAgo": "{{count}}sa once",
+    "daysAgo": "{{count}}g once"
   },
   "recipes": {
     "title": "Tarifler",

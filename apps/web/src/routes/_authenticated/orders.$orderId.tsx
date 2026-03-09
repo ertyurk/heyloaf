@@ -24,9 +24,12 @@ import { createFileRoute, useNavigate } from "@tanstack/react-router"
 import { useCallback, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
+import { ConfirmDialog } from "@/components/confirm-dialog"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
 import { formatCurrency } from "@/lib/format-currency"
+import { formatDateTime } from "@/lib/format-date"
+import { statusBadgeClass } from "@/lib/status-badge"
 
 type Order = components["schemas"]["Order"]
 type OrderItem = components["schemas"]["OrderItem"]
@@ -34,23 +37,6 @@ type OrderItem = components["schemas"]["OrderItem"]
 export const Route = createFileRoute("/_authenticated/orders/$orderId")({
   component: OrderDetailPage,
 })
-
-const statusBadgeClass: Record<string, string> = {
-  completed: "bg-green-100 text-green-800",
-  pending: "bg-secondary text-secondary-foreground",
-  voided: "bg-destructive/10 text-destructive",
-  returned: "bg-destructive/10 text-destructive",
-}
-
-function formatDate(dateStr: string) {
-  return new Date(dateStr).toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  })
-}
 
 interface ReturnSelection {
   selected: boolean
@@ -290,7 +276,7 @@ function OrderDetailPage() {
         }}
       />
 
-      <PageHeader title={orderTitle} description={`Created ${formatDate(order.created_at)}`}>
+      <PageHeader title={orderTitle} description={`Created ${formatDateTime(order.created_at)}`}>
         <Button variant="outline" size="sm" onClick={() => navigate({ to: "/orders" })}>
           <HugeiconsIcon icon={ArrowLeft01Icon} size={16} className="mr-1" />
           {t("common.back")}
@@ -343,7 +329,7 @@ function OrderDetailPage() {
               <CardTitle className="text-sm text-muted-foreground">{t("common.date")}</CardTitle>
             </CardHeader>
             <CardContent>
-              <p className="text-sm font-medium">{formatDate(order.created_at)}</p>
+              <p className="text-sm font-medium">{formatDateTime(order.created_at)}</p>
             </CardContent>
           </Card>
           <Card>
@@ -360,7 +346,7 @@ function OrderDetailPage() {
           </Card>
           <Card>
             <CardHeader className="pb-2">
-              <CardTitle className="text-sm text-muted-foreground">Cashier</CardTitle>
+              <CardTitle className="text-sm text-muted-foreground">{t("shifts.cashier")}</CardTitle>
             </CardHeader>
             <CardContent>
               <p className="text-sm font-medium">
@@ -409,26 +395,15 @@ function OrderDetailPage() {
       </div>
 
       {/* Void Confirmation */}
-      {confirmVoid && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50">
-          <div className="rounded-lg border bg-background p-6 shadow-lg max-w-sm w-full mx-4">
-            <p className="text-sm mb-4">{t("orders.confirmVoid")}</p>
-            <div className="flex justify-end gap-2">
-              <Button variant="outline" size="sm" onClick={() => setConfirmVoid(false)}>
-                {t("common.cancel")}
-              </Button>
-              <Button
-                variant="destructive"
-                size="sm"
-                onClick={() => voidMutation.mutate()}
-                disabled={voidMutation.isPending}
-              >
-                {t("orders.void")}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
+      <ConfirmDialog
+        open={confirmVoid}
+        onConfirm={() => voidMutation.mutate()}
+        onCancel={() => setConfirmVoid(false)}
+        title={t("orders.void")}
+        description={t("orders.confirmVoid")}
+        confirmLabel={t("orders.void")}
+        isPending={voidMutation.isPending}
+      />
 
       {/* Return Items Sheet */}
       <Sheet open={returnOpen} onOpenChange={setReturnOpen}>
