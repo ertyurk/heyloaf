@@ -8,11 +8,13 @@ pub struct Config {
     pub server_host: String,
     pub server_port: u16,
     pub jwt_secret: String,
+    pub refresh_jwt_secret: String,
     pub jwt_access_token_ttl_secs: u64,
     pub jwt_refresh_token_ttl_secs: u64,
     pub cors_origins: String,
     pub log_level: String,
     pub log_format: String,
+    pub app_env: String,
 }
 
 impl Config {
@@ -47,6 +49,9 @@ impl Config {
             .parse::<u64>()
             .map_err(|e| anyhow!("JWT_REFRESH_TOKEN_TTL_SECS must be a valid u64: {e}"))?;
 
+        let refresh_jwt_secret = std::env::var("REFRESH_JWT_SECRET")
+            .unwrap_or_else(|_| format!("{jwt_secret}-refresh"));
+
         let cors_origins =
             std::env::var("CORS_ORIGINS").unwrap_or_else(|_| "http://localhost:3000".to_string());
 
@@ -54,10 +59,10 @@ impl Config {
 
         let log_format = std::env::var("LOG_FORMAT").unwrap_or_else(|_| "pretty".to_string());
 
+        let app_env = std::env::var("APP_ENV").unwrap_or_else(|_| "development".to_string());
+
         if jwt_secret.len() < 32 {
-            let is_production = std::env::var("APP_ENV")
-                .unwrap_or_default()
-                .eq_ignore_ascii_case("production");
+            let is_production = app_env.eq_ignore_ascii_case("production");
             if is_production {
                 return Err(anyhow!(
                     "JWT_SECRET must be at least 32 characters in production"
@@ -75,11 +80,13 @@ impl Config {
             server_host,
             server_port,
             jwt_secret,
+            refresh_jwt_secret,
             jwt_access_token_ttl_secs,
             jwt_refresh_token_ttl_secs,
             cors_origins,
             log_level,
             log_format,
+            app_env,
         })
     }
 }

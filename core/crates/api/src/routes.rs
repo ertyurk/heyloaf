@@ -8,6 +8,7 @@ use utoipa_swagger_ui::SwaggerUi;
 
 use crate::handlers;
 use crate::middleware;
+use crate::middleware::rate_limit::RateLimitConfig;
 use crate::middleware::rbac::require_module_permission;
 use crate::openapi::ApiDoc;
 use crate::state::AppState;
@@ -543,14 +544,119 @@ fn settings_routes() -> Router<AppState> {
 }
 
 // ---------------------------------------------------------------------------
+// Global security headers: apply all 5 layers to a router
+// ---------------------------------------------------------------------------
+fn apply_security_headers(router: Router) -> Router {
+    router
+        .layer(SetResponseHeaderLayer::overriding(
+            axum::http::header::HeaderName::from_static("x-content-type-options"),
+            axum::http::header::HeaderValue::from_static("nosniff"),
+        ))
+        .layer(SetResponseHeaderLayer::overriding(
+            axum::http::header::HeaderName::from_static("x-frame-options"),
+            axum::http::header::HeaderValue::from_static("DENY"),
+        ))
+        .layer(SetResponseHeaderLayer::overriding(
+            axum::http::header::HeaderName::from_static("x-xss-protection"),
+            axum::http::header::HeaderValue::from_static("0"),
+        ))
+        .layer(SetResponseHeaderLayer::overriding(
+            axum::http::header::HeaderName::from_static("referrer-policy"),
+            axum::http::header::HeaderValue::from_static(
+                "strict-origin-when-cross-origin",
+            ),
+        ))
+        .layer(SetResponseHeaderLayer::overriding(
+            axum::http::header::HeaderName::from_static("permissions-policy"),
+            axum::http::header::HeaderValue::from_static(
+                "camera=(), microphone=(), geolocation=()",
+            ),
+        ))
+}
+
+// ---------------------------------------------------------------------------
+// Upload serve route with company_id check
+// ---------------------------------------------------------------------------
+async fn upload_company_guard(
+    axum::extract::State(state): axum::extract::State<AppState>,
+    request: axum::http::Request<axum::body::Body>,
+    next: axum::middleware::Next,
+) -> Result<axum::response::Response, heyloaf_common::errors::AppError> {
+    use heyloaf_common::errors::AppError;
+
+    // Extract the authenticated user's company_id from extensions
+    let auth_user = request
+        .extensions()
+        .get::<middleware::auth::AuthUser>()
+        .ok_or_else(|| AppError::Unauthorized("Authentication required".into()))?
+        .clone();
+
+    let user_company_id = auth_user
+        .company_id
+        .ok_or_else(|| AppError::Forbidden("No active company selected".into()))?;
+
+    // The path will be like /uploads/{company_id}/filename.ext
+    let path = request.uri().path().to_string();
+    let segments: Vec<&str> = path.split('/').filter(|s| !s.is_empty()).collect();
+
+    // segments: ["uploads", "<company_id>", "<filename>"]
+    if segments.len() >= 2
+        && let Ok(path_company_id) = segments[1].parse::<uuid::Uuid>()
+        && path_company_id != user_company_id
+    {
+        return Err(AppError::Forbidden(
+            "You do not have access to this company's uploads".into(),
+        ));
+    }
+
+    let _ = state;
+    Ok(next.run(request).await)
+}
+
+// ---------------------------------------------------------------------------
 // Top-level router
 // ---------------------------------------------------------------------------
 pub fn create_routes(state: AppState) -> Router {
+    let is_production = state.config.app_env.eq_ignore_ascii_case("production");
+
+    // Rate limit configs
+    let login_rl = RateLimitConfig::new(5, 60);
+    let register_rl = RateLimitConfig::new(3, 300);
+    let refresh_rl = RateLimitConfig::new(10, 60);
+
+    let login_rl_clone = login_rl.clone();
+    let register_rl_clone = register_rl.clone();
+    let refresh_rl_clone = refresh_rl.clone();
+
     let public_routes = Router::new()
         .route("/health", routing::get(handlers::health::health_check))
-        .route("/auth/login", routing::post(handlers::auth::login))
-        .route("/auth/register", routing::post(handlers::auth::register))
-        .route("/auth/refresh", routing::post(handlers::auth::refresh));
+        .route(
+            "/auth/login",
+            routing::post(handlers::auth::login).layer(axum_middleware::from_fn(
+                move |req, next| {
+                    let cfg = login_rl_clone.clone();
+                    middleware::rate_limit::rate_limit_middleware(cfg, req, next)
+                },
+            )),
+        )
+        .route(
+            "/auth/register",
+            routing::post(handlers::auth::register).layer(axum_middleware::from_fn(
+                move |req, next| {
+                    let cfg = register_rl_clone.clone();
+                    middleware::rate_limit::rate_limit_middleware(cfg, req, next)
+                },
+            )),
+        )
+        .route(
+            "/auth/refresh",
+            routing::post(handlers::auth::refresh).layer(axum_middleware::from_fn(
+                move |req, next| {
+                    let cfg = refresh_rl_clone.clone();
+                    middleware::rate_limit::rate_limit_middleware(cfg, req, next)
+                },
+            )),
+        );
 
     let protected_routes = Router::new()
         // Common (no module perm needed)
@@ -602,13 +708,24 @@ pub fn create_routes(state: AppState) -> Router {
         ))
         .layer(axum_middleware::from_fn_with_state(
             state.clone(),
+            upload_company_guard,
+        ))
+        .layer(axum_middleware::from_fn_with_state(
+            state.clone(),
             middleware::auth::auth_middleware,
         ));
 
-    Router::new()
+    let mut app = Router::new()
         .merge(public_routes)
         .nest("/api", protected_routes)
-        .merge(uploads_service)
-        .merge(SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()))
-        .with_state(state)
+        .merge(uploads_service);
+
+    // Swagger UI: only mount when NOT in production
+    if !is_production {
+        app = app.merge(
+            SwaggerUi::new("/swagger-ui").url("/api-docs/openapi.json", ApiDoc::openapi()),
+        );
+    }
+
+    apply_security_headers(app.with_state(state))
 }

@@ -30,6 +30,9 @@ pub enum AppError {
 
     #[error("Conflict: {0}")]
     Conflict(String),
+
+    #[error("Too many requests: {message}")]
+    TooManyRequests { message: String, retry_after: u64 },
 }
 
 impl IntoResponse for AppError {
@@ -72,6 +75,12 @@ impl IntoResponse for AppError {
                 (StatusCode::BAD_REQUEST, "BAD_REQUEST", msg.clone(), None)
             }
             AppError::Conflict(msg) => (StatusCode::CONFLICT, "CONFLICT", msg.clone(), None),
+            AppError::TooManyRequests { message, .. } => (
+                StatusCode::TOO_MANY_REQUESTS,
+                "TOO_MANY_REQUESTS",
+                message.clone(),
+                None,
+            ),
         };
 
         let trace_id = uuid::Uuid::new_v4().to_string();
@@ -88,6 +97,18 @@ impl IntoResponse for AppError {
             body["error"]["details"] = details;
         }
 
-        (status, axum::Json(body)).into_response()
+        let mut response = (status, axum::Json(body)).into_response();
+
+        if let AppError::TooManyRequests { retry_after, .. } = &self
+            && let Ok(val) =
+                axum::http::HeaderValue::from_str(&retry_after.to_string())
+        {
+            response.headers_mut().insert(
+                axum::http::header::RETRY_AFTER,
+                val,
+            );
+        }
+
+        response
     }
 }

@@ -24,7 +24,11 @@ pub struct CreateUserRequest {
     pub name: String,
     #[validate(email(message = "Valid email is required"))]
     pub email: String,
-    #[validate(length(min = 8, message = "Password must be at least 8 characters"))]
+    #[validate(length(
+        min = 8,
+        max = 1024,
+        message = "Password must be between 8 and 1024 characters"
+    ))]
     pub password: String,
     #[validate(length(min = 1, message = "Role is required"))]
     pub role: String,

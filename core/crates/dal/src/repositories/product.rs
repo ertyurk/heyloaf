@@ -1,3 +1,4 @@
+use heyloaf_common::escape_like;
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -33,7 +34,7 @@ impl ProductRepository {
         per_page: u32,
     ) -> Result<(Vec<Product>, i64), sqlx::Error> {
         let offset = (page.saturating_sub(1)) * per_page;
-        let search_pattern = search.map(|s| format!("%{}%", s.to_lowercase()));
+        let search_pattern = search.map(|s| format!("%{}%", escape_like(&s.to_lowercase())));
 
         let total: i64 = sqlx::query_scalar(
             r"SELECT COUNT(*) FROM products
@@ -41,7 +42,7 @@ impl ProductRepository {
             AND ($2::text IS NULL OR product_type = $2::product_type)
             AND ($3::text IS NULL OR status = $3::product_status)
             AND ($4::uuid IS NULL OR category_id = $4)
-            AND ($5::text IS NULL OR LOWER(name) LIKE $5 OR LOWER(code) LIKE $5 OR barcode LIKE $5)",
+            AND ($5::text IS NULL OR LOWER(name) LIKE $5 ESCAPE '\' OR LOWER(code) LIKE $5 ESCAPE '\' OR barcode LIKE $5 ESCAPE '\')",
         )
         .bind(company_id)
         .bind(product_type)
@@ -57,7 +58,7 @@ impl ProductRepository {
             AND ($2::text IS NULL OR product_type = $2::product_type)
             AND ($3::text IS NULL OR status = $3::product_status)
             AND ($4::uuid IS NULL OR category_id = $4)
-            AND ($5::text IS NULL OR LOWER(name) LIKE $5 OR LOWER(code) LIKE $5 OR barcode LIKE $5)
+            AND ($5::text IS NULL OR LOWER(name) LIKE $5 ESCAPE '\' OR LOWER(code) LIKE $5 ESCAPE '\' OR barcode LIKE $5 ESCAPE '\')
             ORDER BY created_at DESC
             LIMIT $6 OFFSET $7",
             Self::SELECT

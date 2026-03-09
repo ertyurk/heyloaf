@@ -18,6 +18,8 @@ pub struct Claims {
     pub role: Option<String>,
     pub exp: usize,
     pub iat: usize,
+    pub iss: String,
+    pub aud: String,
 }
 
 #[derive(Debug, Clone)]
@@ -42,7 +44,9 @@ pub async fn auth_middleware(
         .strip_prefix("Bearer ")
         .ok_or_else(|| AppError::Unauthorized("Invalid authorization header format".into()))?;
 
-    let validation = Validation::new(Algorithm::HS256);
+    let mut validation = Validation::new(Algorithm::HS256);
+    validation.set_issuer(&["heyloaf"]);
+    validation.set_audience(&["heyloaf-api"]);
     let key = DecodingKey::from_secret(state.config.jwt_secret.as_bytes());
 
     let token_data = decode::<Claims>(token, &key, &validation).map_err(|e| {

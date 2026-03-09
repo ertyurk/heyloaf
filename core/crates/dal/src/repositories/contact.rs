@@ -1,3 +1,4 @@
+use heyloaf_common::escape_like;
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -28,15 +29,15 @@ impl ContactRepository {
         per_page: u32,
     ) -> Result<(Vec<Contact>, i64), sqlx::Error> {
         let offset = (page.saturating_sub(1)) * per_page;
-        let search_pattern = search.map(|s| format!("%{}%", s.to_lowercase()));
+        let search_pattern = search.map(|s| format!("%{}%", escape_like(&s.to_lowercase())));
 
         let total: i64 = sqlx::query_scalar(
             r"SELECT COUNT(*) FROM contacts
             WHERE company_id = $1
             AND ($2::text IS NULL OR contact_type = $2::contact_type)
             AND ($3::text IS NULL OR status = $3::contact_status)
-            AND ($4::text IS NULL OR LOWER(name) LIKE $4 OR LOWER(contact_person) LIKE $4
-                OR LOWER(phone) LIKE $4 OR LOWER(email) LIKE $4)",
+            AND ($4::text IS NULL OR LOWER(name) LIKE $4 ESCAPE '\' OR LOWER(contact_person) LIKE $4 ESCAPE '\'
+                OR LOWER(phone) LIKE $4 ESCAPE '\' OR LOWER(email) LIKE $4 ESCAPE '\')",
         )
         .bind(company_id)
         .bind(contact_type)
@@ -50,8 +51,8 @@ impl ContactRepository {
             WHERE company_id = $1
             AND ($2::text IS NULL OR contact_type = $2::contact_type)
             AND ($3::text IS NULL OR status = $3::contact_status)
-            AND ($4::text IS NULL OR LOWER(name) LIKE $4 OR LOWER(contact_person) LIKE $4
-                OR LOWER(phone) LIKE $4 OR LOWER(email) LIKE $4)
+            AND ($4::text IS NULL OR LOWER(name) LIKE $4 ESCAPE '\' OR LOWER(contact_person) LIKE $4 ESCAPE '\'
+                OR LOWER(phone) LIKE $4 ESCAPE '\' OR LOWER(email) LIKE $4 ESCAPE '\')
             ORDER BY created_at DESC
             LIMIT $5 OFFSET $6",
             Self::SELECT

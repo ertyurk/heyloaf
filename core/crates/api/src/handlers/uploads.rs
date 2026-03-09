@@ -32,6 +32,27 @@ fn extension_for_content_type(content_type: &str) -> Option<&'static str> {
     }
 }
 
+/// Validate image magic bytes match the declared content type.
+fn validate_magic_bytes(data: &[u8], content_type: &str) -> Result<(), AppError> {
+    let valid = match content_type {
+        "image/jpeg" => data.len() >= 3 && data[..3] == [0xFF, 0xD8, 0xFF],
+        "image/png" => data.len() >= 4 && data[..4] == [0x89, 0x50, 0x4E, 0x47],
+        "image/webp" => {
+            data.len() >= 12
+                && data[..4] == *b"RIFF"
+                && data[8..12] == *b"WEBP"
+        }
+        _ => false,
+    };
+
+    if !valid {
+        return Err(AppError::BadRequest(
+            "File content does not match declared content type".into(),
+        ));
+    }
+    Ok(())
+}
+
 #[utoipa::path(
     post,
     path = "/api/uploads",
@@ -79,6 +100,9 @@ pub async fn upload_file(
     if data.is_empty() {
         return Err(AppError::BadRequest("File is empty".into()));
     }
+
+    // Validate magic bytes match the declared content type
+    validate_magic_bytes(&data, &content_type)?;
 
     let file_id = Uuid::new_v4();
     let filename = format!("{file_id}.{ext}");

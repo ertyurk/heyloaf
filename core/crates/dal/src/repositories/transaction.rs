@@ -1,4 +1,5 @@
 use chrono::NaiveDate;
+use heyloaf_common::escape_like;
 use sqlx::PgPool;
 use uuid::Uuid;
 
@@ -79,7 +80,7 @@ impl TransactionRepository {
         per_page: u32,
     ) -> Result<(Vec<Transaction>, i64), sqlx::Error> {
         let offset = (page.saturating_sub(1)) * per_page;
-        let search_pattern = search.map(|s| format!("%{}%", s.to_lowercase()));
+        let search_pattern = search.map(|s| format!("%{}%", escape_like(&s.to_lowercase())));
 
         let total: i64 = sqlx::query_scalar(
             r"SELECT COUNT(*) FROM transactions
@@ -89,7 +90,7 @@ impl TransactionRepository {
             AND ($4::uuid IS NULL OR payment_method_id = $4)
             AND ($5::date IS NULL OR date >= $5)
             AND ($6::date IS NULL OR date <= $6)
-            AND ($7::text IS NULL OR LOWER(description) LIKE $7)",
+            AND ($7::text IS NULL OR LOWER(description) LIKE $7 ESCAPE '\')",
         )
         .bind(company_id)
         .bind(contact_id)
@@ -109,7 +110,7 @@ impl TransactionRepository {
             AND ($4::uuid IS NULL OR payment_method_id = $4)
             AND ($5::date IS NULL OR date >= $5)
             AND ($6::date IS NULL OR date <= $6)
-            AND ($7::text IS NULL OR LOWER(description) LIKE $7)
+            AND ($7::text IS NULL OR LOWER(description) LIKE $7 ESCAPE '\')
             ORDER BY date DESC, created_at DESC
             LIMIT $8 OFFSET $9",
             Self::SELECT

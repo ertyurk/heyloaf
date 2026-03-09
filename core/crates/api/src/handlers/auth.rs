@@ -1,5 +1,7 @@
 use argon2::{Argon2, PasswordHash, PasswordVerifier};
 use axum::extract::State;
+use axum::http::header::SET_COOKIE;
+use axum::http::HeaderMap;
 use axum::{Extension, Json};
 use heyloaf_common::crypto::hash_password;
 use heyloaf_common::errors::AppError;
@@ -22,7 +24,7 @@ use crate::state::AppState;
 pub struct LoginRequest {
     #[validate(email(message = "Invalid email address"))]
     pub email: String,
-    #[validate(length(min = 1, message = "Password is required"))]
+    #[validate(length(min = 1, max = 1024, message = "Password is required"))]
     pub password: String,
 }
 
@@ -32,7 +34,11 @@ pub struct RegisterRequest {
     pub name: String,
     #[validate(email(message = "Invalid email address"))]
     pub email: String,
-    #[validate(length(min = 8, message = "Password must be at least 8 characters"))]
+    #[validate(length(
+        min = 8,
+        max = 1024,
+        message = "Password must be between 8 and 1024 characters"
+    ))]
     pub password: String,
 }
 
@@ -103,6 +109,8 @@ fn generate_access_token(
         role: role.map(String::from),
         exp: (now + chrono::Duration::seconds(ttl_secs as i64)).timestamp() as usize,
         iat: now.timestamp() as usize,
+        iss: "heyloaf".into(),
+        aud: "heyloaf-api".into(),
     };
 
     jsonwebtoken::encode(
@@ -126,6 +134,8 @@ fn generate_refresh_token(
         role: None,
         exp: (now + chrono::Duration::seconds(ttl_secs as i64)).timestamp() as usize,
         iat: now.timestamp() as usize,
+        iss: "heyloaf".into(),
+        aud: "heyloaf-api".into(),
     };
 
     jsonwebtoken::encode(
@@ -134,6 +144,47 @@ fn generate_refresh_token(
         &EncodingKey::from_secret(secret.as_bytes()),
     )
     .map_err(|e| AppError::Internal(e.into()))
+}
+
+fn build_refresh_cookie(token: &str, max_age_secs: u64, is_production: bool) -> String {
+    let mut cookie = format!(
+        "refresh_token={token}; HttpOnly; SameSite=Strict; Path=/api/auth; Max-Age={max_age_secs}"
+    );
+    if is_production {
+        cookie.push_str("; Secure");
+    }
+    cookie
+}
+
+fn clear_refresh_cookie(is_production: bool) -> String {
+    let mut cookie =
+        "refresh_token=; HttpOnly; SameSite=Strict; Path=/api/auth; Max-Age=0".to_string();
+    if is_production {
+        cookie.push_str("; Secure");
+    }
+    cookie
+}
+
+/// Try to extract the refresh token from the Cookie header, falling back to the body field.
+fn extract_refresh_token(
+    headers: &HeaderMap,
+    body_token: Option<String>,
+) -> Result<String, AppError> {
+    // Try cookie first
+    if let Some(cookie_header) = headers.get(axum::http::header::COOKIE)
+        && let Ok(cookie_str) = cookie_header.to_str()
+    {
+        for part in cookie_str.split(';') {
+            let part = part.trim();
+            if let Some(value) = part.strip_prefix("refresh_token=")
+                && !value.is_empty()
+            {
+                return Ok(value.to_string());
+            }
+        }
+    }
+    // Fallback to body
+    body_token.ok_or_else(|| AppError::BadRequest("Refresh token is required".into()))
 }
 
 // --- Handlers ---
@@ -148,7 +199,7 @@ fn generate_refresh_token(
 pub async fn login(
     State(state): State<AppState>,
     ValidatedJson(body): ValidatedJson<LoginRequest>,
-) -> Result<Json<ApiResponse<LoginResponse>>, AppError> {
+) -> Result<(HeaderMap, Json<ApiResponse<LoginResponse>>), AppError> {
     let user = UserRepository::find_by_email(&state.pool, &body.email)
         .await
         .map_err(|e| AppError::Database(e.to_string()))?
@@ -191,24 +242,39 @@ pub async fn login(
     let refresh_token = generate_refresh_token(
         user.id,
         company_id,
-        &state.config.jwt_secret,
+        &state.config.refresh_jwt_secret,
         state.config.jwt_refresh_token_ttl_secs,
     )?;
 
-    Ok(Json(ApiResponse::new(LoginResponse {
-        access_token,
-        refresh_token,
-        token_type: "Bearer".into(),
-        expires_in: state.config.jwt_access_token_ttl_secs,
-        user: LoginUser {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-        },
-        company: login_company,
-        role: role.clone(),
-        permissions,
-    })))
+    let is_production = state.config.app_env.eq_ignore_ascii_case("production");
+    let cookie = build_refresh_cookie(
+        &refresh_token,
+        state.config.jwt_refresh_token_ttl_secs,
+        is_production,
+    );
+
+    let mut headers = HeaderMap::new();
+    if let Ok(val) = cookie.parse() {
+        headers.insert(SET_COOKIE, val);
+    }
+
+    Ok((
+        headers,
+        Json(ApiResponse::new(LoginResponse {
+            access_token,
+            refresh_token,
+            token_type: "Bearer".into(),
+            expires_in: state.config.jwt_access_token_ttl_secs,
+            user: LoginUser {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+            },
+            company: login_company,
+            role: role.clone(),
+            permissions,
+        })),
+    ))
 }
 
 #[utoipa::path(
@@ -221,7 +287,7 @@ pub async fn login(
 pub async fn register(
     State(state): State<AppState>,
     ValidatedJson(body): ValidatedJson<RegisterRequest>,
-) -> Result<Json<ApiResponse<TokenResponse>>, AppError> {
+) -> Result<(HeaderMap, Json<ApiResponse<TokenResponse>>), AppError> {
     // Check if email is already taken
     let existing = UserRepository::find_by_email(&state.pool, &body.email)
         .await
@@ -248,16 +314,31 @@ pub async fn register(
     let refresh_token = generate_refresh_token(
         user.id,
         None,
-        &state.config.jwt_secret,
+        &state.config.refresh_jwt_secret,
         state.config.jwt_refresh_token_ttl_secs,
     )?;
 
-    Ok(Json(ApiResponse::new(TokenResponse {
-        access_token,
-        refresh_token,
-        token_type: "Bearer".into(),
-        expires_in: state.config.jwt_access_token_ttl_secs,
-    })))
+    let is_production = state.config.app_env.eq_ignore_ascii_case("production");
+    let cookie = build_refresh_cookie(
+        &refresh_token,
+        state.config.jwt_refresh_token_ttl_secs,
+        is_production,
+    );
+
+    let mut headers = HeaderMap::new();
+    if let Ok(val) = cookie.parse() {
+        headers.insert(SET_COOKIE, val);
+    }
+
+    Ok((
+        headers,
+        Json(ApiResponse::new(TokenResponse {
+            access_token,
+            refresh_token,
+            token_type: "Bearer".into(),
+            expires_in: state.config.jwt_access_token_ttl_secs,
+        })),
+    ))
 }
 
 #[utoipa::path(
@@ -269,14 +350,16 @@ pub async fn register(
 )]
 pub async fn refresh(
     State(state): State<AppState>,
+    request_headers: HeaderMap,
     Json(body): Json<RefreshRequest>,
-) -> Result<Json<ApiResponse<TokenResponse>>, AppError> {
-    let token = body
-        .refresh_token
-        .ok_or_else(|| AppError::BadRequest("Refresh token is required".into()))?;
+) -> Result<(HeaderMap, Json<ApiResponse<TokenResponse>>), AppError> {
+    let token = extract_refresh_token(&request_headers, body.refresh_token)?;
 
-    let validation = jsonwebtoken::Validation::new(jsonwebtoken::Algorithm::HS256);
-    let key = jsonwebtoken::DecodingKey::from_secret(state.config.jwt_secret.as_bytes());
+    let mut validation = jsonwebtoken::Validation::new(jsonwebtoken::Algorithm::HS256);
+    validation.set_issuer(&["heyloaf"]);
+    validation.set_audience(&["heyloaf-api"]);
+    let key =
+        jsonwebtoken::DecodingKey::from_secret(state.config.refresh_jwt_secret.as_bytes());
 
     let token_data = jsonwebtoken::decode::<Claims>(&token, &key, &validation).map_err(|e| {
         tracing::debug!(error = %e, "Refresh token validation failed");
@@ -322,16 +405,31 @@ pub async fn refresh(
     let new_refresh_token = generate_refresh_token(
         user_id,
         company_id,
-        &state.config.jwt_secret,
+        &state.config.refresh_jwt_secret,
         state.config.jwt_refresh_token_ttl_secs,
     )?;
 
-    Ok(Json(ApiResponse::new(TokenResponse {
-        access_token,
-        refresh_token: new_refresh_token,
-        token_type: "Bearer".into(),
-        expires_in: state.config.jwt_access_token_ttl_secs,
-    })))
+    let is_production = state.config.app_env.eq_ignore_ascii_case("production");
+    let cookie = build_refresh_cookie(
+        &new_refresh_token,
+        state.config.jwt_refresh_token_ttl_secs,
+        is_production,
+    );
+
+    let mut headers = HeaderMap::new();
+    if let Ok(val) = cookie.parse() {
+        headers.insert(SET_COOKIE, val);
+    }
+
+    Ok((
+        headers,
+        Json(ApiResponse::new(TokenResponse {
+            access_token,
+            refresh_token: new_refresh_token,
+            token_type: "Bearer".into(),
+            expires_in: state.config.jwt_access_token_ttl_secs,
+        })),
+    ))
 }
 
 #[utoipa::path(
@@ -341,12 +439,23 @@ pub async fn refresh(
     security(("bearer" = [])),
     responses((status = 200))
 )]
-pub async fn logout() -> Result<Json<ApiResponse<serde_json::Value>>, AppError> {
-    // For stateless JWT, logout is handled client-side by discarding the token.
-    // Future: add token to a denylist if needed.
-    Ok(Json(ApiResponse::new(serde_json::json!({
-        "message": "Logged out successfully"
-    }))))
+pub async fn logout(
+    State(state): State<AppState>,
+) -> Result<(HeaderMap, Json<ApiResponse<serde_json::Value>>), AppError> {
+    let is_production = state.config.app_env.eq_ignore_ascii_case("production");
+    let cookie = clear_refresh_cookie(is_production);
+
+    let mut headers = HeaderMap::new();
+    if let Ok(val) = cookie.parse() {
+        headers.insert(SET_COOKIE, val);
+    }
+
+    Ok((
+        headers,
+        Json(ApiResponse::new(serde_json::json!({
+            "message": "Logged out successfully"
+        }))),
+    ))
 }
 
 #[utoipa::path(
@@ -361,7 +470,7 @@ pub async fn switch_company(
     State(state): State<AppState>,
     Extension(auth_user): Extension<AuthUser>,
     Json(body): Json<SwitchCompanyRequest>,
-) -> Result<Json<ApiResponse<TokenResponse>>, AppError> {
+) -> Result<(HeaderMap, Json<ApiResponse<TokenResponse>>), AppError> {
     // Validate user belongs to the target company
     let user_company =
         UserRepository::get_user_company(&state.pool, auth_user.user_id, body.company_id)
@@ -380,14 +489,29 @@ pub async fn switch_company(
     let refresh_token = generate_refresh_token(
         auth_user.user_id,
         Some(body.company_id),
-        &state.config.jwt_secret,
+        &state.config.refresh_jwt_secret,
         state.config.jwt_refresh_token_ttl_secs,
     )?;
 
-    Ok(Json(ApiResponse::new(TokenResponse {
-        access_token,
-        refresh_token,
-        token_type: "Bearer".into(),
-        expires_in: state.config.jwt_access_token_ttl_secs,
-    })))
+    let is_production = state.config.app_env.eq_ignore_ascii_case("production");
+    let cookie = build_refresh_cookie(
+        &refresh_token,
+        state.config.jwt_refresh_token_ttl_secs,
+        is_production,
+    );
+
+    let mut headers = HeaderMap::new();
+    if let Ok(val) = cookie.parse() {
+        headers.insert(SET_COOKIE, val);
+    }
+
+    Ok((
+        headers,
+        Json(ApiResponse::new(TokenResponse {
+            access_token,
+            refresh_token,
+            token_type: "Bearer".into(),
+            expires_in: state.config.jwt_access_token_ttl_secs,
+        })),
+    ))
 }

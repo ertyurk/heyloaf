@@ -24,6 +24,16 @@ async fn main() -> anyhow::Result<()> {
 
     tracing::info!("Starting Heyloaf API server");
 
+    // CORS production guard: wildcard origins are not allowed in production
+    let is_production = config.app_env.eq_ignore_ascii_case("production");
+    if is_production && config.cors_origins == "*" {
+        tracing::error!(
+            "CORS_ORIGINS is set to '*' in production. \
+             This is insecure. Set explicit origins or the server will not start."
+        );
+        anyhow::bail!("Wildcard CORS origins are not allowed in production");
+    }
+
     // Database pool
     let pool = create_pool(&config.database_url).await?;
 
