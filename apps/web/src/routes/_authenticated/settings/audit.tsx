@@ -1,7 +1,6 @@
 import { AdvancedSelect } from "@heyloaf/ui/components/advanced-select"
 import { Badge } from "@heyloaf/ui/components/badge"
 import { DataTable } from "@heyloaf/ui/components/data-table"
-import { DateRangeFilter } from "@heyloaf/ui/components/date-range-filter"
 import {
   Sheet,
   SheetBody,
@@ -13,6 +12,7 @@ import { useQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { LocalizedDateRangeFilter } from "@/components/localized-date-range-filter"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
 
@@ -200,7 +200,7 @@ function AuditLogsPage() {
             searchable={false}
             className="w-36"
           />
-          <DateRangeFilter
+          <LocalizedDateRangeFilter
             from={dateFrom}
             to={dateTo}
             onChange={(from, to) => {

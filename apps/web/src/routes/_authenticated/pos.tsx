@@ -1206,12 +1206,8 @@ function PosPage() {
               })}
               {filteredProducts.length === 0 && (
                 <div className="col-span-full py-12 text-center">
-                  <p className="text-sm text-muted-foreground">
-                    {t("pos.noProductsFound")}
-                  </p>
-                  <p className="mt-1 text-xs text-muted-foreground/70">
-                    {t("pos.noProductsHint")}
-                  </p>
+                  <p className="text-sm text-muted-foreground">{t("pos.noProductsFound")}</p>
+                  <p className="mt-1 text-xs text-muted-foreground/70">{t("pos.noProductsHint")}</p>
                 </div>
               )}
             </div>

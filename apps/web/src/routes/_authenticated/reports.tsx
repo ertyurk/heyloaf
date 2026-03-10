@@ -3,7 +3,6 @@ import { Badge } from "@heyloaf/ui/components/badge"
 import { Button } from "@heyloaf/ui/components/button"
 import { Card, CardContent, CardHeader, CardTitle } from "@heyloaf/ui/components/card"
 import { DataTable } from "@heyloaf/ui/components/data-table"
-import { DateRangeFilter } from "@heyloaf/ui/components/date-range-filter"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@heyloaf/ui/components/tabs"
 import { useQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
@@ -24,6 +23,7 @@ import {
   YAxis,
 } from "recharts"
 import * as XLSX from "xlsx"
+import { LocalizedDateRangeFilter } from "@/components/localized-date-range-filter"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
 import { formatCurrency } from "@/lib/format-currency"
@@ -377,7 +377,7 @@ function ReportsPage() {
       <div className="space-y-4 p-6">
         {/* Date Range Filter */}
         <div className="flex items-center gap-4">
-          <DateRangeFilter from={dateFrom} to={dateTo} onChange={handleDateChange} />
+          <LocalizedDateRangeFilter from={dateFrom} to={dateTo} onChange={handleDateChange} />
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="flex flex-col">

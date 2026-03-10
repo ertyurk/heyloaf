@@ -51,8 +51,10 @@ impl StockService {
             "in" => quantity,
             "out" => -quantity,
             "adjustment" => quantity,
-            // Unreachable: validation above rejects unknown types
-            _ => unreachable!(),
+            // Validation above already rejects unknown types
+            _ => return Err(AppError::BadRequest(format!(
+                "Invalid movement type: '{movement_type}'"
+            ))),
         };
 
         // Prevent stock from going negative on "out" movements

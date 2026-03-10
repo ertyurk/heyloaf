@@ -4,7 +4,6 @@ import { Button } from "@heyloaf/ui/components/button"
 import { Card, CardContent } from "@heyloaf/ui/components/card"
 import { Checkbox } from "@heyloaf/ui/components/checkbox"
 import { DataTable } from "@heyloaf/ui/components/data-table"
-import { DateRangeFilter } from "@heyloaf/ui/components/date-range-filter"
 import { DropdownMenuItem, DropdownMenuSeparator } from "@heyloaf/ui/components/dropdown-menu"
 import { Input } from "@heyloaf/ui/components/input"
 import { Label } from "@heyloaf/ui/components/label"
@@ -28,6 +27,7 @@ import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { ConfirmDialog } from "@/components/confirm-dialog"
+import { LocalizedDateRangeFilter } from "@/components/localized-date-range-filter"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
 import { useDebounce } from "@/hooks/use-debounce"
@@ -397,7 +397,7 @@ function RecordsTab({
                 className="h-12 pl-8 text-lg md:h-10 md:text-sm"
               />
             </div>
-            <DateRangeFilter
+            <LocalizedDateRangeFilter
               from={dateFrom}
               to={dateTo}
               onChange={(from, to) => {

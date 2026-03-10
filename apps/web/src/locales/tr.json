@@ -75,7 +75,11 @@
     "confirmDelete": "Silmeyi Onayla",
     "deleteConfirmation": "Bu ogesi silmek istediginizden emin misiniz? Bu islem geri alinamaz.",
     "failedToLoadData": "Veri yuklenemedi",
-    "retry": "Tekrar Dene"
+    "retry": "Tekrar Dene",
+    "dateRange": "Tarih araligi",
+    "selectDates": "Baslangic ve bitis tarihlerini secin",
+    "clear": "Temizle",
+    "apply": "Uygula"
   },
   "auth": {
     "failedToSwitchCompany": "Sirket degistirilemedi"

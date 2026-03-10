@@ -150,7 +150,7 @@ fn generate_refresh_token(
 
 fn build_refresh_cookie(token: &str, max_age_secs: u64, is_production: bool) -> String {
     let mut cookie = format!(
-        "refresh_token={token}; HttpOnly; SameSite=Strict; Path=/api/auth; Max-Age={max_age_secs}"
+        "refresh_token={token}; HttpOnly; SameSite=Strict; Path=/auth; Max-Age={max_age_secs}"
     );
     if is_production {
         cookie.push_str("; Secure");
@@ -160,7 +160,7 @@ fn build_refresh_cookie(token: &str, max_age_secs: u64, is_production: bool) -> 
 
 fn clear_refresh_cookie(is_production: bool) -> String {
     let mut cookie =
-        "refresh_token=; HttpOnly; SameSite=Strict; Path=/api/auth; Max-Age=0".to_string();
+        "refresh_token=; HttpOnly; SameSite=Strict; Path=/auth; Max-Age=0".to_string();
     if is_production {
         cookie.push_str("; Secure");
     }

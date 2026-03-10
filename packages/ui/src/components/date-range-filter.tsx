@@ -1,6 +1,6 @@
 import Calendar03Icon from "@hugeicons/core-free-icons/Calendar03Icon"
 import { HugeiconsIcon } from "@hugeicons/react"
-import { endOfDay, format, startOfDay, startOfMonth, subMonths } from "date-fns"
+import { endOfDay, format, type Locale, startOfDay, startOfMonth, subMonths } from "date-fns"
 import { useState } from "react"
 import type { DateRange } from "react-day-picker"
 
@@ -8,14 +8,39 @@ import { Button } from "./button"
 import { Calendar } from "./calendar"
 import { Popover, PopoverContent, PopoverTrigger } from "./popover"
 
+interface DateRangeFilterLabels {
+  trigger?: string
+  selectDates?: string
+  clear?: string
+  cancel?: string
+  apply?: string
+}
+
 interface DateRangeFilterProps {
   from: string
   to: string
   onChange: (from: string, to: string) => void
   className?: string
+  labels?: DateRangeFilterLabels
+  locale?: Locale
 }
 
-export function DateRangeFilter({ from, to, onChange, className }: DateRangeFilterProps) {
+export function DateRangeFilter({
+  from,
+  to,
+  onChange,
+  className,
+  labels,
+  locale,
+}: DateRangeFilterProps) {
+  const l = {
+    trigger: labels?.trigger ?? "Date range",
+    selectDates: labels?.selectDates ?? "Select start and end dates",
+    clear: labels?.clear ?? "Clear",
+    cancel: labels?.cancel ?? "Cancel",
+    apply: labels?.apply ?? "Apply",
+  }
+  const fmtOpts = locale ? { locale } : undefined
   const [isOpen, setIsOpen] = useState(false)
   const [pendingRange, setPendingRange] = useState<DateRange | undefined>(undefined)
 
@@ -54,10 +79,11 @@ export function DateRangeFilter({ from, to, onChange, className }: DateRangeFilt
         <HugeiconsIcon icon={Calendar03Icon} size={14} className="mr-2" />
         {hasRange ? (
           <>
-            {format(new Date(from), "LLL dd, y")} &ndash; {format(new Date(to), "LLL dd, y")}
+            {format(new Date(from), "LLL dd, y", fmtOpts)} &ndash;{" "}
+            {format(new Date(to), "LLL dd, y", fmtOpts)}
           </>
         ) : (
-          <span>Date range</span>
+          <span>{l.trigger}</span>
         )}
       </PopoverTrigger>
       <PopoverContent className="w-auto p-0" align="start">
@@ -68,30 +94,31 @@ export function DateRangeFilter({ from, to, onChange, className }: DateRangeFilt
           onSelect={setPendingRange}
           numberOfMonths={2}
           disabled={{ after: today }}
+          locale={locale}
         />
         <div className="flex items-center justify-between border-t p-3">
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <HugeiconsIcon icon={Calendar03Icon} size={14} />
             {pendingRange?.from ? (
               <span>
-                {format(pendingRange.from, "MMM d, yyyy")}
-                {pendingRange.to && ` \u2013 ${format(pendingRange.to, "MMM d, yyyy")}`}
+                {format(pendingRange.from, "MMM d, yyyy", fmtOpts)}
+                {pendingRange.to && ` \u2013 ${format(pendingRange.to, "MMM d, yyyy", fmtOpts)}`}
               </span>
             ) : (
-              <span>Select start and end dates</span>
+              <span>{l.selectDates}</span>
             )}
           </div>
           <div className="flex gap-2">
             {hasRange && (
               <Button variant="ghost" size="sm" onClick={handleClear}>
-                Clear
+                {l.clear}
               </Button>
             )}
             <Button variant="ghost" size="sm" onClick={() => setIsOpen(false)}>
-              Cancel
+              {l.cancel}
             </Button>
             <Button size="sm" onClick={handleApply} disabled={!canApply}>
-              Apply
+              {l.apply}
             </Button>
           </div>
         </div>

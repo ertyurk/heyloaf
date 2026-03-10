@@ -73,7 +73,12 @@ const navGroups: NavGroup[] = [
     label: "Inventory",
     items: [
       { labelKey: "sidebar.stock", href: "/stock", icon: WarehouseIcon, module: "stock" },
-      { labelKey: "sidebar.production", href: "/production", icon: Bread01Icon, module: "production" },
+      {
+        labelKey: "sidebar.production",
+        href: "/production",
+        icon: Bread01Icon,
+        module: "production",
+      },
     ],
   },
   {
@@ -193,7 +198,7 @@ export function AppSidebar() {
       <nav className="flex flex-1 flex-col overflow-y-auto p-2">
         {navGroups.map((group) => {
           const visibleItems = group.items.filter(
-            (item) => !item.module || canViewModule(item.module),
+            (item) => !item.module || canViewModule(item.module)
           )
           if (visibleItems.length === 0) return null
           return (
@@ -213,7 +218,7 @@ export function AppSidebar() {
                       "flex items-center gap-2 px-3 py-1.5 text-sm transition-colors",
                       active
                         ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-                        : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                        : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                     )}
                   >
                     <HugeiconsIcon icon={item.icon} size={16} />
@@ -240,7 +245,7 @@ export function AppSidebar() {
                   "flex items-center gap-2 px-3 py-1.5 text-sm transition-colors",
                   location.pathname.startsWith("/super-admin")
                     ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-                    : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                    : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 )}
               >
                 <HugeiconsIcon icon={SecurityIcon} size={16} />
@@ -254,7 +259,7 @@ export function AppSidebar() {
                   "flex items-center gap-2 px-3 py-1.5 text-sm transition-colors",
                   location.pathname.startsWith("/settings")
                     ? "bg-sidebar-accent font-medium text-sidebar-accent-foreground"
-                    : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
+                    : "text-muted-foreground hover:bg-sidebar-accent hover:text-sidebar-accent-foreground"
                 )}
               >
                 <HugeiconsIcon icon={Settings01Icon} size={16} />

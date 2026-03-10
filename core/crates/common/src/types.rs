@@ -1,4 +1,4 @@
-use serde::{Deserialize, Serialize};
+use serde::{Deserialize, Deserializer, Serialize};
 use std::fmt;
 use std::str::FromStr;
 
@@ -14,12 +14,35 @@ impl<T: Serialize> ApiResponse<T> {
     }
 }
 
+/// Deserialize a `u32` that may arrive as a string (e.g. from `serde_urlencoded`
+/// when the field lives inside a `#[serde(flatten)]`-ed struct).
+fn deserialize_optional_u32_lenient<'de, D>(deserializer: D) -> Result<Option<u32>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    use serde::de::Error;
+
+    #[derive(Deserialize)]
+    #[serde(untagged)]
+    enum StringOrU32 {
+        Num(u32),
+        Str(String),
+    }
+
+    Option::<StringOrU32>::deserialize(deserializer)?
+        .map(|v| match v {
+            StringOrU32::Num(n) => Ok(n),
+            StringOrU32::Str(s) => s.parse::<u32>().map_err(D::Error::custom),
+        })
+        .transpose()
+}
+
 /// Pagination query parameters.
 #[derive(Debug, Clone, Deserialize, utoipa::IntoParams)]
 pub struct PaginationParams {
-    #[serde(default = "default_page")]
+    #[serde(default = "default_page", deserialize_with = "deserialize_optional_u32_lenient")]
     pub page: Option<u32>,
-    #[serde(default = "default_per_page")]
+    #[serde(default = "default_per_page", deserialize_with = "deserialize_optional_u32_lenient")]
     pub per_page: Option<u32>,
 }
 

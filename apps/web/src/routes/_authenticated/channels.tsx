@@ -18,6 +18,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { useMemo, useState } from "react"
+import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
@@ -27,6 +28,7 @@ export const Route = createFileRoute("/_authenticated/channels")({
 })
 
 function ChannelsPage() {
+  const { t } = useTranslation()
   const client = useApi()
   const queryClient = useQueryClient()
 
@@ -61,11 +63,11 @@ function ChannelsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["marketplace-channels"] })
-      toast.success("Channel created")
+      toast.success(t("channels.channelCreated"))
       closeSheet()
     },
     onError: () => {
-      toast.error("Failed to create channel")
+      toast.error(t("channels.failedToCreateChannel"))
     },
   })
 
@@ -76,11 +78,11 @@ function ChannelsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["marketplace-channels"] })
-      toast.success("Channel updated")
+      toast.success(t("channels.channelUpdated"))
       closeSheet()
     },
     onError: () => {
-      toast.error("Failed to update channel")
+      toast.error(t("channels.failedToUpdateChannel"))
     },
   })
 
@@ -90,10 +92,10 @@ function ChannelsPage() {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["marketplace-channels"] })
-      toast.success("Channel deleted")
+      toast.success(t("channels.channelDeleted"))
     },
     onError: () => {
-      toast.error("Failed to delete channel")
+      toast.error(t("channels.failedToDeleteChannel"))
     },
   })
 
@@ -113,28 +115,28 @@ function ChannelsPage() {
     () => [
       {
         id: "code",
-        header: "Code",
+        header: t("common.code"),
         cell: (row: Channel) => <span className="text-muted-foreground">{row.code}</span>,
       },
       {
         id: "name",
-        header: "Name",
+        header: t("common.name"),
         cell: (row: Channel) => <span className="font-medium">{row.name}</span>,
       },
       {
         id: "active",
-        header: "Active",
+        header: t("common.status"),
         cell: (row: Channel) => (
           <Badge
             variant={row.is_active ? "default" : "secondary"}
             className={row.is_active ? "bg-green-100 text-green-800 hover:bg-green-100" : undefined}
           >
-            {row.is_active ? "Active" : "Inactive"}
+            {row.is_active ? t("common.active") : t("common.inactive")}
           </Badge>
         ),
       },
     ],
-    []
+    [t]
   )
 
   function openCreate() {
@@ -174,8 +176,8 @@ function ChannelsPage() {
 
   return (
     <>
-      <PageHeader title="Channels" description="Manage your marketplace channels">
-        <Button onClick={openCreate}>Add Channel</Button>
+      <PageHeader title={t("channels.title")} description={t("channels.description")}>
+        <Button onClick={openCreate}>{t("channels.addChannel")}</Button>
       </PageHeader>
 
       <div className="space-y-4 p-6">
@@ -187,7 +189,7 @@ function ChannelsPage() {
               className="text-muted-foreground absolute left-3 top-1/2 -translate-y-1/2"
             />
             <Input
-              placeholder="Search by name or code..."
+              placeholder={t("channels.searchByNameOrCode")}
               value={search}
               onChange={(e) => setSearch(e.target.value)}
               className="pl-9"
@@ -200,17 +202,17 @@ function ChannelsPage() {
           data={filteredChannels}
           getRowId={(row) => row.id}
           isLoading={isLoading}
-          emptyMessage="No channels found."
+          emptyMessage={t("channels.noChannelsFound")}
           onRowClick={openEdit}
           rowActions={(row) => (
             <>
-              <DropdownMenuItem onClick={() => openEdit(row)}>Edit</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => openEdit(row)}>{t("common.edit")}</DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
                 variant="destructive"
                 onClick={() => deleteChannelMutation.mutate(row.id)}
               >
-                Delete
+                {t("common.delete")}
               </DropdownMenuItem>
             </>
           )}
@@ -226,48 +228,48 @@ function ChannelsPage() {
       >
         <SheetContent>
           <SheetHeader>
-            <SheetTitle>{editChannel ? "Edit Channel" : "Add Channel"}</SheetTitle>
+            <SheetTitle>
+              {editChannel ? t("channels.editChannel") : t("channels.addChannel")}
+            </SheetTitle>
             <SheetDescription>
-              {editChannel
-                ? "Update the channel details below."
-                : "Fill in the details to create a new channel."}
+              {editChannel ? t("channels.updateDescription") : t("channels.createDescription")}
             </SheetDescription>
           </SheetHeader>
           <form onSubmit={handleSubmit}>
             <SheetBody className="space-y-4">
               <div className="space-y-2">
-                <Label htmlFor="channel-code">Code</Label>
+                <Label htmlFor="channel-code">{t("common.code")}</Label>
                 <Input
                   id="channel-code"
                   value={formCode}
                   onChange={(e) => setFormCode(e.target.value)}
-                  placeholder="Channel code"
+                  placeholder={t("channels.channelCode")}
                   required
                 />
               </div>
               <div className="space-y-2">
-                <Label htmlFor="channel-name">Name</Label>
+                <Label htmlFor="channel-name">{t("common.name")}</Label>
                 <Input
                   id="channel-name"
                   value={formName}
                   onChange={(e) => setFormName(e.target.value)}
-                  placeholder="Channel name"
+                  placeholder={t("channels.channelName")}
                   required
                 />
               </div>
             </SheetBody>
             <SheetFooter>
               <Button variant="outline" type="button" onClick={closeSheet}>
-                Cancel
+                {t("common.cancel")}
               </Button>
               <Button type="submit" disabled={isPending}>
                 {isPending
                   ? editChannel
-                    ? "Saving..."
-                    : "Creating..."
+                    ? t("common.saving")
+                    : t("common.creating")
                   : editChannel
-                    ? "Save"
-                    : "Create"}
+                    ? t("common.save")
+                    : t("common.create")}
               </Button>
             </SheetFooter>
           </form>

@@ -2,7 +2,6 @@ import type { components } from "@heyloaf/api-client"
 import { AdvancedSelect } from "@heyloaf/ui/components/advanced-select"
 import { Badge } from "@heyloaf/ui/components/badge"
 import { DataTable } from "@heyloaf/ui/components/data-table"
-import { DateRangeFilter } from "@heyloaf/ui/components/date-range-filter"
 import { Input } from "@heyloaf/ui/components/input"
 import Search01Icon from "@hugeicons/core-free-icons/Search01Icon"
 import { HugeiconsIcon } from "@hugeicons/react"
@@ -10,6 +9,7 @@ import { useQuery } from "@tanstack/react-query"
 import { createFileRoute } from "@tanstack/react-router"
 import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { LocalizedDateRangeFilter } from "@/components/localized-date-range-filter"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
 import { useDebounce } from "@/hooks/use-debounce"
@@ -216,7 +216,7 @@ function TransactionsPage() {
             placeholder={t("dashboard.paymentMethod")}
             className="w-44"
           />
-          <DateRangeFilter
+          <LocalizedDateRangeFilter
             from={dateFrom}
             to={dateTo}
             onChange={(from, to) => {

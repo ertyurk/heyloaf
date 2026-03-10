@@ -29,11 +29,13 @@ function Select<Value, Multiple extends boolean | undefined = false>({
         labels.set(value, label)
       },
     }),
-    [labels],
+    [labels]
   )
   return (
     <SelectLabelsContext.Provider value={ctx}>
-      <SelectPrimitive.Root {...(props as SelectPrimitive.Root.Props<Value, Multiple>)}>{children}</SelectPrimitive.Root>
+      <SelectPrimitive.Root {...(props as SelectPrimitive.Root.Props<Value, Multiple>)}>
+        {children}
+      </SelectPrimitive.Root>
     </SelectLabelsContext.Provider>
   )
 }
@@ -99,7 +101,7 @@ function SelectTrigger({
 
 function collectLabels(
   children: React.ReactNode,
-  register: (value: string, label: string) => void,
+  register: (value: string, label: string) => void
 ) {
   React.Children.forEach(children, (child) => {
     if (!React.isValidElement(child)) return

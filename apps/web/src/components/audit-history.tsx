@@ -1,6 +1,5 @@
 import { Badge } from "@heyloaf/ui/components/badge"
 import { Button } from "@heyloaf/ui/components/button"
-import { DateRangeFilter } from "@heyloaf/ui/components/date-range-filter"
 import {
   Sheet,
   SheetBody,
@@ -13,6 +12,7 @@ import { HugeiconsIcon } from "@hugeicons/react"
 import { useQuery } from "@tanstack/react-query"
 import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
+import { LocalizedDateRangeFilter } from "@/components/localized-date-range-filter"
 import { useApi } from "@/hooks/use-api"
 
 interface AuditLogEntry {
@@ -122,7 +122,7 @@ export function AuditHistory({ entityType, entityId, trigger }: AuditHistoryProp
           </SheetHeader>
           <SheetBody>
             <div className="mb-4">
-              <DateRangeFilter
+              <LocalizedDateRangeFilter
                 from={dateFrom}
                 to={dateTo}
                 onChange={(from, to) => {

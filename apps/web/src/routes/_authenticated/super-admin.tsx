@@ -14,8 +14,8 @@ import {
 } from "@heyloaf/ui/components/sheet"
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@heyloaf/ui/components/tabs"
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
-import { createFileRoute, redirect } from "@tanstack/react-router"
-import { useMemo, useState } from "react"
+import { createFileRoute, useNavigate } from "@tanstack/react-router"
+import { useEffect, useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { PageHeader } from "@/components/page-header"
@@ -23,14 +23,24 @@ import { useApi } from "@/hooks/use-api"
 import { useAuthStore } from "@/lib/auth"
 
 export const Route = createFileRoute("/_authenticated/super-admin")({
-  beforeLoad: () => {
-    const { isSuperAdmin } = useAuthStore.getState()
-    if (!isSuperAdmin) {
-      throw redirect({ to: "/dashboard" })
-    }
-  },
-  component: SuperAdminPage,
+  component: SuperAdminGuard,
 })
+
+function SuperAdminGuard() {
+  const navigate = useNavigate()
+  const isSuperAdmin = useAuthStore((s) => s.isSuperAdmin)
+  const hasHydrated = useAuthStore((s) => s._hasHydrated)
+
+  useEffect(() => {
+    if (hasHydrated && !isSuperAdmin) {
+      navigate({ to: "/dashboard" })
+    }
+  }, [hasHydrated, isSuperAdmin, navigate])
+
+  if (!hasHydrated || !isSuperAdmin) return null
+
+  return <SuperAdminPage />
+}
 
 interface CompanyWithUserCount {
   id: string

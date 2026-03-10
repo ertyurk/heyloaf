@@ -2,7 +2,6 @@ import { AdvancedSelect } from "@heyloaf/ui/components/advanced-select"
 import { Badge } from "@heyloaf/ui/components/badge"
 import { Button } from "@heyloaf/ui/components/button"
 import { DataTable } from "@heyloaf/ui/components/data-table"
-import { DateRangeFilter } from "@heyloaf/ui/components/date-range-filter"
 import { DropdownMenuItem } from "@heyloaf/ui/components/dropdown-menu"
 import { Input } from "@heyloaf/ui/components/input"
 import { Label } from "@heyloaf/ui/components/label"
@@ -30,6 +29,7 @@ import { useMemo, useState } from "react"
 import { useTranslation } from "react-i18next"
 import { toast } from "sonner"
 import { ConfirmDialog } from "@/components/confirm-dialog"
+import { LocalizedDateRangeFilter } from "@/components/localized-date-range-filter"
 import { PageHeader } from "@/components/page-header"
 import { useApi } from "@/hooks/use-api"
 import { useDebounce } from "@/hooks/use-debounce"
@@ -316,7 +316,7 @@ function OrdersPage() {
             searchable={false}
             className="w-40"
           />
-          <DateRangeFilter
+          <LocalizedDateRangeFilter
             from={dateFrom}
             to={dateTo}
             onChange={(from, to) => {
